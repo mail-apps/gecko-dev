@@ -1594,6 +1594,7 @@ static nsresult LaunchChild(nsINativeAppSupport* aNative,
   PR_SetEnv("MOZ_LAUNCHED_CHILD=1");
 
 #if defined(XP_MACOSX)
+  SetupMacCommandLine(gRestartArgc, gRestartArgv);
   LaunchChildMac(gRestartArgc, gRestartArgv);
 #else
   nsCOMPtr<nsILocalFile> lf;
