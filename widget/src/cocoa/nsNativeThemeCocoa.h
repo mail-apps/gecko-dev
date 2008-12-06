@@ -114,6 +114,7 @@ protected:
   void DrawCheckboxOrRadio(CGContextRef cgContext, PRBool inCheckbox,
                            const HIRect& inBoxRect, PRBool inSelected,
                            PRBool inDisabled, PRInt32 inState, nsIFrame* aFrame);
+  void DrawSearchField(CGContextRef cgContext, const HIRect& inBoxRect, nsIFrame* aFrame);
   void DrawPushButton(CGContextRef cgContext, const HIRect& inBoxRect, PRBool inIsDefault,
                       PRBool inDisabled, PRInt32 inState, nsIFrame* aFrame);
   void DrawButton(CGContextRef context, ThemeButtonKind inKind,
@@ -139,6 +140,7 @@ private:
   NSButtonCell* mPushButtonCell;
   NSButtonCell* mRadioButtonCell;
   NSButtonCell* mCheckboxCell;
+  NSSearchFieldCell* mSearchFieldCell;
 };
 
 #endif // nsNativeThemeCocoa_h_
