@@ -4253,11 +4253,9 @@ nsGenericElement::SetAttr(PRInt32 aNamespaceID, nsIAtom* aName,
     attrValue.SetTo(aValue);
   }
 
-  rv = SetAttrAndNotify(aNamespaceID, aName, aPrefix, oldValue,
-                        attrValue, modification, hasListeners, aNotify);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  return AfterSetAttr(aNamespaceID, aName, &aValue, aNotify);
+  return SetAttrAndNotify(aNamespaceID, aName, aPrefix, oldValue,
+                          attrValue, modification, hasListeners, aNotify,
+                          &aValue);
 }
   
 nsresult
@@ -4268,7 +4266,8 @@ nsGenericElement::SetAttrAndNotify(PRInt32 aNamespaceID,
                                    nsAttrValue& aParsedValue,
                                    PRBool aModification,
                                    PRBool aFireMutation,
-                                   PRBool aNotify)
+                                   PRBool aNotify,
+                                   const nsAString* aValueForAfterSetAttr)
 {
   nsresult rv;
   PRUint8 modType = aModification ?
@@ -4327,7 +4326,16 @@ nsGenericElement::SetAttrAndNotify(PRInt32 aNamespaceID,
     nsNodeUtils::AttributeChanged(this, aNamespaceID, aName, modType,
                                   stateMask);
   }
-  
+
+  if (aNamespaceID == kNameSpaceID_XMLEvents && 
+      aName == nsGkAtoms::event && mNodeInfo->GetDocument()) {
+    mNodeInfo->GetDocument()->AddXMLEventsContent(this);
+  }
+  if (aValueForAfterSetAttr) {
+    rv = AfterSetAttr(aNamespaceID, aName, aValueForAfterSetAttr, aNotify);
+    NS_ENSURE_SUCCESS(rv, rv);
+  }
+
   if (aFireMutation) {
     mozAutoRemovableBlockerRemover blockerRemover;
     
@@ -4354,11 +4362,6 @@ nsGenericElement::SetAttrAndNotify(PRInt32 aNamespaceID,
 
     mozAutoSubtreeModified subtree(GetOwnerDoc(), this);
     nsEventDispatcher::Dispatch(this, nsnull, &mutation);
-  }
-
-  if (aNamespaceID == kNameSpaceID_XMLEvents && 
-      aName == nsGkAtoms::event && mNodeInfo->GetDocument()) {
-    mNodeInfo->GetDocument()->AddXMLEventsContent(this);
   }
 
   return NS_OK;
@@ -4585,6 +4588,9 @@ nsGenericElement::UnsetAttr(PRInt32 aNameSpaceID, nsIAtom* aName,
                                   stateMask);
   }
 
+  rv = AfterSetAttr(aNameSpaceID, aName, nsnull, aNotify);
+  NS_ENSURE_SUCCESS(rv, rv);
+
   if (hasMutationListeners) {
     mozAutoRemovableBlockerRemover blockerRemover;
 
@@ -4605,7 +4611,7 @@ nsGenericElement::UnsetAttr(PRInt32 aNameSpaceID, nsIAtom* aName,
     nsEventDispatcher::Dispatch(this, nsnull, &mutation);
   }
 
-  return AfterSetAttr(aNameSpaceID, aName, nsnull, aNotify);
+  return NS_OK;
 }
 
 const nsAttrName*
