@@ -4354,6 +4354,15 @@ js_SetPropertyHelper(JSContext *cx, JSObject *obj, jsid id, jsval *vp,
     /* Convert string indices to integers if appropriate. */
     CHECK_FOR_STRING_INDEX(id);
 
+    /*
+     * We peek at OBJ_SCOPE(obj) without locking obj. Any race means a failure
+     * to seal before sharing, which is inherently ambiguous.
+     */
+    if (SCOPE_IS_SEALED(OBJ_SCOPE(obj)) && OBJ_SCOPE(obj)->object == obj) {
+        flags = JSREPORT_ERROR;
+        goto read_only_error;
+    }
+
     shape = OBJ_SHAPE(obj);
     protoIndex = js_LookupPropertyWithFlags(cx, obj, id, cx->resolveFlags,
                                             &pobj, &prop);
@@ -4391,7 +4400,7 @@ js_SetPropertyHelper(JSContext *cx, JSObject *obj, jsid id, jsval *vp,
 
         attrs = sprop->attrs;
         if ((attrs & JSPROP_READONLY) ||
-            (SCOPE_IS_SEALED(scope) && pobj == obj)) {
+            (SCOPE_IS_SEALED(scope) && (attrs & JSPROP_SHARED))) {
             JS_UNLOCK_SCOPE(cx, scope);
 
             /*
@@ -4478,11 +4487,6 @@ js_SetPropertyHelper(JSContext *cx, JSObject *obj, jsid id, jsval *vp,
     }
 
     if (!sprop) {
-        if (SCOPE_IS_SEALED(OBJ_SCOPE(obj)) && OBJ_SCOPE(obj)->object == obj) {
-            flags = JSREPORT_ERROR;
-            goto read_only_error;
-        }
-
         /*
          * Purge the property cache of now-shadowed id in obj's scope chain.
          * Do this early, before locking obj to avoid nesting locks.
