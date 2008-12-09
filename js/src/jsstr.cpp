@@ -1411,7 +1411,7 @@ match_glob(JSContext *cx, jsint count, GlobData *data)
     mdata = (MatchData *)data;
     arrayobj = JSVAL_TO_OBJECT(*mdata->arrayval);
     if (!arrayobj) {
-        arrayobj = js_ConstructObject(cx, &js_ArrayClass, NULL, NULL, 0, NULL);
+        arrayobj = js_NewArrayObject(cx, 0, NULL);
         if (!arrayobj)
             return JS_FALSE;
         *mdata->arrayval = OBJECT_TO_JSVAL(arrayobj);
@@ -1451,7 +1451,7 @@ str_match(JSContext *cx, uintN argc, jsval *vp)
 {
     JSStackFrame *fp;
 
-    for (fp = cx->fp; fp && !fp->regs; fp = fp->down)
+    for (fp = js_GetTopStackFrame(cx); fp && !fp->regs; fp = fp->down)
         JS_ASSERT(!fp->script);
 
     /* Root the object in vp[0].  See comment in match_or_replace. */
@@ -2037,7 +2037,7 @@ str_split(JSContext *cx, uintN argc, jsval *vp)
 
     NORMALIZE_THIS(cx, vp, str);
 
-    arrayobj = js_ConstructObject(cx, &js_ArrayClass, NULL, NULL, 0, NULL);
+    arrayobj = js_NewArrayObject(cx, 0, NULL);
     if (!arrayobj)
         return JS_FALSE;
     *vp = OBJECT_TO_JSVAL(arrayobj);
@@ -2595,7 +2595,7 @@ String(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
     } else {
         str = cx->runtime->emptyString;
     }
-    if (!(cx->fp->flags & JSFRAME_CONSTRUCTING)) {
+    if (!JS_IsConstructing(cx)) {
         *rval = STRING_TO_JSVAL(str);
         return JS_TRUE;
     }
