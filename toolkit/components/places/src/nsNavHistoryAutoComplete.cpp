@@ -1155,7 +1155,9 @@ nsNavHistory::AutoCompleteFeedback(PRInt32 aIndex,
   rv = stmt->BindStringParameter(1, url);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  rv = stmt->Execute();
+  // We do the update async and we don't care about failures
+  nsCOMPtr<mozIStoragePendingStatement> canceler;
+  rv = stmt->ExecuteAsync(nsnull, getter_AddRefs(canceler));
   NS_ENSURE_SUCCESS(rv, rv);
 
   return NS_OK;
