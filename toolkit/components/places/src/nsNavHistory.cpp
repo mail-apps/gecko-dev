@@ -3161,11 +3161,9 @@ PlacesSQLQueryBuilder::SelectAsURI()
               "JOIN moz_historyvisits v ON h.id = v.place_id "
               "LEFT JOIN moz_favicons f ON h.favicon_id = f.id "
               "WHERE h.hidden <> 1 AND v.visit_type NOT IN ") +
-                nsPrintfCString("(0,%d,%d) ",
-                                nsINavHistoryService::TRANSITION_EMBED,
-                                nsINavHistoryService::TRANSITION_DOWNLOAD) +
-                NS_LITERAL_CSTRING("AND h.visit_count > 0 "
-                "{ADDITIONAL_CONDITIONS} "
+                nsPrintfCString("(0,%d) ",
+                                nsINavHistoryService::TRANSITION_EMBED) +
+                NS_LITERAL_CSTRING("{ADDITIONAL_CONDITIONS} "
               "GROUP BY h.id "
             ") "
             "UNION ALL "
@@ -3180,12 +3178,10 @@ PlacesSQLQueryBuilder::SelectAsURI()
               "JOIN moz_historyvisits v ON h.id = v.place_id "
               "LEFT JOIN moz_favicons f ON h.favicon_id = f.id "
               "WHERE h.hidden <> 1 AND v.visit_type NOT IN ") +
-                nsPrintfCString("(0,%d,%d) ",
-                                nsINavHistoryService::TRANSITION_EMBED,
-                                nsINavHistoryService::TRANSITION_DOWNLOAD) +
-                NS_LITERAL_CSTRING("AND h.visit_count > 0 "
+                nsPrintfCString("(0,%d) ",
+                                nsINavHistoryService::TRANSITION_EMBED) +
+                NS_LITERAL_CSTRING("{ADDITIONAL_CONDITIONS} "
                 "AND h.id NOT IN (SELECT id FROM moz_places_temp) "
-                "{ADDITIONAL_CONDITIONS} "
               "GROUP BY h.id "
             ") "
             "UNION ALL "
@@ -3200,12 +3196,10 @@ PlacesSQLQueryBuilder::SelectAsURI()
               "JOIN moz_historyvisits_temp v ON h.id = v.place_id "
               "LEFT JOIN moz_favicons f ON h.favicon_id = f.id "
               "WHERE h.hidden <> 1 AND v.visit_type NOT IN ") +
-                nsPrintfCString("(0,%d,%d) ",
-                                nsINavHistoryService::TRANSITION_EMBED,
-                                nsINavHistoryService::TRANSITION_DOWNLOAD) +
-                NS_LITERAL_CSTRING("AND h.visit_count > 0 "
+                nsPrintfCString("(0,%d) ",
+                                nsINavHistoryService::TRANSITION_EMBED) +
+                NS_LITERAL_CSTRING("{ADDITIONAL_CONDITIONS} "
                 "AND h.id NOT IN (SELECT id FROM moz_places_temp) "
-                "{ADDITIONAL_CONDITIONS} "
               "GROUP BY h.id "
             ") "
             "UNION ALL "
@@ -3220,11 +3214,9 @@ PlacesSQLQueryBuilder::SelectAsURI()
               "JOIN moz_historyvisits_temp v ON h.id = v.place_id "
               "LEFT JOIN moz_favicons f ON h.favicon_id = f.id "
               "WHERE h.hidden <> 1 AND v.visit_type NOT IN ") +
-                nsPrintfCString("(0,%d,%d) ",
-                                nsINavHistoryService::TRANSITION_EMBED,
-                                nsINavHistoryService::TRANSITION_DOWNLOAD) +
-                NS_LITERAL_CSTRING("AND h.visit_count > 0 "
-                "{ADDITIONAL_CONDITIONS} "
+                nsPrintfCString("(0,%d) ",
+                                nsINavHistoryService::TRANSITION_EMBED) +
+                NS_LITERAL_CSTRING("{ADDITIONAL_CONDITIONS} "
               "GROUP BY h.id "
             ") "
           ") "
@@ -3402,11 +3394,9 @@ PlacesSQLQueryBuilder::SelectAsVisit()
       "FROM moz_places h "
       "JOIN moz_historyvisits v ON h.id = v.place_id "
       "LEFT JOIN moz_favicons f ON h.favicon_id = f.id "
-      "WHERE h.visit_count > 0 "
-        "AND h.hidden <> 1 AND v.visit_type NOT IN ") +
-          nsPrintfCString("(0,%d,%d) ",
-                          nsINavHistoryService::TRANSITION_EMBED,
-                          nsINavHistoryService::TRANSITION_DOWNLOAD) +
+      "WHERE h.hidden <> 1 AND v.visit_type NOT IN ") +
+          nsPrintfCString("(0,%d) ",
+                          nsINavHistoryService::TRANSITION_EMBED) +
         NS_LITERAL_CSTRING("AND h.id NOT IN (SELECT id FROM moz_places_temp) "
         "{ADDITIONAL_CONDITIONS} "
       "UNION ALL "
@@ -3415,11 +3405,9 @@ PlacesSQLQueryBuilder::SelectAsVisit()
       "FROM moz_places_temp h "
       "JOIN moz_historyvisits v ON h.id = v.place_id "
       "LEFT JOIN moz_favicons f ON h.favicon_id = f.id "
-      "WHERE h.visit_count > 0 "
-        "AND h.hidden <> 1 AND v.visit_type NOT IN ") +
-          nsPrintfCString("(0,%d,%d) ",
-                          nsINavHistoryService::TRANSITION_EMBED,
-                          nsINavHistoryService::TRANSITION_DOWNLOAD) +
+      "WHERE h.hidden <> 1 AND v.visit_type NOT IN ") +
+          nsPrintfCString("(0,%d) ",
+                          nsINavHistoryService::TRANSITION_EMBED) +
         NS_LITERAL_CSTRING("{ADDITIONAL_CONDITIONS} "
       "UNION ALL "
       "SELECT h.id, h.url, h.title, h.rev_host, h.visit_count, "
@@ -3427,12 +3415,10 @@ PlacesSQLQueryBuilder::SelectAsVisit()
       "FROM moz_places h "
       "JOIN moz_historyvisits_temp v ON h.id = v.place_id "
       "LEFT JOIN moz_favicons f ON h.favicon_id = f.id "
-      "WHERE h.visit_count > 0 "
-        "AND h.id NOT IN (SELECT id FROM moz_places_temp) "
+      "WHERE h.id NOT IN (SELECT id FROM moz_places_temp) "
         "AND h.hidden <> 1 AND v.visit_type NOT IN ") +
-          nsPrintfCString("(0,%d,%d) ", 
-                          nsINavHistoryService::TRANSITION_EMBED,
-                          nsINavHistoryService::TRANSITION_DOWNLOAD) +
+          nsPrintfCString("(0,%d) ", 
+                          nsINavHistoryService::TRANSITION_EMBED) +
         NS_LITERAL_CSTRING("{ADDITIONAL_CONDITIONS} "
       "UNION ALL "
       "SELECT h.id, h.url, h.title, h.rev_host, h.visit_count, "
@@ -3440,11 +3426,9 @@ PlacesSQLQueryBuilder::SelectAsVisit()
       "FROM moz_places_temp h "
       "JOIN moz_historyvisits_temp v ON h.id = v.place_id "
       "LEFT JOIN moz_favicons f ON h.favicon_id = f.id "
-      "WHERE h.visit_count > 0 "
-        "AND h.hidden <> 1 AND v.visit_type NOT IN ") +
-          nsPrintfCString("(0,%d,%d) ",
-                          nsINavHistoryService::TRANSITION_EMBED,
-                          nsINavHistoryService::TRANSITION_DOWNLOAD) +
+      "WHERE h.hidden <> 1 AND v.visit_type NOT IN ") +
+          nsPrintfCString("(0,%d) ",
+                          nsINavHistoryService::TRANSITION_EMBED) +
         NS_LITERAL_CSTRING("{ADDITIONAL_CONDITIONS} ");
   }
   else {
@@ -3559,14 +3543,14 @@ PlacesSQLQueryBuilder::SelectAsDay()
           "SELECT id FROM moz_historyvisits_temp "
           "WHERE visit_date >= %llu "
             "AND visit_date < %llu "
-            "AND visit_type NOT IN (0, 4) "
+            "AND visit_type NOT IN (0,%d) "
           "LIMIT 1 "
         ") "
         "OR EXISTS ( "
           "SELECT * FROM moz_historyvisits "
           "WHERE visit_date >= %llu "
             "AND visit_date < %llu "
-            "AND visit_type NOT IN (0, 4) "
+            "AND visit_type NOT IN (0,%d) "
           "LIMIT 1 "
         ") "
       "LIMIT 1) TUNION%d UNION ", 
@@ -3575,8 +3559,10 @@ PlacesSQLQueryBuilder::SelectAsDay()
       midnight.Get(toDayAgo), 
       midnight.Get(fromDayAgo),
       midnight.Get(toDayAgo),
+      nsINavHistoryService::TRANSITION_EMBED,
       midnight.Get(fromDayAgo),
       midnight.Get(toDayAgo),
+      nsINavHistoryService::TRANSITION_EMBED,
       i);
 
     mQueryString.Append( dayRange );
@@ -3599,13 +3585,13 @@ PlacesSQLQueryBuilder::SelectAsDay()
       "WHERE EXISTS ( "
         "SELECT id FROM moz_historyvisits_temp "
         "WHERE visit_date < %llu "
-          "AND visit_type NOT IN (0, 4) "
+          "AND visit_type NOT IN (0,%d) "
         "LIMIT 1 "
       ") "
       "OR EXISTS ( "
         "SELECT id FROM moz_historyvisits "
         "WHERE visit_date < %llu "
-          "AND visit_type NOT IN (0, 4) "
+          "AND visit_type NOT IN (0,%d) "
         "LIMIT 1 "
       ") "
       "LIMIT 1) TUNIONLAST "
@@ -3616,7 +3602,9 @@ PlacesSQLQueryBuilder::SelectAsDay()
     dateParam.get(),
     midnight.Get(-MAX_HISTORY_DAYS),
     midnight.Get(-MAX_HISTORY_DAYS),
-    midnight.Get(-MAX_HISTORY_DAYS)
+    nsINavHistoryService::TRANSITION_EMBED,
+    midnight.Get(-MAX_HISTORY_DAYS),
+    nsINavHistoryService::TRANSITION_EMBED
     ));
 
   return NS_OK;
@@ -3942,8 +3930,10 @@ nsNavHistory::ConstructQueryString(
       "SELECT * FROM ( "
         "SELECT DISTINCT place_id "
         "FROM moz_historyvisits "
-        "WHERE visit_type NOT IN (0,4) "
-          "AND NOT EXISTS (SELECT id FROM moz_places h WHERE h.id = place_id AND hidden = 1) "
+        "WHERE visit_type NOT IN ") +
+          nsPrintfCString("(0,%d) ", nsINavHistoryService::TRANSITION_EMBED) +
+          NS_LITERAL_CSTRING("AND NOT EXISTS "
+            "(SELECT id FROM moz_places h WHERE h.id = place_id AND hidden = 1) "
           "AND NOT EXISTS (SELECT id FROM moz_places_temp h WHERE h.id = place_id AND hidden = 1) "
         "ORDER by visit_date DESC LIMIT ") +
         nsPrintfCString("%d ", aOptions->MaxResults()) +
@@ -3952,9 +3942,11 @@ nsNavHistory::ConstructQueryString(
       "SELECT * FROM ( "
         "SELECT DISTINCT place_id "
         "FROM moz_historyvisits_temp "
-        "WHERE visit_type NOT IN (0,4) "
-        "AND NOT EXISTS (SELECT id FROM moz_places h WHERE h.id = place_id AND hidden = 1) "
-        "AND NOT EXISTS (SELECT id FROM moz_places_temp h WHERE h.id = place_id AND hidden = 1) "
+        "WHERE visit_type NOT IN ") +
+          nsPrintfCString("(0,%d) ", nsINavHistoryService::TRANSITION_EMBED) +
+          NS_LITERAL_CSTRING("AND NOT EXISTS "
+            "(SELECT id FROM moz_places h WHERE h.id = place_id AND hidden = 1) "
+          "AND NOT EXISTS (SELECT id FROM moz_places_temp h WHERE h.id = place_id AND hidden = 1) "
         "ORDER by visit_date DESC LIMIT ") +
         nsPrintfCString("%d ", aOptions->MaxResults()) +
       NS_LITERAL_CSTRING(")");
