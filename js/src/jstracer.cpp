@@ -6557,6 +6557,12 @@ TraceRecorder::guardCallee(jsval& callee)
     LIns* exit = snapshot(BRANCH_EXIT);
     JSObject* callee_obj = JSVAL_TO_OBJECT(callee);
     LIns* callee_ins = get(&callee);
+
+    /*
+     * NB: The following guard guards at runtime that the callee is a
+     * function. Even if the given value is an object that doesn't have
+     * a private slot, the value we're matching against is not forgeable.
+     */
     guard(true,
           lir->ins2(LIR_eq, 
                     lir->ins2(LIR_piand, 
@@ -6713,6 +6719,10 @@ TraceRecorder::record_JSOP_APPLY()
         if (jsuword(newsp) > a->limit)
             ABORT_TRACE("apply or call across stack-chunks");
     }
+
+    /* Protect against a non-function callee. */
+    if (!VALUE_IS_FUNCTION(cx, vp[1]))
+        ABORT_TRACE("apply on a non-function");
 
     /*
      * Guard on the identity of this, which is the function we
