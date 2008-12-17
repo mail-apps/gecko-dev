@@ -1961,6 +1961,9 @@ NS_IMETHODIMP nsChildView::DispatchEvent(nsGUIEvent* event, nsEventStatus& aStat
   debug_DumpEvent(stdout, event->widget, event, nsCAutoString("something"), 0);
 #endif
 
+  NS_ASSERTION(!(nsTSMManager::IsComposing() && NS_IS_KEY_EVENT(event)),
+    "Any key events should not be fired during IME composing");
+
   aStatus = nsEventStatus_eIgnore;
 
   nsCOMPtr<nsIWidget> kungFuDeathGrip(mParentWidget ? mParentWidget : this);
@@ -5561,7 +5564,7 @@ static const char* ToEscapedString(NSString* aString, nsCAutoString& aBuf)
   mCurKeyEvent = theEvent;
 
   BOOL nonDeadKeyPress = [[theEvent characters] length] > 0;
-  if (nonDeadKeyPress) {
+  if (nonDeadKeyPress && !nsTSMManager::IsComposing()) {
     if (![theEvent isARepeat]) {
       NSResponder* firstResponder = [[self window] firstResponder];
 
@@ -5814,7 +5817,7 @@ static BOOL keyUpAlreadySentKeyDown = NO;
   }
 
   // if we don't have any characters we can't generate a keyUp event
-  if ([[theEvent characters] length] == 0)
+  if ([[theEvent characters] length] == 0 || nsTSMManager::IsComposing())
     return;
 
   // Cocoa doesn't send an NSKeyDown event for control-tab on 10.4, so if this
@@ -5853,22 +5856,20 @@ static BOOL keyUpAlreadySentKeyDown = NO;
     }
 
     // now send a key press event if we should
-    if (!nsTSMManager::IsComposing()) {
-      nsKeyEvent geckoEvent(PR_TRUE, NS_KEY_PRESS, nsnull);
-      [self convertCocoaKeyEvent:nativeKeyDownEvent toGeckoEvent:&geckoEvent];
+    nsKeyEvent geckoEvent(PR_TRUE, NS_KEY_PRESS, nsnull);
+    [self convertCocoaKeyEvent:nativeKeyDownEvent toGeckoEvent:&geckoEvent];
 
-      if (keyDownHandled)
-        geckoEvent.flags |= NS_EVENT_FLAG_NO_DEFAULT;
+    if (keyDownHandled)
+      geckoEvent.flags |= NS_EVENT_FLAG_NO_DEFAULT;
 
-      // create native EventRecord for use by plugins
-      EventRecord macEvent;
-      ConvertCocoaKeyEventToMacEvent(nativeKeyDownEvent, macEvent);
-      geckoEvent.nativeMsg = &macEvent;
+    // create native EventRecord for use by plugins
+    EventRecord macEvent;
+    ConvertCocoaKeyEventToMacEvent(nativeKeyDownEvent, macEvent);
+    geckoEvent.nativeMsg = &macEvent;
 
-      mGeckoChild->DispatchWindowEvent(geckoEvent);
-      if (!mGeckoChild)
-        return;
-    }
+    mGeckoChild->DispatchWindowEvent(geckoEvent);
+    if (!mGeckoChild)
+      return;
   }
 
   nsKeyEvent geckoEvent(PR_TRUE, NS_KEY_UP, nsnull);
@@ -6046,7 +6047,8 @@ static BOOL keyUpAlreadySentKeyDown = NO;
 {
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
 
-  if (!mGeckoChild || [theEvent type] != NSFlagsChanged)
+  if (!mGeckoChild || [theEvent type] != NSFlagsChanged ||
+      nsTSMManager::IsComposing())
     return;
 
   nsAutoRetainCocoaObject kungFuDeathGrip(self);
