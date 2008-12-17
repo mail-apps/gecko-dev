@@ -1062,6 +1062,7 @@ if [ "$MOZ_MEDIA" ]; then
    content/media/video/Makefile
    content/media/video/public/Makefile
    content/media/video/src/Makefile
+   content/media/video/test/Makefile
  "
 fi
 
