@@ -2933,7 +2933,7 @@ Snarf(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
 {
     JSString *str;
     const char *filename;
-    char *pathname;
+    const char *pathname;
     JSStackFrame *fp;
     JSBool ok;
     size_t cc, len;
