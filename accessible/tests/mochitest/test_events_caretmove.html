@@ -71,7 +71,7 @@
     {
       handleEvent: function handleEvent(aEvent)
       {
-        if (aEvent.DOMNode == gTestsArray[gTestIdx].node)
+        if (gTestIdx != -1 && aEvent.DOMNode == gTestsArray[gTestIdx].node)
           gTestsArray[gTestIdx].wasCaught = true;
       }
     };
@@ -96,7 +96,7 @@
           gTestsArray[++gTestIdx].testFunc();
           doTest();
         },
-        100
+        200
       );
     }
 
