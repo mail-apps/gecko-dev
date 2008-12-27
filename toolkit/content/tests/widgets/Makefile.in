@@ -106,15 +106,9 @@ _TEST_FILES = 	test_bug360220.xul \
  		test_mousescroll.xul \
 		test_scrollbar.xul \
 		test_sorttemplate.xul \
+		test_videocontrols.html \
 		video.ogg \
 		$(NULL)
-
-# Temporarily disabled on SeaMonkey to investigate bug 471085.
-ifndef MOZ_SUITE
-_TEST_FILES += \
-		test_videocontrols.html \
-		$(NULL)
-endif # MOZ_SUITE
 
 ifeq (,$(filter mac cocoa,$(MOZ_WIDGET_TOOLKIT)))
 _TEST_FILES += test_menubar.xul \
