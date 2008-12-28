@@ -239,7 +239,7 @@ var StarUI = {
       if (!this._element("editBookmarkPanelContent").hidden) {
         var namePicker = this._element("editBMPanel_namePicker");
         namePicker.focus();
-        namePicker.editor.selectAll();
+        namePicker.select();
       }
       else
         this.panel.focus();
