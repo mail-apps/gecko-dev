@@ -7336,6 +7336,8 @@ nsCSSFrameConstructor::ConstructSVGFrame(nsFrameConstructorState& aState,
 //    code doesn't expect positioned frames to have nsPageBreakFrame siblings)
 //
 // Returns true iff we should construct a page break frame after this element.
+// aStyleContext is the style context of the frame for which we're
+// constructing the page break
 PRBool
 nsCSSFrameConstructor::PageBreakBefore(nsFrameConstructorState& aState,
                                        nsIContent*              aContent,
@@ -7359,6 +7361,8 @@ nsCSSFrameConstructor::PageBreakBefore(nsFrameConstructorState& aState,
   return PR_FALSE;
 }
 
+// aStyleContext is the style context of the frame for which we're
+// constructing the page break
 nsresult
 nsCSSFrameConstructor::ConstructPageBreakFrame(nsFrameConstructorState& aState,
                                                nsIContent*              aContent,
@@ -7367,9 +7371,12 @@ nsCSSFrameConstructor::ConstructPageBreakFrame(nsFrameConstructorState& aState,
                                                nsFrameItems&            aFrameItems)
 {
   nsRefPtr<nsStyleContext> pseudoStyle;
+  // Use the same parent style context that |aStyleContext| has, since
+  // that's easier to re-resolve and it doesn't matter in practice.
+  // (Getting different parents can result in framechange hints, e.g.,
+  // for user-modify.)
   pseudoStyle = mPresShell->StyleSet()->ResolvePseudoStyleFor(nsnull,
-                                                              nsCSSAnonBoxes::pageBreak,
-                                                              aStyleContext);
+                   nsCSSAnonBoxes::pageBreak, aStyleContext->GetParent());
   nsIFrame* pageBreakFrame = NS_NewPageBreakFrame(mPresShell, pseudoStyle);
   if (pageBreakFrame) {
     InitAndRestoreFrame(aState, aContent, aParentFrame, nsnull, pageBreakFrame);
@@ -7409,7 +7416,8 @@ nsCSSFrameConstructor::ConstructFrame(nsFrameConstructorState& aState,
   PRBool pageBreakAfter = PR_FALSE;
 
   if (aState.mPresContext->IsPaginated()) {
-    // See if there is a page break before, if so construct one. Also see if there is one after
+    // Construct a page break frame for page-break-before, and remember if
+    // we need one for page-break-after.
     pageBreakAfter = PageBreakBefore(aState, aContent, aParentFrame,
                                      styleContext, aFrameItems);
   }
