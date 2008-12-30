@@ -123,15 +123,9 @@ install::
 	    $(LOCALE_SRCDIR)/existing-profile-defaults.js > $(DESTDIR)$(mozappdir)/defaults/existing-profile-defaults.js; \
 	fi
 
-ifeq ($(OS_ARCH),OS2)
-README_FILES = \
-	os2/README.txt \
-	$(NULL)
-else
 README_FILES = \
 	README.txt \
 	$(NULL)
-endif
 
 PROFILE_FILES = \
 	localstore.rdf \
@@ -147,7 +141,9 @@ ifeq ($(OS_ARCH),WINNT)
 	  $(PERL) -pe 's/(?<!\r)\n/\r\n/g;' < $$file > $(FINAL_TARGET)/`basename $$file`; \
 	done
 else
+ifneq ($(OS_ARCH),OS2)
 	$(SYSINSTALL) $(IFLAGS1) $^ $(FINAL_TARGET)
+endif
 endif
 
 NO_JA_JP_MAC_AB_CD := $(if $(filter ja-JP-mac, $(AB_CD)),ja,$(AB_CD))
