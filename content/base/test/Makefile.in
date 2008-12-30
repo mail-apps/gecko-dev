@@ -263,6 +263,7 @@ _TEST_FILES = 	test_bug5141.html \
 		test_w3element_traversal.xhtml \
 		test_w3element_traversal_svg.html \
 		w3element_traversal.svg \
+		test_bug469020.html \
 		test_bug465767.html \
 		$(NULL)
 
