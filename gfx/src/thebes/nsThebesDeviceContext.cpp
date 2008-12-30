@@ -146,6 +146,12 @@ nsThebesDeviceContext::Shutdown()
     gSystemFonts = nsnull;
 }
 
+PRBool
+nsThebesDeviceContext::IsPrinterSurface()
+{
+  return(mPrintingSurface != NULL);
+}
+
 nsresult
 nsThebesDeviceContext::SetDPI()
 {
