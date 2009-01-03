@@ -101,11 +101,6 @@ function runTest(event) {
   testnum++;
 }
 
-if (navigator.userAgent.match(/ SeaMonkey\//) &&
-    navigator.userAgent.match(/Windows/)) {
-  todo(false, "Test script disabled on Windows SeaMonkey: see bug 471085.");
-} else {
-
 var testnum = 1;
 var video = document.getElementById("video");
 
@@ -118,8 +113,6 @@ video.addEventListener("pause", runTest, false);
 video.addEventListener("volumechange", runTest, false);
 
 SimpleTest.waitForExplicitFinish();
-
-}
 
 </script>
 </pre>
