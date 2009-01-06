@@ -3685,8 +3685,6 @@ function testComparisons()
 testComparisons.expected = "no failures reported!";
 test(testComparisons);
 
-load("trace-test-math.js");
-
 /* NOTE: Keep this test last, since it screws up all for...in loops after it. */
 function testGlobalProtoAccess() {
     return "ok";
