@@ -8344,10 +8344,7 @@ TraceRecorder::record_JSOP_GENERATOR()
 JS_REQUIRES_STACK bool
 TraceRecorder::record_JSOP_YIELD()
 {
-    LIns* v_ins = stack(-1);
-    int n = -1 - GET_UINT16(cx->fp->regs->pc);
-    stack(n, v_ins);
-    return true;
+    return false;
 }
 
 JS_REQUIRES_STACK bool
