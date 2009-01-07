@@ -20,9 +20,9 @@ var fails = [], passes=[];
 
 function jitstatHandler(f)
 {
-    if (!haveTracemonkey) {
-	return;
-    }
+    if (!haveTracemonkey)
+        return;
+
     // XXXbz this is a nasty hack, but I can't figure out a way to
     // just use jitstats.tbl here
     f("recorderStarted");
@@ -92,10 +92,10 @@ function check(desc, actual, expected, oldJITstats, expectedJITstats)
                      });
   }
   print(desc, ": FAILED: expected", typeof(expected), "(", expected, ")",
-	(expectedStats ? " [" + expectedStats + "] " : ""),
-	"!= actual",
-	typeof(actual), "(", actual, ")",
-	(actualStats ? " [" + actualStats + "] " : ""));
+        (expectedStats ? " [" + expectedStats + "] " : ""),
+        "!= actual",
+        typeof(actual), "(", uneval(actual), ")",
+        (actualStats ? " [" + actualStats + "] " : ""));
 }
 
 function ifInsideLoop()
@@ -389,13 +389,13 @@ setprop.expected =  "19,-1,19";
 test(setprop);
 
 function testif() {
-	var q = 0;
-	for (var i = 0; i < 100; i++) {
-		if ((i & 1) == 0)
-			q++;
-		else
-			q--;
-	}
+    var q = 0;
+    for (var i = 0; i < 100; i++) {
+        if ((i & 1) == 0)
+            q++;
+        else
+            q--;
+    }
     return q;
 }
 testif.expected = "0";
@@ -443,7 +443,7 @@ function unboxint() {
     var q = 0;
     var o = [4];
     for (var i = 0; i < 100; ++i)
-	q = o[0] << 1;
+        q = o[0] << 1;
     return q;
 }
 unboxint.expected = "8";
@@ -548,7 +548,7 @@ if (!testName || testName == "truthies") {
      //  functions get trace-JITed.
      for each (var op in opsies) {
        for (var i in boolies) {
-	 for (var j in boolies[i]) {
+         for (var j in boolies[i]) {
            var x = uneval(boolies[i][j]);
            for (var k in boolies) {
              for (var l in boolies[k]) {
@@ -560,7 +560,7 @@ if (!testName || testName == "truthies") {
                test(f);
              }
            }
-	 }
+         }
        }
      }
    })();
@@ -781,12 +781,14 @@ test(deepForInLoop);
 function nestedExit(x) {
     var q = 0;
     for (var i = 0; i < 10; ++i)
-	if (x)
-	    ++q;
+    {
+        if (x)
+            ++q;
+    }
 }
 function nestedExitLoop() {
     for (var j = 0; j < 10; ++j)
-	nestedExit(j < 7);
+        nestedExit(j < 7);
     return "ok";
 }
 nestedExitLoop.expected = "ok";
@@ -823,14 +825,14 @@ function parsingNumbers() {
     var r1, r1z, r2, r2z;
 
     for (var i = 0; i < 10; i++) {
-	r1 = parseInt(s1);
-	r1z = parseInt(s1z);
-	r2 = parseFloat(s2);
-	r2z = parseFloat(s2z);
+        r1 = parseInt(s1);
+        r1z = parseInt(s1z);
+        r2 = parseFloat(s2);
+        r2z = parseFloat(s2z);
     }
 
     if (r1 == e1 && r1z == e1 && r2 == e2 && r2z == e2)
-	return "ok";
+        return "ok";
     return "fail";
 }
 parsingNumbers.expected = "ok";
@@ -857,12 +859,12 @@ test(testMatchAsCondition);
 
 function deep1(x) {
     if (x > 90)
-	return 1;
+       return 1;
     return 2;
 }
 function deep2() {
     for (var i = 0; i < 100; ++i)
-	deep1(i);
+        deep1(i);
     return "ok";
 }
 deep2.expected = "ok";
@@ -872,7 +874,7 @@ var merge_type_maps_x = 0, merge_type_maps_y = 0;
 function merge_type_maps() {
     for (merge_type_maps_x = 0; merge_type_maps_x < 50; ++merge_type_maps_x)
         if ((merge_type_maps_x & 1) == 1)
-	    ++merge_type_maps_y;
+            ++merge_type_maps_y;
     return [merge_type_maps_x,merge_type_maps_y].join(",");
 }
 merge_type_maps.expected = "50,25";
@@ -880,10 +882,10 @@ test(merge_type_maps)
 
 function inner_double_outer_int() {
     function f(i) {
-	for (var m = 0; m < 20; ++m)
-	    for (var n = 0; n < 100; n += i)
-		;
-	return n;
+        for (var m = 0; m < 20; ++m)
+            for (var n = 0; n < 100; n += i)
+                ;
+        return n;
     }
     return f(.5);
 }
@@ -965,10 +967,10 @@ test(inArrayTest);
 function innerLoopIntOuterDouble() {
     var n = 10000, i=0, j=0, count=0, limit=0;
     for (i = 1; i <= n; ++i) {
-	limit = i * 1;
-	for (j = 0; j < limit; ++j) {
-	    ++count;
-	}
+        limit = i * 1;
+        for (j = 0; j < limit; ++j) {
+            ++count;
+        }
     }
     return "" + count;
 }
@@ -980,9 +982,13 @@ function outerline(){
     var j=0;
 
     for (i = 3; i<= 100000; i+=2)
-	for (j = 3; j < 1000; j+=2)
-	    if ((i & 1) == 1)
-		break;
+    {
+        for (j = 3; j < 1000; j+=2)
+        {
+            if ((i & 1) == 1)
+                break;
+        }
+    }
     return "ok";
 }
 outerline.expected="ok";
@@ -1005,8 +1011,8 @@ function loopingAccumulator() {
 }
 
 function testLoopingAccumulator() {
-	var x = addAccumulations(loopingAccumulator);
-	return x;
+    var x = addAccumulations(loopingAccumulator);
+    return x;
 }
 testLoopingAccumulator.expected = 20;
 test(testLoopingAccumulator);
@@ -1043,7 +1049,7 @@ function testBranchingUnstableLoopCounter() {
     if (i == 51) {
       i += 1.1;
     }
-    x++;    
+    x++;
   }
   return x;
 }
@@ -1106,8 +1112,8 @@ test(testNumberToString);
 function testDecayingInnerLoop() {
     var i, j, k = 10;
     for (i = 0; i < 5000; ++i) {
-	for (j = 0; j < k; ++j);
-	--k;
+        for (j = 0; j < k; ++j);
+            --k;
     }
     return i;
 }
@@ -1118,9 +1124,9 @@ function testContinue() {
     var i;
     var total = 0;
     for (i = 0; i < 20; ++i) {
-	if (i == 11)
-	    continue;
-	total++;
+        if (i == 11)
+            continue;
+        total++;
     }
     return total;
 }
@@ -1132,13 +1138,13 @@ function testContinueWithLabel() {
     var j = 20;
     checkiandj :
     while (i<10) {
-	i+=1;
-	checkj :
-	while (j>10) {
-	    j-=1;
-	    if ((j%2)==0)
-		continue checkj;
-	}   
+        i+=1;
+        checkj :
+        while (j>10) {
+            j-=1;
+            if ((j%2)==0)
+            continue checkj;
+        }
     }
     return i + j;
 }
@@ -1149,8 +1155,8 @@ function testDivision() {
     var a = 32768;
     var b;
     while (b !== 1) {
-	b = a / 2;
-	a = b;
+        b = a / 2;
+        a = b;
     }
     return a;
 }
@@ -1161,8 +1167,8 @@ function testDivisionFloat() {
     var a = 32768.0;
     var b;
     while (b !== 1) {
-	b = a / 2.0;
-	a = b;
+        b = a / 2.0;
+        a = b;
     }
     return a === 1.0;
 }
@@ -1172,8 +1178,8 @@ test(testDivisionFloat);
 function testToUpperToLower() {
     var s = "Hello", s1, s2;
     for (i = 0; i < 100; ++i) {
-	s1 = s.toLowerCase();
-	s2 = s.toUpperCase();
+        s1 = s.toLowerCase();
+        s2 = s.toUpperCase();
     }
     return s1 + s2;
 }
@@ -1182,9 +1188,8 @@ test(testToUpperToLower);
 
 function testReplace2() {
     var s = "H e l l o", s1;
-    for (i = 0; i < 100; ++i) {
-	s1 = s.replace(" ", "");
-    }
+    for (i = 0; i < 100; ++i)
+        s1 = s.replace(" ", "");
     return s1;
 }
 testReplace2.expected = "He l l o";
@@ -1272,7 +1277,7 @@ testNegZero1.name = 'testNegZero1';
 testNegZero1Helper(1);
 test(testNegZero1);
 
-// No test case, just make sure this doesn't assert. 
+// No test case, just make sure this doesn't assert.
 function testNegZero2() {
     var z = 0;
     for (let j = 0; j < 5; ++j) { ({p: (-z)}); }
@@ -1406,8 +1411,8 @@ test(testNativeMax);
 function testFloatArrayIndex() {
     var a = [];
     for (var i = 0; i < 10; ++i) {
-	a[3] = 5;
-	a[3.5] = 7;
+        a[3] = 5;
+        a[3.5] = 7;
     }
     return a[3] + "," + a[3.5];
 }
@@ -1417,10 +1422,10 @@ test(testFloatArrayIndex);
 function testStrict() {
     var n = 10, a = [];
     for (var i = 0; i < 10; ++i) {
-	a[0] = (n === 10);
-	a[1] = (n !== 10);
-	a[2] = (n === null);
-	a[3] = (n == null);
+        a[0] = (n === 10);
+        a[1] = (n !== 10);
+        a[2] = (n === null);
+        a[3] = (n == null);
     }
     return a.join(",");
 }
@@ -1439,42 +1444,43 @@ function testPrimitiveConstructorPrototype() {
     f.prototype = false;
     for (let j=0;j<5;++j) { new f; }
     return "ok";
-}    
+}
 testPrimitiveConstructorPrototype.expected = "ok";
 test(testPrimitiveConstructorPrototype);
 
 function testSideExitInConstructor() {
     var FCKConfig = {};
     FCKConfig.CoreStyles =
-	{
-	    'Bold': { },
-	    'Italic': { },
-	    'FontFace': { },
-	    'Size' :
-	    {
-		Overrides: [ ]
-	    },
+    {
+        'Bold': { },
+        'Italic': { },
+        'FontFace': { },
+        'Size' :
+        {
+        Overrides: [ ]
+        },
 
-	    'Color' :
-	    {
-		Element: '',
-		Styles: {  },
-		Overrides: [  ]
-	    },
-	    'BackColor': {
-		Element : '',
-		Styles : { 'background-color' : '' }
-	    },
-	    
-	};
-    var FCKStyle = function(A) {
-	A.Element;
+        'Color' :
+        {
+        Element: '',
+        Styles: {  },
+        Overrides: [  ]
+        },
+        'BackColor': {
+        Element : '',
+        Styles : { 'background-color' : '' }
+        },
+
     };
-    
+    var FCKStyle = function(A) {
+        A.Element;
+    };
+
     var pass = true;
     for (var s in FCKConfig.CoreStyles) {
-	var x = new FCKStyle(FCKConfig.CoreStyles[s]);
-	if (!x) pass = false;
+        var x = new FCKStyle(FCKConfig.CoreStyles[s]);
+        if (!x)
+            pass = false;
     }
     return pass;
 }
@@ -1484,9 +1490,8 @@ test(testSideExitInConstructor);
 function testNot() {
     var a = new Object(), b = null, c = "foo", d = "", e = 5, f = 0, g = 5.5, h = -0, i = true, j = false, k = undefined;
     var r;
-    for (var i = 0; i < 10; ++i) {
-	r = [!a, !b, !c, !d, !e, !f, !g, !h, !i, !j, !k];
-    }
+    for (var i = 0; i < 10; ++i)
+        r = [!a, !b, !c, !d, !e, !f, !g, !h, !i, !j, !k];
     return r.join(",");
 }
 testNot.expected = "false,true,false,true,false,true,false,true,false,true,true";
@@ -1573,9 +1578,8 @@ test(testHOTLOOPSize);
 function testMatchStringObject() {
     var a = new String("foo");
     var b;
-    for (i = 0; i < 300; i++) {
-	b = a.match(/bar/);
-    }
+    for (i = 0; i < 300; i++)
+        b = a.match(/bar/);
     return b;
 }
 testMatchStringObject.expected = null;
@@ -1607,7 +1611,7 @@ function testInnerSwitchBreak()
 testInnerSwitchBreak.expected = "1,1,1,1,1";
 test(testInnerSwitchBreak);
 
-function testArrayNaNIndex() 
+function testArrayNaNIndex()
 {
     for (var j = 0; j < 4; ++j) { [this[NaN]]; }
     for (var j = 0; j < 5; ++j) { if([1][-0]) { } }
@@ -1654,9 +1658,8 @@ test(regexpLastIndex);
 
 function testHOTLOOPCorrectness() {
     var b = 0;
-    for (var i = 0; i < HOTLOOP; ++i) {
-	++b;
-    }
+    for (var i = 0; i < HOTLOOP; ++i)
+        ++b;
     return b;
 }
 testHOTLOOPCorrectness.expected = HOTLOOP;
@@ -1672,7 +1675,7 @@ test(testHOTLOOPCorrectness);
 function testRUNLOOPCorrectness() {
     var b = 0;
     for (var i = 0; i < RUNLOOP; ++i) {
-	++b;
+    ++b;
     }
     return b;
 }
@@ -1691,9 +1694,8 @@ function testDateNow() {
     // so do it before the loop starts; otherwise we have to loop an extra time
     // to pick things up.
     var time = Date.now();
-    for (var j = 0; j < RUNLOOP; ++j) {
-	time = Date.now();
-    }
+    for (var j = 0; j < RUNLOOP; ++j)
+        time = Date.now();
     return "ok";
 }
 testDateNow.expected = "ok";
@@ -1704,36 +1706,36 @@ testDateNow.jitstats = {
 };
 test(testDateNow);
 
-function testINITELEM() 
+function testINITELEM()
 {
     var x;
     for (var i = 0; i < 10; ++i)
-	x = { 0: 5, 1: 5 };    
+        x = { 0: 5, 1: 5 };
     return x[0] + x[1];
 }
 testINITELEM.expected = 10;
 test(testINITELEM);
 
-function testUndefinedBooleanCmp() 
+function testUndefinedBooleanCmp()
 {
     var t = true, f = false, x = [];
     for (var i = 0; i < 10; ++i) {
-	x[0] = t == undefined;
-	x[1] = t != undefined;
-	x[2] = t === undefined;
-	x[3] = t !== undefined;
-	x[4] = t < undefined;
-	x[5] = t > undefined;
-	x[6] = t <= undefined;
-	x[7] = t >= undefined;
-	x[8] = f == undefined;
-	x[9] = f != undefined;
-	x[10] = f === undefined;
-	x[11] = f !== undefined;
-	x[12] = f < undefined;
-	x[13] = f > undefined;
-	x[14] = f <= undefined;
-	x[15] = f >= undefined;
+        x[0] = t == undefined;
+        x[1] = t != undefined;
+        x[2] = t === undefined;
+        x[3] = t !== undefined;
+        x[4] = t < undefined;
+        x[5] = t > undefined;
+        x[6] = t <= undefined;
+        x[7] = t >= undefined;
+        x[8] = f == undefined;
+        x[9] = f != undefined;
+        x[10] = f === undefined;
+        x[11] = f !== undefined;
+        x[12] = f < undefined;
+        x[13] = f > undefined;
+        x[14] = f <= undefined;
+        x[15] = f >= undefined;
     }
     return x.join(",");
 }
@@ -1760,7 +1762,7 @@ function doTestInvalidCharCodeAt(input)
 {
     var q = "";
     for (var i = 0; i < 10; i++)
-       q += input.charCodeAt(i); 
+       q += input.charCodeAt(i);
     return q;
 }
 function testInvalidCharCodeAt()
@@ -1807,7 +1809,7 @@ function loopWithUndefined2(t, dostuff, val) {
     var a = new Array(6);
     for (var i = 0; i < 6; i++) {
         if (dostuff) {
-            val = 1; 
+            val = 1;
             a[i] = (t > val);
         } else {
             a[i] = (val == undefined);
@@ -1878,12 +1880,12 @@ test(testClosingRecursion);
 
 // Test no assert or crash from outer recorders (bug 465145)
 function testBug465145() {
-	this.__defineSetter__("x", function(){});
-	this.watch("x", function(){});
-	y = this;
-	for (var z = 0; z < 2; ++z) { x = y };
-	this.__defineSetter__("x", function(){});
-	for (var z = 0; z < 2; ++z) { x = y };
+    this.__defineSetter__("x", function(){});
+    this.watch("x", function(){});
+    y = this;
+    for (var z = 0; z < 2; ++z) { x = y };
+    this.__defineSetter__("x", function(){});
+    for (var z = 0; z < 2; ++z) { x = y };
 }
 
 function testTrueShiftTrue() {
@@ -1912,10 +1914,10 @@ testBug465272.expected = "3,3,3,3,3"
 test(testBug465272);
 
 function testBug465483() {
-	var a = new Array(4);
-	var c = 0;
-	for each (i in [4, 'a', 'b', (void 0)]) a[c++] = '' + (i + i);
-	return a.join(',');
+    var a = new Array(4);
+    var c = 0;
+    for each (i in [4, 'a', 'b', (void 0)]) a[c++] = '' + (i + i);
+    return a.join(',');
 }
 testBug465483.expected = '8,aa,bb,NaN';
 test(testBug465483);
@@ -1940,7 +1942,7 @@ test(testNullCallee);
 
 //test no multitrees assert
 function testBug466128() {
-    for (let a = 0; a < 3; ++a) { 
+    for (let a = 0; a < 3; ++a) {
       for each (let b in [1, 2, "three", 4, 5, 6, 7, 8]) {
       }
     }
@@ -1959,13 +1961,13 @@ test(testBug465688);
 
 //test no assert
 function testBug466262() {
-	var e = 1;
-	for (var d = 0; d < 3; ++d) {
-	  if (d == 2) {
-		e = "";
-	  }
-	}
-	return true;
+    var e = 1;
+    for (var d = 0; d < 3; ++d) {
+      if (d == 2) {
+        e = "";
+      }
+    }
+    return true;
 }
 testBug466262.expected = true;
 test(testBug466262);
@@ -1977,9 +1979,8 @@ function testNewDate()
     // to pick things up.
     var start = new Date();
     var time = new Date();
-    for (var j = 0; j < RUNLOOP; ++j) {
-	time = new Date();
-    }
+    for (var j = 0; j < RUNLOOP; ++j)
+        time = new Date();
     return time > 0 && time >= start;
 }
 testNewDate.expected = true;
@@ -1993,9 +1994,9 @@ test(testNewDate);
 function testArrayPushPop() {
     var a = [], sum1 = 0, sum2 = 0;
     for (var i = 0; i < 10; ++i)
-	sum1 += a.push(i);
+        sum1 += a.push(i);
     for (var i = 0; i < 10; ++i)
-	sum2 += a.pop();
+        sum2 += a.pop();
     a.push(sum1);
     a.push(sum2);
     return a.join(",");
@@ -2065,7 +2066,7 @@ function testRegExpTest() {
     var r = /abc/;
     var flag = false;
     for (var i = 0; i < 10; ++i)
-	flag = r.test("abc");
+        flag = r.test("abc");
     return flag;
 }
 testRegExpTest.expected = true;
@@ -2075,16 +2076,16 @@ function testNumToString() {
     var r = [];
     var d = 123456789;
     for (var i = 0; i < 10; ++i) {
-	r = [
-	     d.toString(),
-	     (-d).toString(),
-	     d.toString(10),
-	     (-d).toString(10),
-	     d.toString(16),
-	     (-d).toString(16),
-	     d.toString(36),
-	     (-d).toString(36)
-        ];
+        r = [
+             d.toString(),
+             (-d).toString(),
+             d.toString(10),
+             (-d).toString(10),
+             d.toString(16),
+             (-d).toString(16),
+             d.toString(36),
+             (-d).toString(36)
+            ];
     }
     return r.join(",");
 }
@@ -2116,7 +2117,7 @@ test(testForInLoopChangeIteratorType);
 function testGrowDenseArray() {
     var a = new Array();
     for (var i = 0; i < 10; ++i)
-	a[i] |= 5;
+        a[i] |= 5;
     return a.join(",");
 }
 testGrowDenseArray.expected = "5,5,5,5,5,5,5,5,5,5";
@@ -2160,18 +2161,18 @@ function testStringify() {
     var t = true, f = false, u = undefined, n = 5, d = 5.5, s = "x";
     var a = [];
     for (var i = 0; i < 10; ++i) {
-	a[0] = "" + t;
-	a[1] = t + "";
-	a[2] = "" + f;
-	a[3] = f + "";
-	a[4] = "" + u;
-	a[5] = u + "";
-	a[6] = "" + n;
-	a[7] = n + "";
-	a[8] = "" + d;
-	a[9] = d + "";
-	a[10] = "" + s;
-	a[11] = s + "";
+        a[0] = "" + t;
+        a[1] = t + "";
+        a[2] = "" + f;
+        a[3] = f + "";
+        a[4] = "" + u;
+        a[5] = u + "";
+        a[6] = "" + n;
+        a[7] = n + "";
+        a[8] = "" + d;
+        a[9] = d + "";
+        a[10] = "" + s;
+        a[11] = s + "";
     }
     return a.join(",");
 }
@@ -2293,11 +2294,11 @@ function testIn() {
         a.push(1.7 in obj);
         a.push("foo" in obj);
         a.push(1 in obj);
-        a.push("1" in array);  
+        a.push("1" in array);
         a.push(-2 in obj);
         a.push(2.7 in obj);
         a.push("bar" in obj);
-        a.push(2 in obj);    
+        a.push(2 in obj);
     }
     return a.join(",");
 }
@@ -2348,21 +2349,20 @@ function testWeirdDateParseOuter()
 {
     var vDateParts = ["11", "17", "2008"];
     var out = [];
-    for (var vI = 0; vI < vDateParts.length; vI++) {
-	out.push(testWeirdDateParseInner(vDateParts[vI]));
-    }
+    for (var vI = 0; vI < vDateParts.length; vI++)
+        out.push(testWeirdDateParseInner(vDateParts[vI]));
     /* Mutate the global shape so we fall off trace; this causes
      * additional oddity */
     global.x = Math.random();
     return out;
-} 
+}
 function testWeirdDateParseInner(pVal)
 {
     var vR = 0;
     for (var vI = 0; vI < pVal.length; vI++) {
-	var vC = pVal.charAt(vI);
-	if ((vC >= '0') && (vC <= '9'))
-	    vR = (vR * 10) + parseInt(vC);
+        var vC = pVal.charAt(vI);
+        if ((vC >= '0') && (vC <= '9'))
+            vR = (vR * 10) + parseInt(vC);
     }
     return vR;
 }
@@ -2418,16 +2418,16 @@ test(testEqFalseEmptyString);
 
 function testIncDec2(ii) {
     var x = [];
-    for (let j=0;j<5;++j) { 
-	ii=j;
-	jj=j; 
-	var kk=j; 
-	x.push(ii--);
-	x.push(jj--); 
-	x.push(kk--); 
-	x.push(++ii);
-	x.push(++jj); 
-	x.push(++kk); 
+    for (let j=0;j<5;++j) {
+        ii=j;
+        jj=j;
+        var kk=j;
+        x.push(ii--);
+        x.push(jj--);
+        x.push(kk--);
+        x.push(++ii);
+        x.push(++jj);
+        x.push(++kk);
     }
     return x.join(",");
 }
@@ -3374,7 +3374,7 @@ function testComparisons()
          "[0]": notEqualNorDifferent
        }
     };
-  
+
 
 
   var failures = [];
@@ -3457,6 +3457,110 @@ testCaseAbort.jitstats = {
 };
 test(testCaseAbort);
 
+function testApplyCallHelper(f) {
+    var r = [];
+    for (var i = 0; i < 10; ++i) f.call();
+    r.push(x);
+    for (var i = 0; i < 10; ++i) f.call(this);
+    r.push(x);
+    for (var i = 0; i < 10; ++i) f.apply(this);
+    r.push(x);
+    for (var i = 0; i < 10; ++i) f.call(this,0);
+    r.push(x);
+    for (var i = 0; i < 10; ++i) f.apply(this,[0]);
+    r.push(x);
+    for (var i = 0; i < 10; ++i) f.call(this,0,1);
+    r.push(x);
+    for (var i = 0; i < 10; ++i) f.apply(this,[0,1]);
+    r.push(x);
+    for (var i = 0; i < 10; ++i) f.call(this,0,1,2);
+    r.push(x);
+    for (var i = 0; i < 10; ++i) f.apply(this,[0,1,2]);
+    r.push(x);
+    for (var i = 0; i < 10; ++i) f.call(this,0,1,2,3);
+    r.push(x);
+    for (var i = 0; i < 10; ++i) f.apply(this,[0,1,2,3]);
+    r.push(x);
+    for (var i = 0; i < 10; ++i) f.call(this,0,1,2,3,4);
+    r.push(x);
+    for (var i = 0; i < 10; ++i) f.apply(this,[0,1,2,3,4]);
+    r.push(x);
+    for (var i = 0; i < 10; ++i) f.call(this,0,1,2,3,4,5);
+    r.push(x);
+    for (var i = 0; i < 10; ++i) f.apply(this,[0,1,2,3,4,5])
+    r.push(x);
+    return(r.join(","));
+}
+function testApplyCall() {
+    var r = testApplyCallHelper(function (a0,a1,a2,a3,a4,a5,a6,a7) { x = [a0,a1,a2,a3,a4,a5,a6,a7]; });
+    r += testApplyCallHelper(function (a0,a1,a2,a3,a4,a5,a6,a7) { x = [a0,a1,a2,a3,a4,a5,a6,a7]; });
+    return r;
+}
+testApplyCall.expected =
+",,,,,,,,,,,,,,,,,,,,,,,,0,,,,,,,,0,,,,,,,,0,1,,,,,,,0,1,,,,,,,0,1,2,,,,,,0,1,2,,,,,,0,1,2,3,,,,,0,1,2,3,,,,,0,1,2,3,4,,,,0,1,2,3,4,,,,0,1,2,3,4,5,,,0,1,2,3,4,5,," +
+",,,,,,,,,,,,,,,,,,,,,,,,0,,,,,,,,0,,,,,,,,0,1,,,,,,,0,1,,,,,,,0,1,2,,,,,,0,1,2,,,,,,0,1,2,3,,,,,0,1,2,3,,,,,0,1,2,3,4,,,,0,1,2,3,4,,,,0,1,2,3,4,5,,,0,1,2,3,4,5,,";
+test(testApplyCall);
+
+function testApplyUnboxHelper(f,a) {
+    var q;
+    for (var i = 0; i < 10; ++i)
+        q = f.apply(f,a);
+    return q;
+}
+function testApplyUnbox() {
+    var f = function(x) { return x; }
+    return [testApplyUnboxHelper(f,[1]), testApplyUnboxHelper(f,[true])].join(",");
+}
+testApplyUnbox.expected = "1,true";
+test(testApplyUnbox);
+
+function testCallPick() {
+    function g(x,a) {
+        x.f();
+    }
+
+    var x = [];
+    x.f = function() { }
+
+    var y = [];
+    y.f = function() { }
+
+    var z = [x,x,x,x,x,y,y,y,y,y];
+
+    for (var i = 0; i < 10; ++i)
+        g.call(this, z[i], "");
+    return true;
+}
+testCallPick.expected = true;
+test(testCallPick);
+
+/*****************************************************************************
+ *                                                                           *
+ *  _____ _   _  _____ ______ _____ _______                                  *
+ * |_   _| \ | |/ ____|  ____|  __ \__   __|                                 *
+ *   | | |  \| | (___ | |__  | |__) | | |                                    *
+ *   | | | . ` |\___ \|  __| |  _  /  | |                                    *
+ *  _| |_| |\  |____) | |____| | \ \  | |                                    *
+ * |_____|_| \_|_____/|______|_|  \_\ |_|                                    *
+ *                                                                           *
+ *                                                                           *
+ *  _______ ______  _____ _______ _____                                      *
+ * |__   __|  ____|/ ____|__   __/ ____|                                     *
+ *    | |  | |__  | (___    | | | (___                                       *
+ *    | |  |  __|  \___ \   | |  \___ \                                      *
+ *    | |  | |____ ____) |  | |  ____) |                                     *
+ *    |_|  |______|_____/   |_| |_____/                                      *
+ *                                                                           *
+ *                                                                           *
+ *  ____  ______ ______ ____  _____  ______    _    _ ______ _____  ______   *
+ * |  _ \|  ____|  ____/ __ \|  __ \|  ____|  | |  | |  ____|  __ \|  ____|  *
+ * | |_) | |__  | |__ | |  | | |__) | |__     | |__| | |__  | |__) | |__     *
+ * |  _ <|  __| |  __|| |  | |  _  /|  __|    |  __  |  __| |  _  /|  __|    *
+ * | |_) | |____| |   | |__| | | \ \| |____   | |  | | |____| | \ \| |____   *
+ * |____/|______|_|    \____/|_|  \_\______|  |_|  |_|______|_|  \_\______|  *
+ *                                                                           *
+ *****************************************************************************/
+
 load("trace-test-math.js");
 
 // BEGIN MANDELBROT STUFF
@@ -3477,8 +3581,8 @@ load("mandelbrot-results.js");
   const numCols = 600;
 
   // For now, avoid hitting memory pressure
-  gcparam("maxBytes", 1300000000); 
-  gcparam("maxMallocBytes", 1300000000); 
+  gcparam("maxBytes", 1300000000);
+  gcparam("maxMallocBytes", 1300000000);
 
   const colorNames = [
     "black",
@@ -3698,7 +3802,7 @@ load("mandelbrot-results.js");
   computeEscapeSpeed = computeEscapeSpeedDoubles;
 
   doImageData = true;
-  avoidSparseArray = false; 
+  avoidSparseArray = false;
   test(createMandelSet);
 
   escape = escapeNorm2;
@@ -3708,82 +3812,29 @@ load("mandelbrot-results.js");
 //testMandelbrotAll();
 // END MANDELBROT STUFF
 
-function testApplyCallHelper(f) {
-    var r = [];
-    for (var i = 0; i < 10; ++i) f.call(); 
-    r.push(x);
-    for (var i = 0; i < 10; ++i) f.call(this);
-    r.push(x);
-    for (var i = 0; i < 10; ++i) f.apply(this);
-    r.push(x);
-    for (var i = 0; i < 10; ++i) f.call(this,0);
-    r.push(x);
-    for (var i = 0; i < 10; ++i) f.apply(this,[0]);
-    r.push(x);
-    for (var i = 0; i < 10; ++i) f.call(this,0,1);
-    r.push(x);
-    for (var i = 0; i < 10; ++i) f.apply(this,[0,1]);
-    r.push(x);
-    for (var i = 0; i < 10; ++i) f.call(this,0,1,2);
-    r.push(x);
-    for (var i = 0; i < 10; ++i) f.apply(this,[0,1,2]);
-    r.push(x);
-    for (var i = 0; i < 10; ++i) f.call(this,0,1,2,3);
-    r.push(x);
-    for (var i = 0; i < 10; ++i) f.apply(this,[0,1,2,3]);
-    r.push(x);
-    for (var i = 0; i < 10; ++i) f.call(this,0,1,2,3,4);
-    r.push(x);
-    for (var i = 0; i < 10; ++i) f.apply(this,[0,1,2,3,4]);
-    r.push(x);
-    for (var i = 0; i < 10; ++i) f.call(this,0,1,2,3,4,5);
-    r.push(x);
-    for (var i = 0; i < 10; ++i) f.apply(this,[0,1,2,3,4,5])
-    r.push(x);
-    return(r.join(","));
-}
-function testApplyCall() {
-    var r = testApplyCallHelper(function (a0,a1,a2,a3,a4,a5,a6,a7) { x = [a0,a1,a2,a3,a4,a5,a6,a7]; });
-    r += testApplyCallHelper(function (a0,a1,a2,a3,a4,a5,a6,a7) { x = [a0,a1,a2,a3,a4,a5,a6,a7]; });
-    return r;
-}
-testApplyCall.expected = 
-",,,,,,,,,,,,,,,,,,,,,,,,0,,,,,,,,0,,,,,,,,0,1,,,,,,,0,1,,,,,,,0,1,2,,,,,,0,1,2,,,,,,0,1,2,3,,,,,0,1,2,3,,,,,0,1,2,3,4,,,,0,1,2,3,4,,,,0,1,2,3,4,5,,,0,1,2,3,4,5,," +
-",,,,,,,,,,,,,,,,,,,,,,,,0,,,,,,,,0,,,,,,,,0,1,,,,,,,0,1,,,,,,,0,1,2,,,,,,0,1,2,,,,,,0,1,2,3,,,,,0,1,2,3,,,,,0,1,2,3,4,,,,0,1,2,3,4,,,,0,1,2,3,4,5,,,0,1,2,3,4,5,,";
-test(testApplyCall);
-
-function testApplyUnboxHelper(f,a) {
-    var q;
-    for (var i = 0; i < 10; ++i)
-        q = f.apply(f,a);
-    return q;
-}
-function testApplyUnbox() {
-    var f = function(x) { return x; }
-    return [testApplyUnboxHelper(f,[1]), testApplyUnboxHelper(f,[true])].join(",");
-}
-testApplyUnbox.expected = "1,true";
-test(testApplyUnbox);
-
-function testCallPick() {
-    function g(x,a) {
-        x.f();
-    }
-
-    var x = [];
-    x.f = function() { }
-
-    var y = [];
-    y.f = function() { }
-
-    var z = [x,x,x,x,x,y,y,y,y,y];
-
-    for (var i = 0; i < 10; ++i)
-        g.call(this, z[i], "");
-    return true;
-}
-testCallPick.expected = true;
-test(testCallPick);
+/*****************************************************************************
+ *  _   _  ____     _   __  ____  _____  ______                              *
+ * | \ | |/ __ \   |  \/  |/ __ \|  __ \|  ____|                             *
+ * |  \| | |  | |  | \  / | |  | | |__) | |__                                *
+ * | . ` | |  | |  | |\/| | |  | |  _  /|  __|                               *
+ * | |\  | |__| |  | |  | | |__| | | \ \| |____                              *
+ * |_| \_|\____/   |_|  |_|\____/|_|  \_\______|                             *
+ *                                                                           *
+ *  _______ ______  _____ _______ _____                                      *
+ * |__   __|  ____|/ ____|__   __/ ____|                                     *
+ *    | |  | |__  | (___    | | | (___                                       *
+ *    | |  |  __|  \___ \   | |  \___ \                                      *
+ *    | |  | |____ ____) |  | |  ____) |                                     *
+ *    |_|  |______|_____/   |_| |_____/                                      *
+ *                                                                           *
+ *           ______ _______ ______ _____     _    _ ______ _____  ______ _   *
+ *     /\   |  ____|__   __|  ____|  __ \   | |  | |  ____|  __ \|  ____| |  *
+ *    /  \  | |__     | |  | |__  | |__) |  | |__| | |__  | |__) | |__  | |  *
+ *   / /\ \ |  __|    | |  |  __| |  _  /   |  __  |  __| |  _  /|  __| | |  *
+ *  / ____ \| |       | |  | |____| | \ \   | |  | | |____| | \ \| |____|_|  *
+ * /_/    \_\_|       |_|  |______|_|  \_\  |_|  |_|______|_|  \_\______(_)  *
+ *                                                                           *
+ *****************************************************************************/
 
 /* NOTE: Keep this test last, since it screws up all for...in loops after it. */
 function testGlobalProtoAccess() {
