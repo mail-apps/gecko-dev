@@ -2655,7 +2655,7 @@ out:
 #ifdef JS_THREADSAFE
     JS_EndRequest(scx);
 #endif
-    JS_DestroyContext(scx);
+    JS_DestroyContextNoGC(scx);
     return ok;
 }
 
