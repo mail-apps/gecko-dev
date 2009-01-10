@@ -4213,6 +4213,7 @@ nsCSSFrameConstructor::ConstructDocElementFrame(nsFrameConstructorState& aState,
 #endif
 
   if (NS_UNLIKELY(display->mDisplay == NS_STYLE_DISPLAY_NONE)) {
+    aState.mFrameManager->SetUndisplayedContent(aDocElement, styleContext);
     mInitialContainingBlock = nsnull;
     mRootElementStyleFrame = nsnull;
     return NS_OK;
