@@ -136,8 +136,8 @@ download the .zip file and follow these steps:
 Running multiple versions concurrently
 --------------------------------------
 
-If you want to run more than one copy of Firefox, you have to set
-MOZ_NO_REMOTE=1 in your environment.
+If you want to run more than one copy of Firefox, you have to use the
+-no-remote parameter or set MOZ_NO_REMOTE=1 in your environment.
 
 Because various members of the Mozilla family (i.e. SeaMonkey, Mozilla, Firefox,
 Thunderbird, IBM Web Browser) may use different, incompatible versions of the
