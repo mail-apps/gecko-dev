@@ -52,11 +52,6 @@ RequestExecutionLevel user
 
 !addplugindir ./
 
-; empty files - except for the comment line - for generating custom pages.
-!system 'echo ; > options.ini'
-!system 'echo ; > shortcuts.ini'
-!system 'echo ; > summary.ini'
-
 Var TmpVal
 Var StartMenuDir
 Var InstallType
@@ -130,10 +125,6 @@ OutFile "setup.exe"
 InstallDirRegKey HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${BrandFullNameInternal} (${AppVersion})" "InstallLocation"
 InstallDir "$PROGRAMFILES\${BrandFullName}\"
 ShowInstDetails nevershow
-
-ReserveFile options.ini
-ReserveFile shortcuts.ini
-ReserveFile summary.ini
 
 ################################################################################
 # Modern User Interface - MUI
@@ -786,9 +777,9 @@ Function .onInit
 
   ${InstallOnInitCommon} "$(WARN_UNSUPPORTED_MSG)"
 
-  !insertmacro MUI_INSTALLOPTIONS_EXTRACT "options.ini"
-  !insertmacro MUI_INSTALLOPTIONS_EXTRACT "shortcuts.ini"
-  !insertmacro MUI_INSTALLOPTIONS_EXTRACT "summary.ini"
+  !insertmacro InitInstallOptionsFile "options.ini"
+  !insertmacro InitInstallOptionsFile "shortcuts.ini"
+  !insertmacro InitInstallOptionsFile "summary.ini"
 
   ; Setup the options.ini file for the Custom Options Page
   WriteINIStr "$PLUGINSDIR\options.ini" "Settings" NumFields "6"

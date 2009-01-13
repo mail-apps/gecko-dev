@@ -19,6 +19,7 @@
 #
 # Contributor(s):
 #  Robert Strong <robert.bugzilla@gmail.com>
+#  Ehsan Akhgari <ehsan.akhgari@gmail.com>
 #
 # Alternatively, the contents of this file may be used under the terms of
 # either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -174,6 +175,68 @@
 ################################################################################
 # Modern User Interface (MUI) override macros
 
+; Removed macros in nsis 2.33u (ported from nsis 2.22)
+;  MUI_LANGUAGEFILE_DEFINE
+;  MUI_LANGUAGEFILE_LANGSTRING_PAGE
+;  MUI_LANGUAGEFILE_MULTILANGSTRING_PAGE
+;  MUI_LANGUAGEFILE_LANGSTRING_DEFINE
+;  MUI_LANGUAGEFILE_UNLANGSTRING_PAGE
+
+!macro MOZ_MUI_LANGUAGEFILE_DEFINE DEFINE NAME
+
+  !ifndef "${DEFINE}"
+    !define "${DEFINE}" "${${NAME}}"
+  !endif
+  !undef "${NAME}"
+
+!macroend
+
+!macro MOZ_MUI_LANGUAGEFILE_LANGSTRING_PAGE PAGE NAME
+
+  !ifdef MUI_${PAGE}PAGE
+    LangString "${NAME}" 0 "${${NAME}}"
+    !undef "${NAME}"
+  !else
+    !undef "${NAME}"
+  !endif
+
+!macroend
+
+!macro MOZ_MUI_LANGUAGEFILE_MULTILANGSTRING_PAGE PAGE NAME
+
+  !ifdef MUI_${PAGE}PAGE | MUI_UN${PAGE}PAGE
+    LangString "${NAME}" 0 "${${NAME}}"
+    !undef "${NAME}"
+  !else
+    !undef "${NAME}"
+  !endif
+
+!macroend
+
+!macro MOZ_MUI_LANGUAGEFILE_LANGSTRING_DEFINE DEFINE NAME
+
+  !ifdef "${DEFINE}"
+    LangString "${NAME}" 0 "${${NAME}}"
+  !endif
+  !undef "${NAME}"
+
+!macroend
+
+!macro MOZ_MUI_LANGUAGEFILE_UNLANGSTRING_PAGE PAGE NAME
+
+  !ifdef MUI_UNINSTALLER
+    !ifdef MUI_UN${PAGE}PAGE
+      LangString "${NAME}" 0 "${${NAME}}"
+      !undef "${NAME}"
+    !else
+      !undef "${NAME}"
+    !endif
+  !else
+    !undef "${NAME}"
+  !endif
+
+!macroend
+
 ; Modified version of the following MUI macros to support Mozilla localization.
 ; MUI_LANGUAGE
 ; MUI_LANGUAGEFILE_BEGIN
@@ -189,10 +252,7 @@
 !macroend
 
 !macro MOZ_MUI_LANGUAGEFILE_BEGIN LANGUAGE
-  !ifndef MUI_INSERT
-    !define MUI_INSERT
-    !insertmacro MUI_INSERT
-  !endif
+  !insertmacro MUI_INSERT
   !ifndef "MUI_LANGUAGEFILE_${LANGUAGE}_USED"
     !define "MUI_LANGUAGEFILE_${LANGUAGE}_USED"
     LoadLanguageFile "${LANGUAGE}.nlf"
@@ -212,7 +272,7 @@
     !warning "${LANGUAGE} Modern UI language file version doesn't match. Using default English texts for missing strings."
   !endif
 
-  !insertmacro MUI_LANGUAGEFILE_DEFINE "MUI_${LANGUAGE}_LANGNAME" "MUI_LANGNAME"
+  !insertmacro MOZ_MUI_LANGUAGEFILE_DEFINE "MUI_${LANGUAGE}_LANGNAME" "MUI_LANGNAME"
 
   !ifndef MUI_LANGDLL_PUSHLIST
     !define MUI_LANGDLL_PUSHLIST "'${MUI_${LANGUAGE}_LANGNAME}' ${LANG_${LANGUAGE}} "
@@ -225,97 +285,135 @@
     !define MUI_LANGDLL_PUSHLIST "'${MUI_${LANGUAGE}_LANGNAME}' ${LANG_${LANGUAGE}} ${MUI_LANGDLL_PUSHLIST_TEMP}"
   !endif
 
-  !insertmacro MUI_LANGUAGEFILE_LANGSTRING_PAGE WELCOME "MUI_TEXT_WELCOME_INFO_TITLE"
-  !insertmacro MUI_LANGUAGEFILE_LANGSTRING_PAGE WELCOME "MUI_TEXT_WELCOME_INFO_TEXT"
+  !insertmacro MOZ_MUI_LANGUAGEFILE_LANGSTRING_PAGE WELCOME "MUI_TEXT_WELCOME_INFO_TITLE"
+  !insertmacro MOZ_MUI_LANGUAGEFILE_LANGSTRING_PAGE WELCOME "MUI_TEXT_WELCOME_INFO_TEXT"
 
 !ifdef MUI_TEXT_LICENSE_TITLE
-  !insertmacro MUI_LANGUAGEFILE_LANGSTRING_PAGE LICENSE "MUI_TEXT_LICENSE_TITLE"
+  !insertmacro MOZ_MUI_LANGUAGEFILE_LANGSTRING_PAGE LICENSE "MUI_TEXT_LICENSE_TITLE"
 !endif
 !ifdef MUI_TEXT_LICENSE_SUBTITLE
-  !insertmacro MUI_LANGUAGEFILE_LANGSTRING_PAGE LICENSE "MUI_TEXT_LICENSE_SUBTITLE"
+  !insertmacro MOZ_MUI_LANGUAGEFILE_LANGSTRING_PAGE LICENSE "MUI_TEXT_LICENSE_SUBTITLE"
 !endif
 !ifdef MUI_INNERTEXT_LICENSE_TOP
-  !insertmacro MUI_LANGUAGEFILE_MULTILANGSTRING_PAGE LICENSE "MUI_INNERTEXT_LICENSE_TOP"
+  !insertmacro MOZ_MUI_LANGUAGEFILE_MULTILANGSTRING_PAGE LICENSE "MUI_INNERTEXT_LICENSE_TOP"
 !endif
 
-#  !insertmacro MUI_LANGUAGEFILE_LANGSTRING_PAGE LICENSE "MUI_INNERTEXT_LICENSE_BOTTOM"
+#  !insertmacro MOZ_MUI_LANGUAGEFILE_LANGSTRING_PAGE LICENSE "MUI_INNERTEXT_LICENSE_BOTTOM"
 
 !ifdef MUI_INNERTEXT_LICENSE_BOTTOM_CHECKBOX
-  !insertmacro MUI_LANGUAGEFILE_LANGSTRING_PAGE LICENSE "MUI_INNERTEXT_LICENSE_BOTTOM_CHECKBOX"
+  !insertmacro MOZ_MUI_LANGUAGEFILE_LANGSTRING_PAGE LICENSE "MUI_INNERTEXT_LICENSE_BOTTOM_CHECKBOX"
 !endif
 
 !ifdef MUI_INNERTEXT_LICENSE_BOTTOM_RADIOBUTTONS
-  !insertmacro MUI_LANGUAGEFILE_LANGSTRING_PAGE LICENSE "MUI_INNERTEXT_LICENSE_BOTTOM_RADIOBUTTONS"
+  !insertmacro MOZ_MUI_LANGUAGEFILE_LANGSTRING_PAGE LICENSE "MUI_INNERTEXT_LICENSE_BOTTOM_RADIOBUTTONS"
 !endif
 
-  !insertmacro MUI_LANGUAGEFILE_LANGSTRING_PAGE COMPONENTS "MUI_TEXT_COMPONENTS_TITLE"
-  !insertmacro MUI_LANGUAGEFILE_LANGSTRING_PAGE COMPONENTS "MUI_TEXT_COMPONENTS_SUBTITLE"
-  !insertmacro MUI_LANGUAGEFILE_MULTILANGSTRING_PAGE COMPONENTS "MUI_INNERTEXT_COMPONENTS_DESCRIPTION_TITLE"
-  !insertmacro MUI_LANGUAGEFILE_MULTILANGSTRING_PAGE COMPONENTS "MUI_INNERTEXT_COMPONENTS_DESCRIPTION_INFO"
+  !insertmacro MOZ_MUI_LANGUAGEFILE_LANGSTRING_PAGE COMPONENTS "MUI_TEXT_COMPONENTS_TITLE"
+  !insertmacro MOZ_MUI_LANGUAGEFILE_LANGSTRING_PAGE COMPONENTS "MUI_TEXT_COMPONENTS_SUBTITLE"
+  !insertmacro MOZ_MUI_LANGUAGEFILE_MULTILANGSTRING_PAGE COMPONENTS "MUI_INNERTEXT_COMPONENTS_DESCRIPTION_TITLE"
+  !insertmacro MOZ_MUI_LANGUAGEFILE_MULTILANGSTRING_PAGE COMPONENTS "MUI_INNERTEXT_COMPONENTS_DESCRIPTION_INFO"
 
-  !insertmacro MUI_LANGUAGEFILE_LANGSTRING_PAGE DIRECTORY "MUI_TEXT_DIRECTORY_TITLE"
-  !insertmacro MUI_LANGUAGEFILE_LANGSTRING_PAGE DIRECTORY "MUI_TEXT_DIRECTORY_SUBTITLE"
+  !insertmacro MOZ_MUI_LANGUAGEFILE_LANGSTRING_PAGE DIRECTORY "MUI_TEXT_DIRECTORY_TITLE"
+  !insertmacro MOZ_MUI_LANGUAGEFILE_LANGSTRING_PAGE DIRECTORY "MUI_TEXT_DIRECTORY_SUBTITLE"
 
-  !insertmacro MUI_LANGUAGEFILE_LANGSTRING_PAGE STARTMENU "MUI_TEXT_STARTMENU_TITLE"
-  !insertmacro MUI_LANGUAGEFILE_LANGSTRING_PAGE STARTMENU "MUI_TEXT_STARTMENU_SUBTITLE"
-  !insertmacro MUI_LANGUAGEFILE_LANGSTRING_PAGE STARTMENU "MUI_INNERTEXT_STARTMENU_TOP"
-#  !insertmacro MUI_LANGUAGEFILE_LANGSTRING_PAGE STARTMENU "MUI_INNERTEXT_STARTMENU_CHECKBOX"
+  !insertmacro MOZ_MUI_LANGUAGEFILE_LANGSTRING_PAGE STARTMENU "MUI_TEXT_STARTMENU_TITLE"
+  !insertmacro MOZ_MUI_LANGUAGEFILE_LANGSTRING_PAGE STARTMENU "MUI_TEXT_STARTMENU_SUBTITLE"
+  !insertmacro MOZ_MUI_LANGUAGEFILE_LANGSTRING_PAGE STARTMENU "MUI_INNERTEXT_STARTMENU_TOP"
+#  !insertmacro MOZ_MUI_LANGUAGEFILE_LANGSTRING_PAGE STARTMENU "MUI_INNERTEXT_STARTMENU_CHECKBOX"
 
-  !insertmacro MUI_LANGUAGEFILE_LANGSTRING_PAGE INSTFILES "MUI_TEXT_INSTALLING_TITLE"
-  !insertmacro MUI_LANGUAGEFILE_LANGSTRING_PAGE INSTFILES "MUI_TEXT_INSTALLING_SUBTITLE"
+  !insertmacro MOZ_MUI_LANGUAGEFILE_LANGSTRING_PAGE INSTFILES "MUI_TEXT_INSTALLING_TITLE"
+  !insertmacro MOZ_MUI_LANGUAGEFILE_LANGSTRING_PAGE INSTFILES "MUI_TEXT_INSTALLING_SUBTITLE"
 
-  !insertmacro MUI_LANGUAGEFILE_LANGSTRING_PAGE INSTFILES "MUI_TEXT_FINISH_TITLE"
-  !insertmacro MUI_LANGUAGEFILE_LANGSTRING_PAGE INSTFILES "MUI_TEXT_FINISH_SUBTITLE"
+  !insertmacro MOZ_MUI_LANGUAGEFILE_LANGSTRING_PAGE INSTFILES "MUI_TEXT_FINISH_TITLE"
+  !insertmacro MOZ_MUI_LANGUAGEFILE_LANGSTRING_PAGE INSTFILES "MUI_TEXT_FINISH_SUBTITLE"
 
-  !insertmacro MUI_LANGUAGEFILE_LANGSTRING_PAGE INSTFILES "MUI_TEXT_ABORT_TITLE"
-  !insertmacro MUI_LANGUAGEFILE_LANGSTRING_PAGE INSTFILES "MUI_TEXT_ABORT_SUBTITLE"
+  !insertmacro MOZ_MUI_LANGUAGEFILE_LANGSTRING_PAGE INSTFILES "MUI_TEXT_ABORT_TITLE"
+  !insertmacro MOZ_MUI_LANGUAGEFILE_LANGSTRING_PAGE INSTFILES "MUI_TEXT_ABORT_SUBTITLE"
 
-  !insertmacro MUI_LANGUAGEFILE_MULTILANGSTRING_PAGE FINISH "MUI_BUTTONTEXT_FINISH"
-  !insertmacro MUI_LANGUAGEFILE_LANGSTRING_PAGE FINISH "MUI_TEXT_FINISH_INFO_TITLE"
-  !insertmacro MUI_LANGUAGEFILE_LANGSTRING_PAGE FINISH "MUI_TEXT_FINISH_INFO_TEXT"
-  !insertmacro MUI_LANGUAGEFILE_LANGSTRING_PAGE FINISH "MUI_TEXT_FINISH_INFO_REBOOT"
-  !insertmacro MUI_LANGUAGEFILE_MULTILANGSTRING_PAGE FINISH "MUI_TEXT_FINISH_REBOOTNOW"
-  !insertmacro MUI_LANGUAGEFILE_MULTILANGSTRING_PAGE FINISH "MUI_TEXT_FINISH_REBOOTLATER"
-#  !insertmacro MUI_LANGUAGEFILE_MULTILANGSTRING_PAGE FINISH "MUI_TEXT_FINISH_RUN"
-#  !insertmacro MUI_LANGUAGEFILE_MULTILANGSTRING_PAGE FINISH "MUI_TEXT_FINISH_SHOWREADME"
+  !insertmacro MOZ_MUI_LANGUAGEFILE_MULTILANGSTRING_PAGE FINISH "MUI_BUTTONTEXT_FINISH"
+  !insertmacro MOZ_MUI_LANGUAGEFILE_LANGSTRING_PAGE FINISH "MUI_TEXT_FINISH_INFO_TITLE"
+  !insertmacro MOZ_MUI_LANGUAGEFILE_LANGSTRING_PAGE FINISH "MUI_TEXT_FINISH_INFO_TEXT"
+  !insertmacro MOZ_MUI_LANGUAGEFILE_LANGSTRING_PAGE FINISH "MUI_TEXT_FINISH_INFO_REBOOT"
+  !insertmacro MOZ_MUI_LANGUAGEFILE_MULTILANGSTRING_PAGE FINISH "MUI_TEXT_FINISH_REBOOTNOW"
+  !insertmacro MOZ_MUI_LANGUAGEFILE_MULTILANGSTRING_PAGE FINISH "MUI_TEXT_FINISH_REBOOTLATER"
+#  !insertmacro MOZ_MUI_LANGUAGEFILE_MULTILANGSTRING_PAGE FINISH "MUI_TEXT_FINISH_RUN"
+#  !insertmacro MOZ_MUI_LANGUAGEFILE_MULTILANGSTRING_PAGE FINISH "MUI_TEXT_FINISH_SHOWREADME"
 
-  !insertmacro MUI_LANGUAGEFILE_LANGSTRING_DEFINE MUI_ABORTWARNING "MUI_TEXT_ABORTWARNING"
+  !insertmacro MOZ_MUI_LANGUAGEFILE_LANGSTRING_DEFINE MUI_ABORTWARNING "MUI_TEXT_ABORTWARNING"
 
 
-  !insertmacro MUI_LANGUAGEFILE_UNLANGSTRING_PAGE WELCOME "MUI_UNTEXT_WELCOME_INFO_TITLE"
-  !insertmacro MUI_LANGUAGEFILE_UNLANGSTRING_PAGE WELCOME "MUI_UNTEXT_WELCOME_INFO_TEXT"
+  !insertmacro MOZ_MUI_LANGUAGEFILE_UNLANGSTRING_PAGE WELCOME "MUI_UNTEXT_WELCOME_INFO_TITLE"
+  !insertmacro MOZ_MUI_LANGUAGEFILE_UNLANGSTRING_PAGE WELCOME "MUI_UNTEXT_WELCOME_INFO_TEXT"
 
-  !insertmacro MUI_LANGUAGEFILE_UNLANGSTRING_PAGE CONFIRM "MUI_UNTEXT_CONFIRM_TITLE"
-  !insertmacro MUI_LANGUAGEFILE_UNLANGSTRING_PAGE CONFIRM "MUI_UNTEXT_CONFIRM_SUBTITLE"
+  !insertmacro MOZ_MUI_LANGUAGEFILE_UNLANGSTRING_PAGE CONFIRM "MUI_UNTEXT_CONFIRM_TITLE"
+  !insertmacro MOZ_MUI_LANGUAGEFILE_UNLANGSTRING_PAGE CONFIRM "MUI_UNTEXT_CONFIRM_SUBTITLE"
 
-#  !insertmacro MUI_LANGUAGEFILE_UNLANGSTRING_PAGE LICENSE "MUI_UNTEXT_LICENSE_TITLE"
-#  !insertmacro MUI_LANGUAGEFILE_UNLANGSTRING_PAGE LICENSE "MUI_UNTEXT_LICENSE_SUBTITLE"
+#  !insertmacro MOZ_MUI_LANGUAGEFILE_UNLANGSTRING_PAGE LICENSE "MUI_UNTEXT_LICENSE_TITLE"
+#  !insertmacro MOZ_MUI_LANGUAGEFILE_UNLANGSTRING_PAGE LICENSE "MUI_UNTEXT_LICENSE_SUBTITLE"
 
-#  !insertmacro MUI_LANGUAGEFILE_UNLANGSTRING_PAGE LICENSE "MUI_UNINNERTEXT_LICENSE_BOTTOM"
-#  !insertmacro MUI_LANGUAGEFILE_UNLANGSTRING_PAGE LICENSE "MUI_UNINNERTEXT_LICENSE_BOTTOM_CHECKBOX"
-#  !insertmacro MUI_LANGUAGEFILE_UNLANGSTRING_PAGE LICENSE "MUI_UNINNERTEXT_LICENSE_BOTTOM_RADIOBUTTONS"
+#  !insertmacro MOZ_MUI_LANGUAGEFILE_UNLANGSTRING_PAGE LICENSE "MUI_UNINNERTEXT_LICENSE_BOTTOM"
+#  !insertmacro MOZ_MUI_LANGUAGEFILE_UNLANGSTRING_PAGE LICENSE "MUI_UNINNERTEXT_LICENSE_BOTTOM_CHECKBOX"
+#  !insertmacro MOZ_MUI_LANGUAGEFILE_UNLANGSTRING_PAGE LICENSE "MUI_UNINNERTEXT_LICENSE_BOTTOM_RADIOBUTTONS"
 
-#  !insertmacro MUI_LANGUAGEFILE_UNLANGSTRING_PAGE COMPONENTS "MUI_UNTEXT_COMPONENTS_TITLE"
-#  !insertmacro MUI_LANGUAGEFILE_UNLANGSTRING_PAGE COMPONENTS "MUI_UNTEXT_COMPONENTS_SUBTITLE"
+#  !insertmacro MOZ_MUI_LANGUAGEFILE_UNLANGSTRING_PAGE COMPONENTS "MUI_UNTEXT_COMPONENTS_TITLE"
+#  !insertmacro MOZ_MUI_LANGUAGEFILE_UNLANGSTRING_PAGE COMPONENTS "MUI_UNTEXT_COMPONENTS_SUBTITLE"
 
-#  !insertmacro MUI_LANGUAGEFILE_UNLANGSTRING_PAGE DIRECTORY "MUI_UNTEXT_DIRECTORY_TITLE"
-#  !insertmacro MUI_LANGUAGEFILE_UNLANGSTRING_PAGE DIRECTORY  "MUI_UNTEXT_DIRECTORY_SUBTITLE"
+#  !insertmacro MOZ_MUI_LANGUAGEFILE_UNLANGSTRING_PAGE DIRECTORY "MUI_UNTEXT_DIRECTORY_TITLE"
+#  !insertmacro MOZ_MUI_LANGUAGEFILE_UNLANGSTRING_PAGE DIRECTORY  "MUI_UNTEXT_DIRECTORY_SUBTITLE"
 
-  !insertmacro MUI_LANGUAGEFILE_UNLANGSTRING_PAGE INSTFILES "MUI_UNTEXT_UNINSTALLING_TITLE"
-  !insertmacro MUI_LANGUAGEFILE_UNLANGSTRING_PAGE INSTFILES "MUI_UNTEXT_UNINSTALLING_SUBTITLE"
+  !insertmacro MOZ_MUI_LANGUAGEFILE_UNLANGSTRING_PAGE INSTFILES "MUI_UNTEXT_UNINSTALLING_TITLE"
+  !insertmacro MOZ_MUI_LANGUAGEFILE_UNLANGSTRING_PAGE INSTFILES "MUI_UNTEXT_UNINSTALLING_SUBTITLE"
 
-  !insertmacro MUI_LANGUAGEFILE_UNLANGSTRING_PAGE INSTFILES "MUI_UNTEXT_FINISH_TITLE"
-  !insertmacro MUI_LANGUAGEFILE_UNLANGSTRING_PAGE INSTFILES "MUI_UNTEXT_FINISH_SUBTITLE"
+  !insertmacro MOZ_MUI_LANGUAGEFILE_UNLANGSTRING_PAGE INSTFILES "MUI_UNTEXT_FINISH_TITLE"
+  !insertmacro MOZ_MUI_LANGUAGEFILE_UNLANGSTRING_PAGE INSTFILES "MUI_UNTEXT_FINISH_SUBTITLE"
 
-  !insertmacro MUI_LANGUAGEFILE_UNLANGSTRING_PAGE INSTFILES "MUI_UNTEXT_ABORT_TITLE"
-  !insertmacro MUI_LANGUAGEFILE_UNLANGSTRING_PAGE INSTFILES "MUI_UNTEXT_ABORT_SUBTITLE"
+  !insertmacro MOZ_MUI_LANGUAGEFILE_UNLANGSTRING_PAGE INSTFILES "MUI_UNTEXT_ABORT_TITLE"
+  !insertmacro MOZ_MUI_LANGUAGEFILE_UNLANGSTRING_PAGE INSTFILES "MUI_UNTEXT_ABORT_SUBTITLE"
 
-  !insertmacro MUI_LANGUAGEFILE_UNLANGSTRING_PAGE FINISH "MUI_UNTEXT_FINISH_INFO_TITLE"
-  !insertmacro MUI_LANGUAGEFILE_UNLANGSTRING_PAGE FINISH "MUI_UNTEXT_FINISH_INFO_TEXT"
-  !insertmacro MUI_LANGUAGEFILE_UNLANGSTRING_PAGE FINISH "MUI_UNTEXT_FINISH_INFO_REBOOT"
+  !insertmacro MOZ_MUI_LANGUAGEFILE_UNLANGSTRING_PAGE FINISH "MUI_UNTEXT_FINISH_INFO_TITLE"
+  !insertmacro MOZ_MUI_LANGUAGEFILE_UNLANGSTRING_PAGE FINISH "MUI_UNTEXT_FINISH_INFO_TEXT"
+  !insertmacro MOZ_MUI_LANGUAGEFILE_UNLANGSTRING_PAGE FINISH "MUI_UNTEXT_FINISH_INFO_REBOOT"
 
-  !insertmacro MUI_LANGUAGEFILE_LANGSTRING_DEFINE MUI_UNABORTWARNING "MUI_UNTEXT_ABORTWARNING"
+  !insertmacro MOZ_MUI_LANGUAGEFILE_LANGSTRING_DEFINE MUI_UNABORTWARNING "MUI_UNTEXT_ABORTWARNING"
 
+  !ifndef MUI_LANGDLL_LANGUAGES
+    !define MUI_LANGDLL_LANGUAGES "'${LANGFILE_${LANGUAGE}_NAME}' '${LANG_${LANGUAGE}}' "
+    !define MUI_LANGDLL_LANGUAGES_CP "'${LANGFILE_${LANGUAGE}_NAME}' '${LANG_${LANGUAGE}}' '${LANG_${LANGUAGE}_CP}' "
+  !else
+    !ifdef MUI_LANGDLL_LANGUAGES_TEMP
+      !undef MUI_LANGDLL_LANGUAGES_TEMP
+    !endif
+    !define MUI_LANGDLL_LANGUAGES_TEMP "${MUI_LANGDLL_LANGUAGES}"
+    !undef MUI_LANGDLL_LANGUAGES
+
+    !ifdef MUI_LANGDLL_LANGUAGES_CP_TEMP
+      !undef MUI_LANGDLL_LANGUAGES_CP_TEMP
+    !endif
+    !define MUI_LANGDLL_LANGUAGES_CP_TEMP "${MUI_LANGDLL_LANGUAGES_CP}"
+    !undef MUI_LANGDLL_LANGUAGES_CP
+
+    !define MUI_LANGDLL_LANGUAGES "'${LANGFILE_${LANGUAGE}_NAME}' '${LANG_${LANGUAGE}}' ${MUI_LANGDLL_LANGUAGES_TEMP}"
+    !define MUI_LANGDLL_LANGUAGES_CP "'${LANGFILE_${LANGUAGE}_NAME}' '${LANG_${LANGUAGE}}' '${LANG_${LANGUAGE}_CP}' ${MUI_LANGDLL_LANGUAGES_CP_TEMP}"
+  !endif
+
+!macroend
+
+/**
+ * Creates an InstallOptions file with a UTF-16LE BOM and adds the RTL value
+ * to the Settings section.
+ *
+ * @param   _FILE
+ *          The name of the file to be created in $PLUGINSDIR.
+ */
+!macro InitInstallOptionsFile _FILE
+  Push $R9
+
+  FileOpen $R9 "$PLUGINSDIR\${_FILE}" w
+  FileWriteWord $R9 "65279"
+  FileClose $R9
+  WriteIniStr "$PLUGINSDIR\${_FILE}" "Settings" "RTL" "$(^RTL)"
+
+  Pop $R9
 !macroend
 
 
@@ -1092,11 +1190,11 @@
 
       !ifndef NO_LOG
         IfErrors 0 +3
-        FileWrite $fhInstallLog "  ** ERROR Adding Registry String: $R5 | $R6 | $R7 | $R8 **$\r$\n"
+        FileWriteUTF16LE $fhInstallLog "  ** ERROR Adding Registry String: $R5 | $R6 | $R7 | $R8 **$\r$\n"
         GoTo +4
         StrCmp "$R9" "1" +1 +2
         FileWrite $fhUninstallLog "RegVal: $R5 | $R6 | $R7$\r$\n"
-        FileWrite $fhInstallLog "  Added Registry String: $R5 | $R6 | $R7 | $R8$\r$\n"
+        FileWriteUTF16LE $fhInstallLog "  Added Registry String: $R5 | $R6 | $R7 | $R8$\r$\n"
       !endif
 
       Exch $R5
@@ -1200,11 +1298,11 @@
 
       !ifndef NO_LOG
         IfErrors 0 +3
-        FileWrite $fhInstallLog "  ** ERROR Adding Registry DWord: $R5 | $R6 | $R7 | $R8 **$\r$\n"
+        FileWriteUTF16LE $fhInstallLog "  ** ERROR Adding Registry DWord: $R5 | $R6 | $R7 | $R8 **$\r$\n"
         GoTo +4
         StrCmp "$R9" "1" +1 +2
         FileWrite $fhUninstallLog "RegVal: $R5 | $R6 | $R7$\r$\n"
-        FileWrite $fhInstallLog "  Added Registry DWord: $R5 | $R6 | $R7 | $R8$\r$\n"
+        FileWriteUTF16LE $fhInstallLog "  Added Registry DWord: $R5 | $R6 | $R7 | $R8$\r$\n"
       !endif
 
       Exch $R5
@@ -1308,11 +1406,11 @@
 
       !ifndef NO_LOG
         IfErrors 0 +3
-        FileWrite $fhInstallLog "  ** ERROR Adding Registry String: $R5 | $R6 | $R7 | $R8 **$\r$\n"
+        FileWriteUTF16LE $fhInstallLog "  ** ERROR Adding Registry String: $R5 | $R6 | $R7 | $R8 **$\r$\n"
         GoTo +4
         StrCmp "$R9" "1" +1 +2
         FileWrite $fhUninstallLog "RegVal: $R5 | $R6 | $R7$\r$\n"
-        FileWrite $fhInstallLog "  Added Registry String: $R5 | $R6 | $R7 | $R8$\r$\n"
+        FileWriteUTF16LE $fhInstallLog "  Added Registry String: $R5 | $R6 | $R7 | $R8$\r$\n"
       !endif
 
       Exch $R5
@@ -1373,12 +1471,12 @@
  * Creates a registry key. NSIS doesn't supply a RegCreateKey method and instead
  * will auto create keys when a reg key name value pair is set.
  * i - int (includes char, byte, short, handles, pointers and so on)
- * t - text, string (LPCSTR, pointer to first character)
+ * w - wide-char text, string (LPCWSTR, pointer to first character)
  * * - pointer specifier -> the proc needs the pointer to type, affects next
  *     char (parameter) [ex: '*i' - pointer to int]
  * see the NSIS documentation for additional information.
  */
-!define RegCreateKey "Advapi32::RegCreateKeyA(i, t, *i) i"
+!define RegCreateKey "Advapi32::RegCreateKeyW(i, w, *i) i"
 
 /**
  * Creates a registry key. This will log the actions to the install and
@@ -1434,11 +1532,11 @@
       !ifndef NO_LOG
         ; if $R5 is not 0 then there was an error creating the registry key.
         IntCmp $R5 0 +3 +3
-        FileWrite $fhInstallLog "  ** ERROR Adding Registry Key: $R7 | $R8 **$\r$\n"
+        FileWriteUTF16LE $fhInstallLog "  ** ERROR Adding Registry Key: $R7 | $R8 **$\r$\n"
         GoTo +4
         StrCmp "$R9" "1" +1 +2
         FileWrite $fhUninstallLog "RegKey: $R7 | $R8$\r$\n"
-        FileWrite $fhInstallLog "  Added Registry Key: $R7 | $R8$\r$\n"
+        FileWriteUTF16LE $fhInstallLog "  Added Registry Key: $R7 | $R8$\r$\n"
       !endif
 
       Pop $R4
@@ -2458,14 +2556,14 @@
 !macroend
 
 /**
- * Returns the long path for an existing file or directory. GetLongPathNameA
+ * Returns the long path for an existing file or directory. GetLongPathNameW
  * may not be available on Win95 if Microsoft Layer for Unicode is not
  * installed and GetFullPathName only returns a long path for the last file or
  * directory that doesn't end with a \ in the path that it is passed. If the
  * path does not exist on the file system this will return an empty string. To
  * provide a consistent result trailing back-slashes are always removed.
  *
- * Note: 1024 used by GetLongPathNameA is the maximum NSIS string length.
+ * Note: 1024 used by GetLongPathNameW is the maximum NSIS string length.
  *
  * @param   _IN_PATH
  *          The string containing the path.
@@ -2474,8 +2572,8 @@
  *
  * $R4 = counter value when the previous \ was found
  * $R5 = directory or file name found during loop
- * $R6 = return value from GetLongPathNameA and loop counter
- * $R7 = long path from GetLongPathNameA and single char from path for comparison
+ * $R6 = return value from GetLongPathNameW and loop counter
+ * $R7 = long path from GetLongPathNameW and single char from path for comparison
  * $R8 = storage for _IN_PATH
  * $R9 = _IN_PATH _OUT_PATH
  */
@@ -2506,8 +2604,8 @@
       StrCmp $R6 "\" +1 +2
       StrCpy $R9 "$R8" -1
 
-      System::Call 'kernel32::GetLongPathNameA(t r18, t .r17, i 1024)i .r16'
-      StrCmp "$R7" "" +4 +1 ; Empty string when GetLongPathNameA is not present.
+      System::Call 'kernel32::GetLongPathNameW(w r18, w .r17, i 1024)i .r16'
+      StrCmp "$R7" "" +4 +1 ; Empty string when GetLongPathNameW is not present.
       StrCmp $R6 0 +3 +1    ; Should never equal 0 since the path exists.
       StrCpy $R9 "$R7"
       GoTo end_GetLongPath
@@ -4563,7 +4661,7 @@
       Push $R8
 
       GetDlgItem $R8 $HWNDPARENT 1046
-      System::Call 'user32::LoadImage(i 0, t "$R9", i 0, i 0, i 0, i 0x0010|0x2000) i.s'
+      System::Call 'user32::LoadImageW(i 0, w "$R9", i 0, i 0, i 0, i 0x0010|0x2000) i.s'
       Pop $hHeaderBitmap
       SendMessage $R8 ${STM_SETIMAGE} 0 $hHeaderBitmap
       ; There is no way to specify a show function for a custom page so hide
@@ -5552,9 +5650,10 @@
       Push $9
 
       FileOpen $fhInstallLog "$INSTDIR\install.log" w
+      FileWriteWord $fhInstallLog "65279"
 
       ${GetTime} "" "L" $9 $R0 $R1 $R2 $R3 $R4 $R5
-      FileWrite $fhInstallLog "$R6 Installation Started: $R1-$R0-$9 $R3:$R4:$R5"
+      FileWriteUTF16LE $fhInstallLog "$R6 Installation Started: $R1-$R0-$9 $R3:$R4:$R5"
       ${WriteLogSeparator}
 
       ${LogHeader} "Installation Details"
@@ -5623,7 +5722,7 @@
       
       ${WriteLogSeparator}
       ${GetTime} "" "L" $R2 $R3 $R4 $R5 $R6 $R7 $R8
-      FileWrite $fhInstallLog "$R9 Installation Finished: $R4-$R3-$R2 $R6:$R7:$R8$\r$\n"
+      FileWriteUTF16LE $fhInstallLog "$R9 Installation Finished: $R4-$R3-$R2 $R6:$R7:$R8$\r$\n"
       FileClose $fhInstallLog
 
       Pop $R2
@@ -5709,7 +5808,7 @@
  */
 !macro LogHeader _HEADER
   ${WriteLogSeparator}
-  FileWrite $fhInstallLog "${_HEADER}"
+  FileWriteUTF16LE $fhInstallLog "${_HEADER}"
   ${WriteLogSeparator}
 !macroend
 !define LogHeader "!insertmacro LogHeader"
@@ -5721,7 +5820,7 @@
  *          The message text to write to the log.
  */
 !macro LogMsg _MSG
-  FileWrite $fhInstallLog "  ${_MSG}$\r$\n"
+  FileWriteUTF16LE $fhInstallLog "  ${_MSG}$\r$\n"
 !macroend
 !define LogMsg "!insertmacro LogMsg"
 
@@ -5740,8 +5839,8 @@
  * Adds a section divider to the human readable log.
  */
 !macro WriteLogSeparator
-  FileWrite $fhInstallLog "$\r$\n----------------------------------------\
-                           ---------------------------------------$\r$\n"
+  FileWriteUTF16LE $fhInstallLog "$\r$\n----------------------------------------\
+                                  ---------------------------------------$\r$\n"
 !macroend
 !define WriteLogSeparator "!insertmacro WriteLogSeparator"
 

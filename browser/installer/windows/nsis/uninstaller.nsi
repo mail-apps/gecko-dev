@@ -571,6 +571,8 @@ Function un.onInit
   ; Initialize $hHeaderBitmap to prevent redundant changing of the bitmap if
   ; the user clicks the back button
   StrCpy $hHeaderBitmap ""
+
+  !insertmacro InitInstallOptionsFile "unconfirm.ini"
 FunctionEnd
 
 Function .onGUIEnd
