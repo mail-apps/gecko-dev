@@ -43,17 +43,25 @@
 #include "nsNetUtil.h"
 
 #include "nsIDNSListener.h"
+#include "nsIWebProgressListener.h"
+#include "nsIWebProgress.h"
+#include "nsCURILoader.h"
 #include "nsIDNSRecord.h"
 #include "nsIDNSService.h"
 #include "nsICancelable.h"
 #include "nsContentUtils.h"
 #include "nsGkAtoms.h"
 #include "nsIDocument.h"
+#include "nsThreadUtils.h"
+#include "nsGenericHTMLElement.h"
+#include "nsITimer.h"
+#include "nsIObserverService.h"
 
 static NS_DEFINE_CID(kDNSServiceCID, NS_DNSSERVICE_CID);
 static PRBool sDisablePrefetchHTTPSPref;
 static PRBool sInitialized = PR_FALSE;
 static nsIDNSService *sDNSService = nsnull;
+static nsHTMLDNSPrefetch::nsDeferrals *sPrefetches = nsnull;
 
 nsresult
 nsHTMLDNSPrefetch::Initialize()
@@ -63,6 +71,13 @@ nsHTMLDNSPrefetch::Initialize()
     return NS_OK;
   }
   
+  sPrefetches = new nsHTMLDNSPrefetch::nsDeferrals();
+  if (!sPrefetches)
+    return NS_ERROR_OUT_OF_MEMORY;
+
+  NS_ADDREF(sPrefetches);
+  sPrefetches->Activate();
+
   nsContentUtils::AddBoolPrefVarCache("network.dns.disablePrefetchFromHTTPS", 
                                       &sDisablePrefetchHTTPSPref);
   
@@ -88,26 +103,9 @@ nsHTMLDNSPrefetch::Shutdown()
   }
   sInitialized = PR_FALSE;
   NS_IF_RELEASE(sDNSService);
-  return NS_OK;
-}
-
-nsHTMLDNSPrefetch::nsHTMLDNSPrefetch(nsAString &hostname, nsIDocument *aDocument)
-{
-  NS_ASSERTION(aDocument, "Document Required");
-  NS_ASSERTION(sInitialized, "nsHTMLDNSPrefetch is not initialized");
+  NS_IF_RELEASE(sPrefetches);
   
-  mAllowed = IsAllowed(aDocument);
-  CopyUTF16toUTF8(hostname, mHostname);
-}
-
-nsHTMLDNSPrefetch::nsHTMLDNSPrefetch(nsIURI *aURI, nsIDocument *aDocument)
-{
-  NS_ASSERTION(aDocument, "Document Required");
-  NS_ASSERTION(aURI, "URI Required");
-  NS_ASSERTION(sInitialized, "nsHTMLDNSPrefetch is not initialized");
-
-  mAllowed = IsAllowed(aDocument);
-  aURI->GetAsciiHost(mHostname);
+  return NS_OK;
 }
 
 PRBool
@@ -123,7 +121,7 @@ PRBool
 nsHTMLDNSPrefetch::IsAllowed (nsIDocument *aDocument)
 {
   if (IsSecureBaseContext(aDocument) && sDisablePrefetchHTTPSPref)
-      return PR_FALSE;
+    return PR_FALSE;
     
   // Check whether the x-dns-prefetch-control HTTP response header is set to override 
   // the default. This may also be set by meta tag. Chromium treats any value other
@@ -142,48 +140,270 @@ nsHTMLDNSPrefetch::IsAllowed (nsIDocument *aDocument)
   return PR_TRUE;
 }
 
-nsresult 
-nsHTMLDNSPrefetch::Prefetch(PRUint16 flags)
+nsresult
+nsHTMLDNSPrefetch::Prefetch(nsGenericHTMLElement *aElement, PRUint16 flags)
 {
-  if (mHostname.IsEmpty())
-    return NS_ERROR_NOT_AVAILABLE;
-  
-  if (!mAllowed)
+  if (!(sInitialized && sPrefetches && sDNSService))
     return NS_ERROR_NOT_AVAILABLE;
 
-  if (!sDNSService)
+  return sPrefetches->Add(flags, aElement);
+}
+
+nsresult
+nsHTMLDNSPrefetch::PrefetchLow(nsGenericHTMLElement *aElement)
+{
+  return Prefetch(aElement, nsIDNSService::RESOLVE_PRIORITY_LOW);
+}
+
+nsresult
+nsHTMLDNSPrefetch::PrefetchMedium(nsGenericHTMLElement *aElement)
+{
+  return Prefetch(aElement, nsIDNSService::RESOLVE_PRIORITY_MEDIUM);
+}
+
+nsresult
+nsHTMLDNSPrefetch::PrefetchHigh(nsGenericHTMLElement *aElement)
+{
+  return Prefetch(aElement, 0);
+}
+
+nsresult
+nsHTMLDNSPrefetch::Prefetch(nsAString &hostname, PRUint16 flags)
+{
+  if (!(sInitialized && sDNSService && sPrefetches))
     return NS_ERROR_NOT_AVAILABLE;
-  
+
   nsCOMPtr<nsICancelable> tmpOutstanding;
+  return sDNSService->AsyncResolve(NS_ConvertUTF16toUTF8(hostname), flags,
+                                   sPrefetches, nsnull, getter_AddRefs(tmpOutstanding));
+}
+
+nsresult
+nsHTMLDNSPrefetch::PrefetchLow(nsAString &hostname)
+{
+  return Prefetch(hostname, nsIDNSService::RESOLVE_PRIORITY_LOW);
+}
+
+nsresult
+nsHTMLDNSPrefetch::PrefetchMedium(nsAString &hostname)
+{
+  return Prefetch(hostname, nsIDNSService::RESOLVE_PRIORITY_MEDIUM);
+}
+
+nsresult
+nsHTMLDNSPrefetch::PrefetchHigh(nsAString &hostname)
+{
+  return Prefetch(hostname, 0);
+}
+
+
+/////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+nsHTMLDNSPrefetch::nsDeferrals::nsDeferrals()
+  : mHead(0),
+    mTail(0),
+    mActiveLoaderCount(0),
+    mTimerArmed(PR_FALSE)
+{
+  mTimer = do_CreateInstance("@mozilla.org/timer;1");
+}
+
+nsHTMLDNSPrefetch::nsDeferrals::~nsDeferrals()
+{
+  if (mTimerArmed) {
+    mTimerArmed = PR_FALSE;
+    mTimer->Cancel();
+  }
+
+  Flush();
+}
+
+NS_IMPL_THREADSAFE_ISUPPORTS4(nsHTMLDNSPrefetch::nsDeferrals,
+                              nsIDNSListener,
+                              nsIWebProgressListener,
+                              nsISupportsWeakReference,
+                              nsIObserver)
+
+void
+nsHTMLDNSPrefetch::nsDeferrals::Flush()
+{
+  while (mHead != mTail) {
+    mEntries[mTail].mElement = nsnull;
+    mTail = (mTail + 1) & sMaxDeferredMask;
+  }
+}
+
+nsresult
+nsHTMLDNSPrefetch::nsDeferrals::Add(PRUint16 flags, nsGenericHTMLElement *aElement)
+{
+  // The FIFO has no lock, so it can only be accessed on main thread
+  NS_ASSERTION(NS_IsMainThread(), "nsDeferrals::Add must be on main thread");
+
+  if (((mHead + 1) & sMaxDeferredMask) == mTail)
+    return NS_ERROR_DNS_LOOKUP_QUEUE_FULL;
+    
+  mEntries[mHead].mFlags = flags;
+  mEntries[mHead].mElement = aElement;
+  mHead = (mHead + 1) & sMaxDeferredMask;
+
+  if (!mActiveLoaderCount && !mTimerArmed && mTimer) {
+    mTimerArmed = PR_TRUE;
+    mTimer->InitWithFuncCallback(Tick, this, 2000, nsITimer::TYPE_ONE_SHOT);
+  }
   
-  return sDNSService->AsyncResolve(mHostname, flags, this, nsnull,
-                                   getter_AddRefs(tmpOutstanding));
+  return NS_OK;
 }
 
-nsresult
-nsHTMLDNSPrefetch::PrefetchLow()
+void
+nsHTMLDNSPrefetch::nsDeferrals::SubmitQueue()
 {
-  return Prefetch(nsIDNSService::RESOLVE_PRIORITY_LOW);
+  NS_ASSERTION(NS_IsMainThread(), "nsDeferrals::SubmitQueue must be on main thread");
+  nsCString hostName;
+  if (!sDNSService) return;
+
+  while (mHead != mTail) {
+    nsCOMPtr<nsIURI> hrefURI;
+    mEntries[mTail].mElement->GetHrefURIForAnchors(getter_AddRefs(hrefURI));
+    if (hrefURI)
+      hrefURI->GetAsciiHost(hostName);
+    
+    if (!hostName.IsEmpty()) {
+      nsCOMPtr<nsICancelable> tmpOutstanding;
+
+      sDNSService->AsyncResolve(hostName, 
+                                mEntries[mTail].mFlags,
+                                this, nsnull, getter_AddRefs(tmpOutstanding));
+    }
+    mEntries[mTail].mElement = nsnull;
+    mTail = (mTail + 1) & sMaxDeferredMask;
+  }
+  
+  if (mTimerArmed) {
+    mTimerArmed = PR_FALSE;
+    mTimer->Cancel();
+  }
 }
 
-nsresult
-nsHTMLDNSPrefetch::PrefetchMedium()
+void
+nsHTMLDNSPrefetch::nsDeferrals::Activate()
 {
-  return Prefetch(nsIDNSService::RESOLVE_PRIORITY_MEDIUM);
+  // Register as an observer for the document loader  
+  nsCOMPtr<nsIWebProgress> progress = 
+    do_GetService(NS_DOCUMENTLOADER_SERVICE_CONTRACTID);
+  if (progress)
+    progress->AddProgressListener(this, nsIWebProgress::NOTIFY_STATE_DOCUMENT);
+
+  // Register as an observer for xpcom shutdown events so we can drop any element refs
+  nsresult rv;
+  nsCOMPtr<nsIObserverService> observerService =
+    do_GetService("@mozilla.org/observer-service;1", &rv);
+  if (NS_SUCCEEDED(rv))
+    observerService->AddObserver(this, "xpcom-shutdown", PR_TRUE);
 }
 
-nsresult
-nsHTMLDNSPrefetch::PrefetchHigh()
+// nsITimer related method
+
+void 
+nsHTMLDNSPrefetch::nsDeferrals::Tick(nsITimer *aTimer, void *aClosure)
 {
-  return Prefetch(0);
+  nsHTMLDNSPrefetch::nsDeferrals *self = (nsHTMLDNSPrefetch::nsDeferrals *) aClosure;
+
+  NS_ASSERTION(NS_IsMainThread(), "nsDeferrals::Tick must be on main thread");
+  NS_ASSERTION(self->mTimerArmed, "Timer is not armed");
+  
+  self->mTimerArmed = PR_FALSE;
+
+  // If the queue is not submitted here because there are outstanding pages being loaded,
+  // there is no need to rearm the timer as the queue will be submtited when those 
+  // loads complete.
+  if (!self->mActiveLoaderCount) 
+    self->SubmitQueue();
 }
 
-NS_IMPL_THREADSAFE_ISUPPORTS1(nsHTMLDNSPrefetch, nsIDNSListener)
+//////////// nsIDNSListener method
 
 NS_IMETHODIMP
-nsHTMLDNSPrefetch::OnLookupComplete(nsICancelable *request,
-                                    nsIDNSRecord  *rec,
-                                    nsresult       status)
+nsHTMLDNSPrefetch::nsDeferrals::OnLookupComplete(nsICancelable *request,
+                                                 nsIDNSRecord  *rec,
+                                                 nsresult       status)
 {
+  return NS_OK;
+}
+
+//////////// nsIWebProgressListener methods
+
+NS_IMETHODIMP 
+nsHTMLDNSPrefetch::nsDeferrals::OnStateChange(nsIWebProgress* aWebProgress, 
+                                              nsIRequest *aRequest, 
+                                              PRUint32 progressStateFlags, 
+                                              nsresult aStatus)
+{
+  // The FIFO has no lock, so it can only be accessed on main thread
+  NS_ASSERTION(NS_IsMainThread(), "nsDeferrals::OnStateChange must be on main thread");
+  
+  if (progressStateFlags & STATE_IS_DOCUMENT) {
+    if (progressStateFlags & STATE_STOP) {
+
+      // Initialization may have missed a STATE_START notification, so do
+      // not go negative
+      if (mActiveLoaderCount)
+        mActiveLoaderCount--;
+
+      if (!mActiveLoaderCount)
+        SubmitQueue();
+    }
+    else if (progressStateFlags & STATE_START)
+      mActiveLoaderCount++;
+  }
+            
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+nsHTMLDNSPrefetch::nsDeferrals::OnProgressChange(nsIWebProgress *aProgress,
+                                                 nsIRequest *aRequest, 
+                                                 PRInt32 curSelfProgress, 
+                                                 PRInt32 maxSelfProgress, 
+                                                 PRInt32 curTotalProgress, 
+                                                 PRInt32 maxTotalProgress)
+{
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+nsHTMLDNSPrefetch::nsDeferrals::OnLocationChange(nsIWebProgress* aWebProgress,
+                                                 nsIRequest* aRequest,
+                                                 nsIURI *location)
+{
+  return NS_OK;
+}
+
+NS_IMETHODIMP 
+nsHTMLDNSPrefetch::nsDeferrals::OnStatusChange(nsIWebProgress* aWebProgress,
+                                               nsIRequest* aRequest,
+                                               nsresult aStatus,
+                                               const PRUnichar* aMessage)
+{
+  return NS_OK;
+}
+
+NS_IMETHODIMP 
+nsHTMLDNSPrefetch::nsDeferrals::OnSecurityChange(nsIWebProgress *aWebProgress, 
+                                                 nsIRequest *aRequest, 
+                                                 PRUint32 state)
+{
+  return NS_OK;
+}
+
+//////////// nsIObserver method
+
+NS_IMETHODIMP
+nsHTMLDNSPrefetch::nsDeferrals::Observe(nsISupports *subject,
+                                        const char *topic,
+                                        const PRUnichar *data)
+{
+  if (!strcmp(topic, "xpcom-shutdown"))
+    Flush();
+  
   return NS_OK;
 }
