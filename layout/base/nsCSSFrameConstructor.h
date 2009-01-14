@@ -161,7 +161,7 @@ public:
   PRUint32 GetHoverGeneration() const { return mHoverGeneration; }
 
   // Note: It's the caller's responsibility to make sure to wrap a
-  // ProcessRestyledFrames call in a view update batch.
+  // ProcessRestyledFrames call in a view update batch and a script blocker.
   // This function does not call ProcessAttachedQueue() on the binding manager.
   // If the caller wants that to happen synchronously, it needs to handle that
   // itself.
@@ -195,7 +195,7 @@ public:
                         PRInt32 aNewIndexInContainer);
 
   // Note: It's the caller's responsibility to make sure to wrap a
-  // ProcessPendingRestyles call in a view update batch.
+  // ProcessPendingRestyles call in a view update batch and a script blocker.
   // This function does not call ProcessAttachedQueue() on the binding manager.
   // If the caller wants that to happen synchronously, it needs to handle that
   // itself.
