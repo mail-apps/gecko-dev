@@ -3938,10 +3938,6 @@ nsDocument::DispatchContentLoadedEvents()
     } while (parent);
   }
 
-  if (mScriptLoader) {
-    mScriptLoader->EndDeferringScripts();
-  }
-
   UnblockOnload(PR_TRUE);
 }
 
