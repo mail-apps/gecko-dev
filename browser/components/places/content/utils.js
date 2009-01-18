@@ -889,6 +889,9 @@ var PlacesUIUtils = {
     * {uri: string, isBookmark: boolean}
     */
   _openTabset: function PU__openTabset(aItemsToOpen, aEvent) {
+    if (!aItemsToOpen.length)
+      return;
+
     var urls = [];
     for (var i = 0; i < aItemsToOpen.length; i++) {
       var item = aItemsToOpen[i];
