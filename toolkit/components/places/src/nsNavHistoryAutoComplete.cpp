@@ -641,13 +641,13 @@ nsNavHistory::StartSearch(const nsAString & aSearchString,
   // into bug 412730 because we only specify urls and not titles to look at.
   // Also, only reuse the search if the previous and new search both start with
   // javascript: or both don't. (bug 417798)
-  if (mAutoCompleteSearchSources == SEARCH_NONE ||
+  if (!mAutoCompleteEnabled ||
       (!prevSearchString.IsEmpty() &&
        StringBeginsWith(mCurrentSearchString, prevSearchString) &&
        (StartsWithJS(prevSearchString) == StartsWithJS(mCurrentSearchString)))) {
 
     // Got nothing before? We won't get anything new, so stop now
-    if (mAutoCompleteSearchSources == SEARCH_NONE ||
+    if (!mAutoCompleteEnabled ||
         (mAutoCompleteFinishedSearch && prevMatchCount == 0)) {
       // Set up the result to let the listener know that there's nothing
       mCurrentResult->SetSearchResult(nsIAutoCompleteResult::RESULT_NOMATCH);
@@ -808,13 +808,6 @@ nsNavHistory::ProcessTokensForSpecialSearch()
 {
   // Start with the default behavior
   mAutoCompleteCurrentBehavior = mAutoCompleteDefaultBehavior;
-
-  // If we're searching only one of history or bookmark, we can use filters
-  if (mAutoCompleteSearchSources == SEARCH_HISTORY)
-    SET_BEHAVIOR(History);
-  else if (mAutoCompleteSearchSources == SEARCH_BOOKMARK)
-    SET_BEHAVIOR(Bookmark);
-  // SEARCH_BOTH doesn't require any filtering
 
   // Determine which special searches to apply
   for (PRInt32 i = mCurrentSearchTokens.Count(); --i >= 0; ) {
