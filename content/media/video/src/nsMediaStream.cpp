@@ -77,6 +77,8 @@ public:
   virtual float    DownloadRate();
   virtual void     Cancel();
   virtual nsIPrincipal* GetCurrentPrincipal();
+  virtual void     Suspend();
+  virtual void     Resume();
 
 private:
   // Listener attached to channel to constantly download the
@@ -198,6 +200,16 @@ nsIPrincipal* nsDefaultStreamStrategy::GetCurrentPrincipal()
   return mListener->GetCurrentPrincipal();
 }
 
+void nsDefaultStreamStrategy::Suspend()
+{
+  mChannel->Suspend();
+}
+
+void nsDefaultStreamStrategy::Resume()
+{
+  mChannel->Resume();
+}
+
 class nsFileStreamStrategy : public nsStreamStrategy
 {
 public:
@@ -216,6 +228,8 @@ public:
   virtual PRUint32 Available();
   virtual float    DownloadRate();
   virtual nsIPrincipal* GetCurrentPrincipal();
+  virtual void     Suspend();
+  virtual void     Resume();
 
 private:
   // Seekable stream interface to file. This can be used from any
@@ -350,6 +364,16 @@ nsIPrincipal* nsFileStreamStrategy::GetCurrentPrincipal()
   return mPrincipal;
 }
 
+void nsFileStreamStrategy::Suspend()
+{
+  mChannel->Suspend();
+}
+
+void nsFileStreamStrategy::Resume()
+{
+  mChannel->Resume();
+}
+
 class nsHttpStreamStrategy : public nsStreamStrategy
 {
 public:
@@ -372,6 +396,8 @@ public:
   virtual float    DownloadRate();
   virtual void     Cancel();
   virtual nsIPrincipal* GetCurrentPrincipal();
+  virtual void     Suspend();
+  virtual void     Resume();
 
   // Return PR_TRUE if the stream has been cancelled.
   PRBool IsCancelled() const;
@@ -726,6 +752,16 @@ nsIPrincipal* nsHttpStreamStrategy::GetCurrentPrincipal()
   return mListener->GetCurrentPrincipal();
 }
 
+void nsHttpStreamStrategy::Suspend()
+{
+  mChannel->Suspend();
+}
+
+void nsHttpStreamStrategy::Resume()
+{
+  mChannel->Resume();
+}
+
 nsMediaStream::nsMediaStream()  :
   mPlaybackRateCount(0)
 {
@@ -846,4 +882,14 @@ void nsMediaStream::Cancel()
 nsIPrincipal* nsMediaStream::GetCurrentPrincipal()
 {
   return mStreamStrategy->GetCurrentPrincipal();
+}
+
+void nsMediaStream::Suspend()
+{
+  mStreamStrategy->Suspend();
+}
+
+void nsMediaStream::Resume()
+{
+  mStreamStrategy->Resume();
 }
