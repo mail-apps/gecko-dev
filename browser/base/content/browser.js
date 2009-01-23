@@ -2714,6 +2714,27 @@ var bookmarksButtonObserver = {
   }
 }
 
+var newTabButtonObserver = {
+  onDrop: function (aEvent, aXferData, aDragSession) {
+    var xferData = aXferData.data.split("\n");
+    var draggedText = xferData[0] || xferData[1];
+    var postData = {};
+    var url = getShortcutOrURI(draggedText, postData);
+    if (url) {
+      nsDragAndDrop.dragDropSecurityCheck(aEvent, aDragSession, url);
+      // allow third-party services to fixup this URL
+      openNewTabWith(url, null, postData.value, aEvent, true);
+    }
+  },
+  getSupportedFlavours: function () {
+    var flavourSet = new FlavourSet();
+    flavourSet.appendFlavour("text/unicode");
+    flavourSet.appendFlavour("text/x-moz-url");
+    flavourSet.appendFlavour("application/x-moz-file", "nsIFile");
+    return flavourSet;
+  }
+}
+
 var newWindowButtonObserver = {
   onDragOver: function(aEvent, aFlavour, aDragSession)
     {
