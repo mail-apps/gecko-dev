@@ -4948,8 +4948,9 @@ var contentAreaDNDObserver = {
   getSupportedFlavours: function ()
     {
       var flavourSet = new FlavourSet();
+      flavourSet.appendFlavour("application/x-moz-tabbrowser-tab");
       flavourSet.appendFlavour("text/x-moz-url");
-      flavourSet.appendFlavour("text/unicode");
+      flavourSet.appendFlavour("text/plain");
       flavourSet.appendFlavour("application/x-moz-file", "nsIFile");
       return flavourSet;
     }
