@@ -42,6 +42,8 @@ const ROLE_FLAT_EQUATION = nsIAccessibleRole.ROLE_FLAT_EQUATION;
 const ROLE_LABEL = nsIAccessibleRole.ROLE_LABEL;
 const ROLE_LIST = nsIAccessibleRole.ROLE_LIST;
 const ROLE_OPTION = nsIAccessibleRole.ROLE_OPTION;
+const ROLE_PARAGRAPH = nsIAccessibleRole.ROLE_PARAGRAPH;
+const ROLE_TEXT_CONTAINER = nsIAccessibleRole.ROLE_TEXT_CONTAINER;
 const ROLE_TEXT_LEAF = nsIAccessibleRole.ROLE_TEXT_LEAF;
 
 ////////////////////////////////////////////////////////////////////////////////

@@ -66,6 +66,7 @@ _TEST_FILES =\
 		test_events_caretmove.html \
 		$(warning test_groupattrs.xul temporarily disabled) \
 	$(warning test_table_indexes.html temporarily disabled) \
+ 		test_nsHyperTextAcc_roles.html \
 		test_nsIAccessible_actions.html \
 		$(warning test_nsIAccessible_actions.xul temporarily disabled) \
 		test_nsIAccessible_applicationAccessible.html \
