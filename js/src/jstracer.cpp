@@ -6666,6 +6666,8 @@ TraceRecorder::record_JSOP_CALLUPVAR()
 JS_REQUIRES_STACK bool
 TraceRecorder::guardCallee(jsval& callee)
 {
+    JS_ASSERT(VALUE_IS_FUNCTION(cx, callee));
+
     LIns* exit = snapshot(BRANCH_EXIT);
     JSObject* callee_obj = JSVAL_TO_OBJECT(callee);
     LIns* callee_ins = get(&callee);
@@ -6798,10 +6800,12 @@ TraceRecorder::record_JSOP_APPLY()
      */
     if (argc > 0 && JSVAL_IS_PRIMITIVE(vp[2]))
         return record_JSOP_CALL();
-    
+
     /*
      * Guard on the identity of this, which is the function we are applying.
      */
+    if (!VALUE_IS_FUNCTION(cx, vp[1]))
+        ABORT_TRACE("callee is not a function");
     if (!guardCallee(vp[1]))
         return false;
 
