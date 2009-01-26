@@ -60,7 +60,7 @@ CSRCS		= \
 		huffdec.c \
 		quant.c \
 		dequant.c \
-		bitwise.c \
+		bitpack.c \
 		internal.c \
 		decinfo.c \
 		decapiwrapper.c \
