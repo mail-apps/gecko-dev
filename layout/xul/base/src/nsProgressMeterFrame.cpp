@@ -121,7 +121,7 @@ nsProgressMeterFrame::AttributeChanged(PRInt32 aNameSpaceID,
   }
 
   // did the progress change?
-  if (nsGkAtoms::value == aAttribute) {
+  if (nsGkAtoms::value == aAttribute || nsGkAtoms::max == aAttribute) {
     nsIFrame* barChild = GetFirstChild(nsnull);
     if (!barChild) return NS_OK;
     nsIFrame* remainderChild = barChild->GetNextSibling();
