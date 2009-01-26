@@ -535,7 +535,6 @@ xpc_qsUnwrapThisImpl(JSContext *cx,
         }
         else if(XPCNativeWrapper::IsNativeWrapperClass(clazz))
         {
-            wrapper = XPCNativeWrapper::GetWrappedNative(cur);
             if(!XPCNativeWrapper::GetWrappedNative(cx, cur, &wrapper) ||
                !wrapper)
                 goto next;

@@ -914,7 +914,7 @@ XPCNativeWrapperCtor(JSContext *cx, JSObject *obj, uintN argc, jsval *argv,
     printf("Wrapping already wrapped object\n");
 #endif
 
-    wrappedNative = XPCNativeWrapper::GetWrappedNative(nativeObj);
+    wrappedNative = XPCNativeWrapper::SafeGetWrappedNative(nativeObj);
 
     if (!wrappedNative) {
       return ThrowException(NS_ERROR_INVALID_ARG, cx);
