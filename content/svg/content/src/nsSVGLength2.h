@@ -138,13 +138,20 @@ private:
     NS_IMETHOD GetValue(float* aResult)
       { *aResult = mVal->GetBaseValue(mSVGElement); return NS_OK; }
     NS_IMETHOD SetValue(float aValue)
-      { mVal->SetBaseValue(aValue, mSVGElement); return NS_OK; }
+      {
+        NS_ENSURE_FINITE(aValue, NS_ERROR_ILLEGAL_VALUE);
+        mVal->SetBaseValue(aValue, mSVGElement);
+        return NS_OK;
+      }
 
     NS_IMETHOD GetValueInSpecifiedUnits(float* aResult)
       { *aResult = mVal->mBaseVal; return NS_OK; }
     NS_IMETHOD SetValueInSpecifiedUnits(float aValue)
-      { mVal->SetBaseValueInSpecifiedUnits(aValue, mSVGElement);
-        return NS_OK; }
+      {
+        NS_ENSURE_FINITE(aValue, NS_ERROR_ILLEGAL_VALUE);
+        mVal->SetBaseValueInSpecifiedUnits(aValue, mSVGElement);
+        return NS_OK;
+      }
 
     NS_IMETHOD SetValueAsString(const nsAString& aValue)
       { return mVal->SetBaseValueString(aValue, mSVGElement, PR_TRUE); }
@@ -153,7 +160,9 @@ private:
 
     NS_IMETHOD NewValueSpecifiedUnits(PRUint16 unitType,
                                       float valueInSpecifiedUnits)
-      { mVal->NewValueSpecifiedUnits(unitType, valueInSpecifiedUnits,
+      {
+        NS_ENSURE_FINITE(valueInSpecifiedUnits, NS_ERROR_ILLEGAL_VALUE);
+        mVal->NewValueSpecifiedUnits(unitType, valueInSpecifiedUnits,
                                      mSVGElement);
         return NS_OK; }
 
