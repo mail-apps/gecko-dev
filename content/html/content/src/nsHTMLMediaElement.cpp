@@ -209,7 +209,6 @@ NS_IMETHODIMP nsHTMLMediaElement::GetNetworkState(PRUint16 *aNetworkState)
 PRBool nsHTMLMediaElement::AbortExistingLoads()
 {
   if (mDecoder) {
-    mDecoder->ElementUnavailable();
     mDecoder->Shutdown();
     mDecoder = nsnull;
   }
@@ -812,7 +811,7 @@ PRBool nsHTMLMediaElement::CreateDecoder(const nsACString& aType)
 #ifdef MOZ_OGG
   if (IsOggType(aType)) {
     mDecoder = new nsOggDecoder();
-    if (mDecoder && !mDecoder->Init()) {
+    if (mDecoder && !mDecoder->Init(this)) {
       mDecoder = nsnull;
     }
   }
@@ -820,7 +819,7 @@ PRBool nsHTMLMediaElement::CreateDecoder(const nsACString& aType)
 #ifdef MOZ_WAVE
   if (IsWaveType(aType)) {
     mDecoder = new nsWaveDecoder();
-    if (mDecoder && !mDecoder->Init()) {
+    if (mDecoder && !mDecoder->Init(this)) {
       mDecoder = nsnull;
     }
   }
@@ -838,7 +837,6 @@ nsresult nsHTMLMediaElement::InitializeDecoderForChannel(nsIChannel *aChannel,
     return NS_ERROR_FAILURE;
 
   mNetworkState = nsIDOMHTMLMediaElement::NETWORK_LOADING;
-  mDecoder->ElementAvailable(this);
 
   return mDecoder->Load(nsnull, aChannel, aListener);
 }
