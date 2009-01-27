@@ -4023,6 +4023,13 @@ function testInterpreterReentry3() {
 testInterpreterReentry3.expected = 1;
 test(testInterpreterReentry3);
 
+function testReverseArgTypes() {
+    for (var j = 0; j < 4; ++j) ''.replace('', /x/);
+    return 1;
+}
+testReverseArgTypes.expected = 1;
+test(testReverseArgTypes);
+
 /*****************************************************************************
  *                                                                           *
  *  _____ _   _  _____ ______ _____ _______                                  *
