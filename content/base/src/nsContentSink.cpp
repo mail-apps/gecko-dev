@@ -1762,10 +1762,6 @@ PRBool
 nsContentSink::ReadyToCallDidBuildModelImpl(PRBool aTerminated)
 {
   if (!mDidGetReadyToCallDidBuildModelCall) {
-    if (mDocument && !aTerminated) {
-      mDocument->SetReadyStateInternal(nsIDocument::READYSTATE_INTERACTIVE);
-    }
-
     if (mScriptLoader) {
       mScriptLoader->EndDeferringScripts(aTerminated);
     }
