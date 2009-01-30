@@ -1923,7 +1923,10 @@ endif
 endif
 
 ifneq ($(DIST_FILES),)
-libs:: $(DIST_FILES)
+$(DIST)/bin:
+	$(NSINSTALL) -D $@
+
+libs:: $(DIST_FILES) $(DIST)/bin
 	@$(EXIT_ON_ERROR) \
 	for f in $(DIST_FILES); do \
 	  dest=$(FINAL_TARGET)/`basename $$f`; \
