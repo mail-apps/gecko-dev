@@ -1258,7 +1258,7 @@ nsDownloadManager::GetDefaultDownloadsDirectory(nsILocalFile **aResult)
   // Vista:
   // Downloads
   // XP/2K:
-  // Desktop/Downloads
+  // My Documents/Downloads
   // Linux:
   // XDG user dir spec, with a fallback to Home/Downloads
 
@@ -1300,6 +1300,12 @@ nsDownloadManager::GetDefaultDownloadsDirectory(nsILocalFile **aResult)
   NS_NAMED_LITERAL_STRING(osVersion, "version");
   rv = infoService->GetPropertyAsInt32(osVersion, &version);
   if (version < 6) { // XP/2K
+    // First get "My Documents"
+    rv = dirService->Get(NS_WIN_PERSONAL_DIR,
+                         NS_GET_IID(nsILocalFile),
+                         getter_AddRefs(downloadDir));
+    NS_ENSURE_SUCCESS(rv, rv);
+
     rv = downloadDir->Append(folderName);
     NS_ENSURE_SUCCESS(rv, rv);
   }
