@@ -4920,6 +4920,9 @@ function middleMousePaste(event)
 var contentAreaDNDObserver = {
   onDrop: function (aEvent, aXferData, aDragSession)
     {
+      if (aEvent.getPreventDefault())
+        return;
+
       var dragType = aXferData.flavour.contentType;
       var dragData = aXferData.data;
       if (dragType == "application/x-moz-tabbrowser-tab") {
