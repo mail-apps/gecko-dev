@@ -121,6 +121,8 @@ protected:
                   const HIRect& inBoxRect, PRBool inIsDefault, 
                   PRBool inDisabled, ThemeButtonValue inValue,
                   ThemeButtonAdornment inAdornment, PRInt32 inState, nsIFrame* aFrame);
+  void DrawDropdown(CGContextRef context, const HIRect& inBoxRect, PRInt32 inState,
+                    nsIFrame* aFrame);
   void DrawSpinButtons(CGContextRef context, ThemeButtonKind inKind,
                        const HIRect& inBoxRect,
                        PRBool inDisabled, ThemeDrawState inDrawState,
@@ -141,6 +143,7 @@ private:
   NSButtonCell* mRadioButtonCell;
   NSButtonCell* mCheckboxCell;
   NSSearchFieldCell* mSearchFieldCell;
+  NSPopUpButtonCell* mDropdownCell;
 };
 
 #endif // nsNativeThemeCocoa_h_
