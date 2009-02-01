@@ -84,6 +84,7 @@
                  control="editBMPanel_locationField"
                  observes="paneElementsBroadcaster"/>
           <textbox id="editBMPanel_locationField"
+                   class="uri-element"
                    onblur="gEditItemOverlay.onLocationFieldBlur();"
                    observes="paneElementsBroadcaster"/>
         </row>
@@ -94,6 +95,7 @@
                  control="editBMPanel_feedLocationField"
                  observes="paneElementsBroadcaster"/>
           <textbox id="editBMPanel_feedLocationField"
+                   class="uri-element"
                    onblur="gEditItemOverlay.onFeedLocationFieldBlur();"
                    observes="paneElementsBroadcaster"/>
         </row>
@@ -104,6 +106,7 @@
                  control="editBMPanel_siteLocationField"
                  observes="paneElementsBroadcaster"/>
           <textbox id="editBMPanel_siteLocationField"
+                   class="uri-element"
                    onblur="gEditItemOverlay.onSiteLocationFieldBlur();"
                    observes="paneElementsBroadcaster"/>
         </row>
