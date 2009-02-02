@@ -649,6 +649,7 @@ $(CURDIR)/javascript-trace.h: $(srcdir)/javascript-trace.d
 $(CPPSRCS:%.cpp=%.$(OBJ_SUFFIX)): $(CURDIR)/javascript-trace.h
 endif
 
+ifdef GNU_CC
 imacro_asm.js: imacro_asm.js.in jsopcode.tbl
 	$(CC) -c -x c -E -P -I$(srcdir) $< > $@
 
@@ -663,4 +664,5 @@ libs:: imacros.c.out
 
 %.c.out: %.jsasm imacro_asm.js
 	$(DIST)/bin/js imacro_asm.js $< > $@
+endif
 endif
