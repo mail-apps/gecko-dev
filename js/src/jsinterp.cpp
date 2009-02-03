@@ -4284,8 +4284,9 @@ js_Interpret(JSContext *cx)
                 BEGIN_PC_HINT(regs.pc);
                     if (entry
                         ? !js_GetPropertyHelper(cx, aobj, id, &rval, &entry)
-                        : !OBJ_GET_PROPERTY(cx, obj, id, &rval)) 
+                        : !OBJ_GET_PROPERTY(cx, obj, id, &rval)) {
                         goto error;
+                    }
                 END_PC_HINT();
             } while (0);
 
@@ -4393,8 +4394,9 @@ js_Interpret(JSContext *cx)
                 BEGIN_PC_HINT(regs.pc);
                     if (entry
                         ? !js_GetPropertyHelper(cx, aobj, id, &rval, &entry)
-                        : !OBJ_GET_PROPERTY(cx, obj, id, &rval))
+                        : !OBJ_GET_PROPERTY(cx, obj, id, &rval)) {
                         goto error;
+                    }
                 END_PC_HINT();
                 STORE_OPND(-1, OBJECT_TO_JSVAL(obj));
                 STORE_OPND(-2, rval);
