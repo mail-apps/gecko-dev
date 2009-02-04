@@ -71,7 +71,7 @@ nsRoleMapEntry nsARIAMap::gWAIRoleMap[] =
   },
   {
     "alertdialog",
-    nsIAccessibleRole::ROLE_ALERT,
+    nsIAccessibleRole::ROLE_DIALOG,
     eNameOkFromChildren,
     eNoValue,
     eNoAction,
