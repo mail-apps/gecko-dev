@@ -172,6 +172,11 @@ MakeCommandLine(int argc, PRUnichar **argv)
   for (i = 0; i < argc; ++i)
     len += ArgStrLen(argv[i]) + 1;
 
+#ifdef WINCE
+  wchar_t *env = mozce_GetEnvironmentCL();
+  len += (wcslen(env));
+#endif
+
   // Protect against callers that pass 0 arguments
   if (len == 0)
     len = 1;
@@ -191,6 +196,9 @@ MakeCommandLine(int argc, PRUnichar **argv)
 
   *c = '\0';
 
+#ifdef WINCE
+  wcscat(s, env);
+#endif
   return s;
 }
 
@@ -342,6 +350,19 @@ WinLaunchChild(const PRUnichar *exePath, int argc, PRUnichar **argv, int needEle
 {
   PRUnichar *cl;
   BOOL ok;
+
+#ifdef WINCE
+  // Windows Mobile Issue: 
+  // When passing both an image name and a command line to
+  // CreateProcessW, you need to make sure that the image name
+  // identially matches the first argument of the command line.  If
+  // they do not match, Windows Mobile will send two "argv[0]" values.
+  // To avoid this problem, we will strip off the argv here, and
+  // depend only on the exePath.
+  argv = argv + 1;
+  argc--;
+#endif
+
 #ifndef WINCE
   if (needElevation > 0) {
     cl = MakeCommandLine(argc - 1, argv + 1);
