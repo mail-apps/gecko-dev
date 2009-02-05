@@ -64,6 +64,8 @@ _TEST_FILES	= \
 	test_foreign.html \
 	test_fallback.html \
 	test_updatingManifest.html \
+	test_redirectManifest.html \
+	test_redirectUpdateItem.html \
 	445544_part1.html \
 	445544_part2.html \
 	445544.cacheManifest \
@@ -99,11 +101,16 @@ _TEST_FILES	= \
 	missingFile.cacheManifest^headers^ \
 	simpleManifest.cacheManifest \
 	simpleManifest.cacheManifest^headers^ \
+	redirects.cacheManifest \
+	redirects.cacheManifest^headers^ \
 	updating.cacheManifest \
 	updating.cacheManifest^headers^ \
 	simpleManifest.notmanifest \
 	changing1Sec.sjs \
 	changing1Hour.sjs \
+	dynamicRedirect.sjs \
+	explicitRedirect.sjs \
+	manifestRedirect.sjs \
 	changingManifest.cacheManifest \
 	changingManifest.cacheManifest^headers^ \
 	offlineChild.html \
