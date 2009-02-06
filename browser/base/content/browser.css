@@ -102,6 +102,7 @@ window[chromehidden~="toolbar"] toolbar:not(.toolbar-primary):not(.chromeclass-m
   display: -moz-box;
 }
 
+%ifdef USE_TAB_PREVIEWS
 /* Tab Previews */
 #ctrlTab-panel {
   -moz-user-focus: normal;
@@ -123,3 +124,4 @@ window[chromehidden~="toolbar"] toolbar:not(.toolbar-primary):not(.chromeclass-m
 .ctrlTab-pagePointer {
   display: inline-block;
 }
+%endif
