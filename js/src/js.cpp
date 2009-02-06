@@ -436,9 +436,9 @@ Process(JSContext *cx, JSObject *obj, char *filename, JSBool forceTTY)
     /* It's an interactive filehandle; drop into read-eval-print loop. */
     lineno = 1;
     hitEOF = JS_FALSE;
-    size_t len;
     buffer = NULL;
     do {
+        size_t len = 0; /* initialize to avoid warnings */
         /*
          * Accumulate lines until we get a 'compilable unit' - one that either
          * generates an error (before running out of source) or that compiles
@@ -463,8 +463,8 @@ Process(JSContext *cx, JSObject *obj, char *filename, JSBool forceTTY)
                 len = strlen(buffer);
                 size = len + 1;
             } else {
-                /**
-                 * len + 1 is required to store '\n' in the end of line
+                /*
+                 * len + 1 is required to store '\n' in the end of line.
                  */
                 size_t newlen = strlen(line) + (len ? len + 1 : 0);
                 if (newlen + 1 > size) {
@@ -517,7 +517,6 @@ Process(JSContext *cx, JSObject *obj, char *filename, JSBool forceTTY)
             JS_DestroyScript(cx, script);
         }
         *buffer = '\0';
-        len = 0;
     } while (!hitEOF && !gQuitting);
 
     free(buffer);
