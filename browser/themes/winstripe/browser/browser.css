@@ -2048,12 +2048,15 @@ toolbarbutton.bookmark-item[dragover="true"][open="true"] {
   margin-left: -1px;
 }
 
-.KUI-panel[level="top"] ,
-#ctrlTab-panel:not([sticky]) {
+%ifdef USE_TAB_PREVIEWS
+#ctrlTab-panel:not([sticky]),
+%endif
+.KUI-panel[level="top"] {
   background-color: rgba(68, 68, 68, .5);
   -moz-window-shadow: none;
 }
 
+%ifdef USE_TAB_PREVIEWS
 /* ::::: Ctrl-Tab Panel ::::: */
 #ctrlTab-panel {
   padding-top: 20px;
@@ -2098,3 +2101,4 @@ toolbarbutton.bookmark-item[dragover="true"][open="true"] {
   background: rgba(255, 255, 255, .6);
   cursor: default;
 }
+%endif

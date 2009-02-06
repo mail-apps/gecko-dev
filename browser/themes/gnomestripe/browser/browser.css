@@ -1393,6 +1393,7 @@ toolbar[mode="text"] > #window-controls > toolbarbutton > .toolbarbutton-text {
   -moz-image-region: rect(0px 16px 16px 0px);
 }
 
+%ifdef USE_TAB_PREVIEWS
 /* ::::: Ctrl-Tab Panel ::::: */
 #ctrlTab-panel {
   padding-top: 15px;
@@ -1432,3 +1433,4 @@ toolbar[mode="text"] > #window-controls > toolbarbutton > .toolbarbutton-text {
   background: ThreeDDarkShadow;
   cursor: default;
 }
+%endif

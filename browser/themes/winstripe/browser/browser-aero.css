@@ -82,6 +82,7 @@
   z-index: 10;
 }
 
+%ifdef USE_TAB_PREVIEWS
 #ctrlTab-panel:-moz-system-metric(windows-compositor) {
   background: transparent;
   -moz-appearance: -moz-win-glass;
@@ -92,3 +93,4 @@
   color: black;
   text-shadow: white -1px -1px .5em, white -1px 1px .5em, white 1px 1px .5em, white 1px -1px .5em;
 }
+%endif
