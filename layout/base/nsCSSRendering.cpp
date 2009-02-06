@@ -1358,8 +1358,6 @@ nsCSSRendering::PaintBackgroundWithSC(nsPresContext* aPresContext,
 
   // Compute the Thebes equivalent of the dirtyRect.
   gfxRect dirtyRectGfx(RectToGfxRect(dirtyRect, appUnitsPerPixel));
-  dirtyRectGfx.Round();
-  dirtyRectGfx.Condition();
   if (dirtyRectGfx.IsEmpty()) {
     NS_WARNING("converted dirty rect should not be empty");
     return;
@@ -1397,7 +1395,7 @@ nsCSSRendering::PaintBackgroundWithSC(nsPresContext* aPresContext,
   // this far.)
   if (!drawBackgroundImage) {
     ctx->NewPath();
-    ctx->Rectangle(dirtyRectGfx);
+    ctx->Rectangle(dirtyRectGfx, PR_TRUE);
     ctx->Fill();
     return;
   }
@@ -1416,7 +1414,7 @@ nsCSSRendering::PaintBackgroundWithSC(nsPresContext* aPresContext,
       !(status & imgIRequest::STATUS_SIZE_AVAILABLE)) {
     if (drawBackgroundColor) {
       ctx->NewPath();
-      ctx->Rectangle(dirtyRectGfx);
+      ctx->Rectangle(dirtyRectGfx, PR_TRUE);
       ctx->Fill();
     }
     return;
@@ -1523,7 +1521,7 @@ nsCSSRendering::PaintBackgroundWithSC(nsPresContext* aPresContext,
   // even if the image isn't.
   if (drawBackgroundColor) {
     ctx->NewPath();
-    ctx->Rectangle(dirtyRectGfx);
+    ctx->Rectangle(dirtyRectGfx, PR_TRUE);
     ctx->Fill();
   }
 
