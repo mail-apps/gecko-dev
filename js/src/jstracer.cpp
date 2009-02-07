@@ -6431,6 +6431,13 @@ TraceRecorder::record_JSOP_PRIMTOP()
     return true;
 }
 
+JS_REQUIRES_STACK bool
+TraceRecorder::record_JSOP_OBJTOP()
+{
+    // See the comment in record_JSOP_PRIMTOP.
+    return true;
+}
+
 JSBool
 js_Array(JSContext* cx, JSObject* obj, uintN argc, jsval* argv, jsval* rval);
 
@@ -9378,7 +9385,6 @@ InitIMacroCode()
         return false;                                                         \
     }
 
-UNUSED(135)
 UNUSED(203)
 UNUSED(204)
 UNUSED(205)
