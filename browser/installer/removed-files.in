@@ -642,3 +642,5 @@ xpicleanup.exe
 #else
 xpicleanup
 #endif
+chrome.manifest
+install.rdf
