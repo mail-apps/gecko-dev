@@ -119,6 +119,7 @@ mozce_wcsndup(const unsigned short*, unsigned int);
 #define strcmpi _stricmp
 #define stricmp _stricmp
 #define wgetcwd _wgetcwd
+#define vsnprintf _vsnprintf
 
 #define SHGetSpecialFolderPathW SHGetSpecialFolderPath
 #define SHGetPathFromIDListW    SHGetPathFromIDList
