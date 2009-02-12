@@ -472,12 +472,12 @@ def environment(env = None):
 # RUN THE APP #
 ###############
 
-def runApp(testURL, env, app, profileDir, extraArgs):
-  if (IS_TEST_BUILD):
+def runApp(testURL, env, app, profileDir, extraArgs, runSSLTunnel = False):
+  if IS_TEST_BUILD and runSSLTunnel:
     # create certificate database for the profile
     certificateStatus = fillCertificateDB(profileDir)
     if certificateStatus != 0:
-      log.info("ERROR FAIL Certificate integration")
+      log.info("TEST-UNEXPECTED-FAIL | Certificate integration failed")
       return certificateStatus
   
     # start ssltunnel to provide https:// URLs capability
@@ -505,18 +505,19 @@ def runApp(testURL, env, app, profileDir, extraArgs):
     profileDirectory = profileDir + "/"
 
   args.extend(("-no-remote", "-profile", profileDirectory))
-  if IS_CAMINO:
-    args.extend(("-url", testURL))
-  else:
-    args.append((testURL))
+  if testURL is not None:
+    if IS_CAMINO:
+      args.extend(("-url", testURL))
+    else:
+      args.append((testURL))
   args.extend(extraArgs)
   proc = Process(cmd, args, env = environment(env))
   log.info("Application pid: %d", proc.pid)
   status = proc.wait()
   if status != 0:
-    log.info("ERROR FAIL Exited with code %d during test run", status)
+    log.info("TEST-UNEXPECTED-FAIL | Exited with code %d during test run", status)
 
-  if (IS_TEST_BUILD):
+  if IS_TEST_BUILD and runSSLTunnel:
     ssltunnelProcess.kill()
   
   return start

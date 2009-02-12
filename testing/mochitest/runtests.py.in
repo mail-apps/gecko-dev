@@ -349,7 +349,7 @@ Are you executing $objdir/_tests/testing/mochitest/runtests.py?"""
     browserEnv["XPCOM_DEBUG_BREAK"] = "stack-and-abort"
 
   start = automation.runApp(testURL, browserEnv, options.app, PROFILE_DIRECTORY,
-                            options.browserArgs)
+                            options.browserArgs, runSSLTunnel = True)
 
   # Server's no longer needed, and perhaps more importantly, anything it might
   # spew to console shouldn't disrupt the leak information table we print next.
