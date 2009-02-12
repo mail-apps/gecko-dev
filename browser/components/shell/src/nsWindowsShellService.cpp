@@ -561,7 +561,7 @@ nsWindowsShellService::SetDesktopBackground(nsIDOMElement* aElement,
       ::RegSetValueExW(key, L"WallpaperStyle",
                        0, REG_SZ, (const BYTE *)style, size);
       ::SystemParametersInfoW(SPI_SETDESKWALLPAPER, 0, (PVOID)path.get(),
-                              SPIF_UPDATEINIFILE | SPIF_SENDWININICHANGE);
+                              SPIF_UPDATEINIFILE | SPIF_SENDCHANGE);
       // Close the key we opened.
       ::RegCloseKey(key);
     }
