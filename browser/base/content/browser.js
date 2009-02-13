@@ -3240,8 +3240,12 @@ function BrowserCustomizeToolbar()
   // XXXmano: there's apparently no better way to get this when the iframe is
   // hidden
   var sheetWidth = sheetFrame.style.width.match(/([0-9]+)px/)[1];
+  var rtl = sheetFrame.getAttribute("chromedir") == "rtl";
+  var position = "after_start";
+  if (rtl)
+    position = "after_end";
   document.getElementById("customizeToolbarSheetPopup")
-          .openPopup(gNavToolbox, "after_start", (window.innerWidth - sheetWidth) / 2, 0);
+          .openPopup(gNavToolbox, position, (window.innerWidth - sheetWidth) / 2, 0);
 #else
   window.openDialog(customizeURL,
                     "CustomizeToolbar",

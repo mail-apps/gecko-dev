@@ -557,6 +557,7 @@
   <panel id="customizeToolbarSheetPopup" noautohide="true">
     <iframe id="customizeToolbarSheetIFrame"
             style="&dialog.style;"
+            chromedir="&locale.dir;"
             hidden="true"/>
   </panel>
 #endif
