@@ -78,9 +78,20 @@
 #include "gfxImageSurface.h"
 
 #ifdef WINCE
+
 #include "aygshell.h"
 #include "imm.h"
+
+#define PAINT_USE_IMAGE_SURFACE
+
+#ifdef WINCE_WINDOWS_MOBILE
+#define WINCE_HAVE_SOFTKB
 #include "tpcshell.h"
+#else
+#undef WINCE_HAVE_SOFTKB
+#include "winuserm.h"
+#endif
+
 #else
 
 #include "nsUXThemeData.h"
@@ -155,8 +166,12 @@
 // out to the bounding-box if there are more
 #define MAX_RECTS_IN_REGION 100
 
+/*
+ * WinCE helpers
+ */
 #ifdef WINCE
 
+#ifdef WINCE_HAVE_SOFTKB
 static PRBool gSoftKeyMenuBar = PR_FALSE;
 
 static void CreateSoftKeyMenuBar(HWND wnd)
@@ -201,6 +216,7 @@ static void CreateSoftKeyMenuBar(HWND wnd)
   
   gSoftKeyMenuBar = mbi.hwndMB;
 }
+#endif  //defined(WINCE_HAVE_SOFTKB)
 
 
 #define IDI_APPLICATION MAKEINTRESOURCE(32512)
@@ -251,7 +267,7 @@ inline BOOL EnumThreadWindows(DWORD inThreadID, WNDENUMPROC inFunc, LPARAM inPar
   return FALSE;
 }
 
-#endif
+#endif  //defined(WINCE)
 
 
 
@@ -1423,7 +1439,7 @@ nsWindow::StandardWindowCreate(nsIWidget *aParent,
       }
     }
   }
-#ifdef WINCE
+#if defined(WINCE) && defined(WINCE_HAVE_SOFTKB)
   if (mWindowType == eWindowType_dialog || mWindowType == eWindowType_toplevel )
      CreateSoftKeyMenuBar(mWnd);
 #endif
@@ -4798,11 +4814,9 @@ PRBool nsWindow::ProcessMessage(UINT msg, WPARAM wParam, LPARAM lParam, LRESULT 
 
         if (WA_INACTIVE == fActive) {
           gJustGotDeactivate = PR_TRUE;
-          if (mIsTopWidgetWindow)
 #ifndef WINCE
+          if (mIsTopWidgetWindow)
             mLastKeyboardLayout = gKbdLayout.GetLayout();
-#else
-          ;
 #endif
         } else {
           gJustGotActivate = PR_TRUE;
@@ -4872,7 +4886,7 @@ PRBool nsWindow::ProcessMessage(UINT msg, WPARAM wParam, LPARAM lParam, LRESULT 
       }
 #endif
 
-#ifdef WINCE
+#if defined(WINCE) && defined(WINCE_HAVE_SOFTKB)
       // On Windows CE, we have a window that overlaps
       // the ISP button.  In this case, we should always
       // try to hide it when we are activated
@@ -4900,7 +4914,7 @@ PRBool nsWindow::ProcessMessage(UINT msg, WPARAM wParam, LPARAM lParam, LRESULT 
       break;
 
     case WM_KILLFOCUS:
-#ifdef WINCE
+#if defined(WINCE) && defined(WINCE_HAVE_SOFTKB)
       {
         // Get current input context
         HIMC hC = ImmGetContext(mWnd);
@@ -5422,7 +5436,6 @@ PRBool nsWindow::ProcessMessage(UINT msg, WPARAM wParam, LPARAM lParam, LRESULT 
       result = ProcessGestureMessage(wParam, lParam);
       break;
   }
-
 
   //*aRetValue = result;
   if (mWnd) {
@@ -6230,8 +6243,7 @@ PRBool nsWindow::OnPaint(HDC aDC)
                            (PRInt32) mWnd);
 #endif // NS_DEBUG
 
-#ifndef WINCE
-#ifdef MOZ_XUL
+#if defined(MOZ_XUL) && !defined(PAINT_USE_IMAGE_SURFACE)
       nsRefPtr<gfxASurface> targetSurface;
       if (eTransparencyTransparent == mTransparencyMode) {
         if (mTransparentSurface == nsnull)
@@ -6240,24 +6252,25 @@ PRBool nsWindow::OnPaint(HDC aDC)
       } else {
         targetSurface = new gfxWindowsSurface(hDC);
       }
-#else
-      nsRefPtr<gfxASurface> targetSurface = new gfxWindowsSurface(hDC);
-#endif
-#else
-      nsRefPtr<gfxImageSurface> targetSurface = new gfxImageSurface(gfxIntSize(ps.rcPaint.right - ps.rcPaint.left,
-                                                                               ps.rcPaint.bottom - ps.rcPaint.top),
+#elif defined(PAINT_USE_IMAGE_SURFACE)
+      gfxIntSize surfaceSize(ps.rcPaint.right - ps.rcPaint.left,
+                             ps.rcPaint.bottom - ps.rcPaint.top);
+      nsRefPtr<gfxImageSurface> targetSurface = new gfxImageSurface(surfaceSize,
                                                                     gfxASurface::ImageFormatRGB24);
       if (targetSurface && !targetSurface->CairoStatus()) {
         targetSurface->SetDeviceOffset(gfxPoint(-ps.rcPaint.left, -ps.rcPaint.top));
       }
+#else
+      nsRefPtr<gfxASurface> targetSurface = new gfxWindowsSurface(hDC);
 #endif
-
 
       nsRefPtr<gfxContext> thebesContext = new gfxContext(targetSurface);
       thebesContext->SetFlag(gfxContext::FLAG_DESTINED_FOR_SCREEN);
 
-#ifndef WINCE
-#if defined(MOZ_XUL)
+      // don't need to double buffer with PAINT_USE_IMAGE_SURFACE;
+      // it's implicitly double buffered
+#if !defined(PAINT_USE_IMAGE_SURFACE)
+# if defined(MOZ_XUL)
       if (eTransparencyGlass == mTransparencyMode && nsUXThemeData::sHaveCompositor) {
         thebesContext->PushGroup(gfxASurface::CONTENT_COLOR_ALPHA);
       } else if (eTransparencyTransparent == mTransparencyMode) {
@@ -6270,11 +6283,11 @@ PRBool nsWindow::OnPaint(HDC aDC)
         // If we're not doing translucency, then double buffer
         thebesContext->PushGroup(gfxASurface::CONTENT_COLOR);
       }
-#else
+# else
       // If we're not doing translucency, then double buffer
       thebesContext->PushGroup(gfxASurface::CONTENT_COLOR);
+# endif
 #endif
-#endif /* ifndef WINCE */
 
       nsCOMPtr<nsIRenderingContext> rc;
       nsresult rv = mContext->CreateRenderingContextInstance (*getter_AddRefs(rc));
@@ -6299,24 +6312,37 @@ PRBool nsWindow::OnPaint(HDC aDC)
         // bitmap. Now it can be read from memory bitmap to apply alpha channel and after
         // that displayed on the screen.
         UpdateTranslucentWindow();
-      } else if (result) {
-
-#ifndef WINCE
+      } else
+#endif
+      if (result) {
+#ifndef PAINT_USE_IMAGE_SURFACE
         // Only update if DispatchWindowEvent returned TRUE; otherwise, nothing handled
         // this, and we'll just end up painting with black.
         thebesContext->PopGroupToSource();
         thebesContext->SetOperator(gfxContext::OPERATOR_SOURCE);
         thebesContext->Paint();
 #else
-        nsRefPtr<gfxASurface> winSurface = new gfxWindowsSurface(hDC);
-        nsRefPtr<gfxContext> winCtx = new gfxContext(winSurface);
+        // Just blit this directly
+        BITMAPINFOHEADER bi;
+        memset(&bi, 0, sizeof(BITMAPINFOHEADER));
+        bi.biSize = sizeof(BITMAPINFOHEADER);
+        bi.biWidth = surfaceSize.width;
+        bi.biHeight = - surfaceSize.height;
+        bi.biPlanes = 1;
+        bi.biBitCount = 32;
+        bi.biCompression = BI_RGB;
 
-        winCtx->SetOperator(gfxContext::OPERATOR_SOURCE);
-        winCtx->SetSource(targetSurface);
-        winCtx->Paint();
+        StretchDIBits(hDC,
+                      ps.rcPaint.left, ps.rcPaint.top,
+                      surfaceSize.width, surfaceSize.height,
+                      0, 0,
+                      surfaceSize.width, surfaceSize.height,
+                      targetSurface->Data(),
+                      (BITMAPINFO*) &bi,
+                      DIB_RGB_COLORS,
+                      SRCCOPY);
 #endif
       }
-#endif
     }
   }
 
@@ -7104,7 +7130,7 @@ nsWindow::GetTextRangeList(PRUint32* aListLength,
 
     // iterate over the attributes
     int lastOffset = 0;
-    for (int i = 0; i < *aListLength; i++) {
+    for (unsigned int i = 0; i < *aListLength; i++) {
       long current = sIMECompClauseArray[i + 1];
       NS_ASSERTION(current <= maxlen, "wrong offset");
       if(current > maxlen)
