@@ -156,6 +156,9 @@ private:
   // on behalf of the given proxy.
   void AdjustPriority(imgRequestProxy *aProxy, PRInt32 aDelta);
 
+  // Return whether we've seen some data at this point
+  PRBool HasTransferredData() const { return mGotData; }
+
 public:
   NS_DECL_IMGILOAD
   NS_DECL_IMGIDECODEROBSERVER
@@ -184,6 +187,7 @@ private:
   PRPackedBool mLoading;
   PRPackedBool mProcessing;
   PRPackedBool mHadLastPart;
+  PRPackedBool mGotData;
   PRUint32 mNetworkStatus;
   PRUint32 mImageStatus;
   PRUint32 mState;
