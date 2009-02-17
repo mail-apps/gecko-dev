@@ -853,16 +853,18 @@ ComputeThis(JSContext *cx, JSBool lazy, jsval *argv)
         if (OBJ_GET_CLASS(cx, thisp) == &js_CallClass)
             return js_ComputeGlobalThis(cx, lazy, argv);
 
+        OBJ_TO_OUTER_OBJECT(cx, thisp);
+        if (!thisp)
+            return NULL;
+        argv[-1] = OBJECT_TO_JSVAL(thisp);
+
         if (thisp->map->ops->thisObject) {
             /* Some objects (e.g., With) delegate 'this' to another object. */
             thisp = thisp->map->ops->thisObject(cx, thisp);
             if (!thisp)
                 return NULL;
+            argv[-1] = OBJECT_TO_JSVAL(thisp);
         }
-        OBJ_TO_OUTER_OBJECT(cx, thisp);
-        if (!thisp)
-            return NULL;
-        argv[-1] = OBJECT_TO_JSVAL(thisp);
     }
     return thisp;
 }
