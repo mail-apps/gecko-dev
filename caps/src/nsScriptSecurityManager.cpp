@@ -1747,26 +1747,7 @@ nsScriptSecurityManager::CanExecuteScripts(JSContext* cx,
         }
     }
 
-    //-- See if JS is disabled globally (via prefs)
     *result = mIsJavaScriptEnabled;
-    if (mIsJavaScriptEnabled != mIsMailJavaScriptEnabled && globalObjTreeItem) 
-    {
-        nsCOMPtr<nsIDocShellTreeItem> rootItem;
-        globalObjTreeItem->GetRootTreeItem(getter_AddRefs(rootItem));
-        docshell = do_QueryInterface(rootItem);
-        if (docshell) 
-        {
-            // Is this script running from mail?
-            PRUint32 appType;
-            rv = docshell->GetAppType(&appType);
-            if (NS_FAILED(rv)) return rv;
-            if (appType == nsIDocShell::APP_TYPE_MAIL) 
-            {
-                *result = mIsMailJavaScriptEnabled;
-            }
-        }
-    }
-
     if (!*result)
         return NS_OK; // Do not run scripts
 
@@ -3209,7 +3190,6 @@ nsScriptSecurityManager::nsScriptSecurityManager(void)
       mDefaultPolicy(nsnull),
       mCapabilities(nsnull),
       mIsJavaScriptEnabled(PR_FALSE),
-      mIsMailJavaScriptEnabled(PR_FALSE),
       mIsWritingPrefs(PR_FALSE),
       mPolicyPrefsChanged(PR_TRUE)
 #ifdef XPC_IDISPATCH_SUPPORT
@@ -3810,8 +3790,6 @@ nsScriptSecurityManager::InitPrincipals(PRUint32 aPrefCount, const char** aPrefN
 
 const char nsScriptSecurityManager::sJSEnabledPrefName[] =
     "javascript.enabled";
-const char nsScriptSecurityManager::sJSMailEnabledPrefName[] =
-    "javascript.allow.mailnews";
 const char nsScriptSecurityManager::sFileOriginPolicyPrefName[] =
     "security.fileuri.strict_origin_policy";
 #ifdef XPC_IDISPATCH_SUPPORT
@@ -3826,11 +3804,6 @@ nsScriptSecurityManager::ScriptSecurityPrefChanged()
     nsresult rv = mSecurityPref->SecurityGetBoolPref(sJSEnabledPrefName, &temp);
     // JavaScript defaults to enabled in failure cases.
     mIsJavaScriptEnabled = NS_FAILED(rv) || temp;
-
-    rv = mSecurityPref->SecurityGetBoolPref(sJSMailEnabledPrefName, &temp);
-    // JavaScript in Mail defaults to disabled in failure cases.
-    // disable javascript in mailnews for TB 3.0 beta1
-    mIsMailJavaScriptEnabled = PR_FALSE; // NS_SUCCEEDED(rv) && temp;
 
     rv = mSecurityPref->SecurityGetBoolPref(sFileOriginPolicyPrefName, &temp);
     sStrictFileOriginPolicy = NS_SUCCEEDED(rv) && temp;
@@ -3859,7 +3832,6 @@ nsScriptSecurityManager::InitPrefs()
     ScriptSecurityPrefChanged();
     // set observer callbacks in case the value of the prefs change
     prefBranchInternal->AddObserver(sJSEnabledPrefName, this, PR_FALSE);
-    prefBranchInternal->AddObserver(sJSMailEnabledPrefName, this, PR_FALSE);
     prefBranchInternal->AddObserver(sFileOriginPolicyPrefName, this, PR_FALSE);
 #ifdef XPC_IDISPATCH_SUPPORT
     prefBranchInternal->AddObserver(sXPCDefaultGrantAllName, this, PR_FALSE);
