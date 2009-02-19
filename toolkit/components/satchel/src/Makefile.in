@@ -66,8 +66,6 @@ REQUIRES =	\
 		unicharutil \
 		pref \
 		loginmgr \
-		js \
-		xpconnect \
 		$(NULL)
 
 CPPSRCS = nsFormFillController.cpp \
