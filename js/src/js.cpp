@@ -3134,7 +3134,6 @@ static void
 WatchdogMain(void *arg)
 {
     JSRuntime *rt = (JSRuntime *) arg;
-    PRBool isRunning = JS_TRUE;
 
     JS_LOCK_GC(rt);
     while (gWatchdogThread) {
