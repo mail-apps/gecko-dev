@@ -45,3 +45,5 @@
 == feTile-2.svg feTile-2-ref.svg
 
 # no tests for feSpecularLighting, feDiffuseLighting or feTurbulence
+
+== feConvolveMatrix-order-01.svg feConvolveMatrix-order-01-ref.svg
