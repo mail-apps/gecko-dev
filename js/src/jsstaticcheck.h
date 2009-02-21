@@ -64,5 +64,6 @@ JS_ASSERT_NOT_ON_TRACE(JSContext *cx)
 #define VOUCH_DOES_NOT_REQUIRE_STACK()      ((void) 0)
 #define JS_ASSERT_NOT_ON_TRACE(cx)          JS_ASSERT(!JS_ON_TRACE(cx))
 #endif
+#define VOUCH_HAVE_STACK                    VOUCH_DOES_NOT_REQUIRE_STACK
 
 #endif /* jsstaticcheck_h___ */

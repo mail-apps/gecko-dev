@@ -69,9 +69,10 @@
 #include "jsparse.h"
 #include "jsscope.h"
 #include "jsscript.h"
-#include "jsstr.h"
-#include "jsdbgapi.h"   /* whether or not JS_HAS_OBJ_WATCHPOINT */
 #include "jsstaticcheck.h"
+#include "jsstr.h"
+#include "jstracer.h"
+#include "jsdbgapi.h"   /* whether or not JS_HAS_OBJ_WATCHPOINT */
 
 #if JS_HAS_GENERATORS
 #include "jsiter.h"
@@ -5126,8 +5127,9 @@ js_TryMethod(JSContext *cx, JSObject *obj, JSAtom *atom,
         JS_ClearPendingException(cx);
     JS_SetErrorReporter(cx, older);
 
-    return JSVAL_IS_PRIMITIVE(fval) ||
-           js_InternalCall(cx, obj, fval, argc, argv, rval);
+    if (JSVAL_IS_PRIMITIVE(fval))
+        return JS_TRUE;
+    return js_InternalCall(cx, obj, fval, argc, argv, rval);
 }
 
 #if JS_HAS_XDR
