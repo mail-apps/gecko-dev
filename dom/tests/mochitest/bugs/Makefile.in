@@ -90,7 +90,6 @@ _TEST_FILES	= \
 		test_bug463000.html \
 		iframe_bug463000.html \
 		test_bug465263.html \
-		test_bug479143.html \
 		$(NULL)
 
 libs:: 	$(_TEST_FILES)
