@@ -1507,7 +1507,6 @@ var PlacesQueryBuilder = {
     switch (id) {
       case "scopeBarHistory":
         PlacesSearchBox.filterCollection = "history";
-        folders = [];
         break;
       case "scopeBarFolder":
         var selectedFolder = PlacesOrganizer._places.selectedNode.itemId;
@@ -1515,7 +1514,8 @@ var PlacesQueryBuilder = {
         // bookmark folders
         if (selectedFolder != PlacesUIUtils.allBookmarksFolderId) {
           PlacesSearchBox.filterCollection = "collection";
-          folders.push(PlacesOrganizer._places.selectedNode.itemId);
+          folders.push(PlacesUtils.getConcreteItemId(
+                         PlacesOrganizer._places.selectedNode));
           break;
         }
       default: // all bookmarks
