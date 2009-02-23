@@ -6910,9 +6910,6 @@ js_Interpret(JSContext *cx)
 #endif /* !JS_THREADED_INTERP */
 
   error:
-    // Reset current pc location hinting.
-    cx->pcHint = NULL;
-
     if (fp->imacpc && cx->throwing) {
         // To keep things simple, we hard-code imacro exception handlers here.
         if (*fp->imacpc == JSOP_NEXTITER) {
