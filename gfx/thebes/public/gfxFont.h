@@ -151,8 +151,6 @@ public:
 
     gfxFontEntry(const nsAString& aName) : 
         mName(aName), mItalic(PR_FALSE), mFixedPitch(PR_FALSE),
-        mUnicodeFont(PR_FALSE), mSymbolFont(PR_FALSE),
-        mTrueType(PR_FALSE), mIsType1(PR_FALSE),
         mIsProxy(PR_FALSE), mIsValid(PR_TRUE), 
         mIsBadUnderlineFont(PR_FALSE),
         mWeight(500), mStretch(0),
@@ -161,9 +159,7 @@ public:
 
     gfxFontEntry(const gfxFontEntry& aEntry) : 
         mName(aEntry.mName), mItalic(aEntry.mItalic), 
-        mFixedPitch(aEntry.mFixedPitch), mUnicodeFont(aEntry.mUnicodeFont), 
-        mSymbolFont(aEntry.mSymbolFont), mTrueType(aEntry.mTrueType),
-        mIsType1(aEntry.mIsType1), mIsProxy(aEntry.mIsProxy), 
+        mFixedPitch(aEntry.mFixedPitch), mIsProxy(aEntry.mIsProxy), 
         mIsValid(aEntry.mIsValid), mIsBadUnderlineFont(aEntry.mIsBadUnderlineFont),
         mWeight(aEntry.mWeight), mCmapInitialized(aEntry.mCmapInitialized),
         mCharacterMap(aEntry.mCharacterMap), mUserFontData(aEntry.mUserFontData)
@@ -195,10 +191,6 @@ public:
     PRPackedBool     mItalic      : 1;
     PRPackedBool     mFixedPitch  : 1;
 
-    PRPackedBool     mUnicodeFont : 1;
-    PRPackedBool     mSymbolFont  : 1;
-    PRPackedBool     mTrueType    : 1;
-    PRPackedBool     mIsType1     : 1;
     PRPackedBool     mIsProxy     : 1;
     PRPackedBool     mIsValid     : 1;
 

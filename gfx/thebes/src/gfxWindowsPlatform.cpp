@@ -167,12 +167,14 @@ gfxWindowsPlatform::HashEnumFunc(nsStringHashKey::KeyType aKey,
     style.langGroup = data->mLangGroup;
     nsRefPtr<FontEntry> aFontEntry = aFontFamily->FindFontEntry(style);
 
+#ifndef MOZ_FT2_FONTS
     /* skip symbol fonts */
     if (aFontEntry->mSymbolFont)
         return PL_DHASH_NEXT;
 
     if (aFontEntry->SupportsLangGroup(data->mLangGroup) &&
         aFontEntry->MatchesGenericFamily(data->mGenericFamily))
+#endif
         data->mStringArray.AppendString(aFontFamily->mName);
 
     return PL_DHASH_NEXT;
@@ -838,6 +840,7 @@ gfxWindowsPlatform::MakePlatformFont(const gfxProxyFontEntry *aProxyEntry,
 
         PRUint32 nameLen = PR_MIN(uniqueName.Length(), LF_FACESIZE - 1);
         nsPromiseFlatString fontName(Substring(uniqueName, 0, nameLen));
+
 
         rv = gfxFontUtils::MakeEOTHeader(aFontData, aLength, &eotHeader);
         if (NS_FAILED(rv))

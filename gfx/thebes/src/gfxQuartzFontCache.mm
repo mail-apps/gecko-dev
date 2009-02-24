@@ -118,9 +118,9 @@ gfxQuartzFontCache::GenerateFontListKey(const nsAString& aKeyName, nsAString& aR
 #pragma mark-
 
 MacOSFontEntry::MacOSFontEntry(const nsAString& aPostscriptName, 
-                               PRInt32 aAppleWeight, PRUint32 aTraits, MacOSFamilyEntry *aFamily,
+                               PRInt32 aAppleWeight, PRUint32 aTraits,
                                PRBool aIsStandardFace)
-    : gfxFontEntry(aPostscriptName), mTraits(aTraits), mFamily(aFamily), mATSUFontID(0),
+    : gfxFontEntry(aPostscriptName), mTraits(aTraits), mATSUFontID(0),
       mATSUIDInitialized(0), mStandardFace(aIsStandardFace)
 {
     mWeight = gfxQuartzFontCache::AppleWeightToCSSWeight(aAppleWeight) * 100;
@@ -132,7 +132,7 @@ MacOSFontEntry::MacOSFontEntry(const nsAString& aPostscriptName,
 MacOSFontEntry::MacOSFontEntry(const nsAString& aPostscriptName, ATSUFontID aFontID,
                                PRUint16 aWeight, PRUint16 aStretch, PRUint32 aItalicStyle,
                                gfxUserFontData *aUserFontData)
-    : gfxFontEntry(aPostscriptName), mFamily(nsnull), mATSUFontID(aFontID),
+    : gfxFontEntry(aPostscriptName), mATSUFontID(aFontID),
       mATSUIDInitialized(PR_TRUE), mStandardFace(PR_FALSE)
 {
     // xxx - stretch is basically ignored for now
@@ -146,13 +146,6 @@ MacOSFontEntry::MacOSFontEntry(const nsAString& aPostscriptName, ATSUFontID aFon
     mTraits = (mItalic ? NSItalicFontMask : NSUnitalicFontMask) |
               (mFixedPitch ? NSFixedPitchFontMask : 0) |
               (mWeight >= 600 ? NSBoldFontMask : NSUnboldFontMask);
-}
-
-const nsString& 
-MacOSFontEntry::FamilyName()
-{
-    // XXXbz what if mFamily is null, as it seems to be for downloaded fonts?
-    return mFamily->Name();
 }
 
 ATSUFontID
@@ -779,7 +772,7 @@ gfxQuartzFontCache::InitFontList()
             }
 
             // create a font entry
-            MacOSFontEntry *fontEntry = new MacOSFontEntry(postscriptFontName, weight, traits, familyEntry, isStandardFace);
+            MacOSFontEntry *fontEntry = new MacOSFontEntry(postscriptFontName, weight, traits, isStandardFace);
             if (!fontEntry) break;            
             
             // insert into font entry array of family
@@ -890,7 +883,6 @@ gfxQuartzFontCache::InitSingleFaceList()
                         mFontFamilies.Put(key, familyEntry);
                         PR_LOG(gFontInfoLog, PR_LOG_DEBUG, ("(fontinit-singleface) family: %s, psname: %s\n", [display UTF8String], [faceName UTF8String]));
                     }
-                    fontEntry->mFamily = familyEntry;
                 }
             }
         }
