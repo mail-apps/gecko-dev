@@ -2529,7 +2529,8 @@ nsGenericElement::BindToTree(nsIDocument* aDocument, nsIContent* aParent,
                (aParent && aParent->IsInNativeAnonymousSubtree()),
                "Trying to re-bind content from native anonymous subtree to "
                "non-native anonymous parent!");
-  if (aParent && aParent->IsInNativeAnonymousSubtree()) {
+  if (IsRootOfNativeAnonymousSubtree() ||
+      aParent && aParent->IsInNativeAnonymousSubtree()) {
     SetFlags(NODE_IS_IN_ANONYMOUS_SUBTREE);
   }
 
@@ -3871,13 +3872,6 @@ nsGenericElement::doReplaceOrInsertBefore(PRBool aReplace,
   else {
     // Not inserting a fragment but rather a single node.
 
-    if (newContent->IsRootOfAnonymousSubtree()) {
-      // This is anonymous content.  Don't allow its insertion
-      // anywhere, since it might have UnbindFromTree calls coming
-      // its way.
-      return NS_ERROR_DOM_NOT_SUPPORTED_ERR;
-    }
-
     // Remove the element from the old parent if one exists
     nsINode* oldParent = newContent->GetNodeParent();
 
@@ -3886,7 +3880,6 @@ nsGenericElement::doReplaceOrInsertBefore(PRBool aReplace,
 
       if (removeIndex < 0) {
         // newContent is anonymous.  We can't deal with this, so just bail
-        NS_ERROR("How come our flags didn't catch this?");
         return NS_ERROR_DOM_NOT_SUPPORTED_ERR;
       }
       
