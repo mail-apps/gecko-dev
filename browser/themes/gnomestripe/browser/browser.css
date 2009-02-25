@@ -1285,7 +1285,8 @@ tabpanels {
 }
 
 .tabs-newtab-button > .toolbarbutton-icon {
-  margin: 0 0 -1px;
+  margin-top: -2px;
+  margin-bottom: -2px;
 }
 
 /* Tabstrip close button */
