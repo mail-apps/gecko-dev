@@ -1185,7 +1185,9 @@ nsCSSRendering::PaintBackground(nsPresContext* aPresContext,
 
   if (isCanvas) {
     nsIViewManager* vm = aPresContext->GetViewManager();
-    vm->SetDefaultBackgroundColor(color->mBackgroundColor);
+    vm->SetDefaultBackgroundColor(
+      NS_ComposeColors(aPresContext->DefaultBackgroundColor(),
+                       color->mBackgroundColor));
   }
 
   PaintBackgroundWithSC(aPresContext, aRenderingContext, aForFrame,
