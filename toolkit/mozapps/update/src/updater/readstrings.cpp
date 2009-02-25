@@ -43,7 +43,7 @@
 #include "errors.h"
 #include "prtypes.h"
 
-#if defined(XP_WIN) || defined(XP_OS2)
+#ifdef XP_WIN
 # define NS_tfopen _wfopen
 # define OPEN_MODE L"rb"
 #else
@@ -185,8 +185,6 @@ ReadStrings(const NS_tchar *path, StringTable *results)
     if (!e)
       continue;
 
-    // The first entry in the [Strings] section of the updater.ini must be
-    // Title and the second entry must be either Info or InfoText
     if (strcmp(key, "Title") == 0) {
       strncpy(results->title, token, MAX_TEXT_LEN - 1);
       results->title[MAX_TEXT_LEN - 1] = 0;
