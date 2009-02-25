@@ -3946,11 +3946,14 @@ js_GetCurrentBytecodePC(JSContext* cx)
         imacpc = cx->bailExit->imacpc;
     } else
 #endif
-    if (cx->fp && cx->fp->regs) {
-        pc = cx->fp->regs->pc;
-        imacpc = cx->fp->imacpc;
-    } else {
-        return NULL;
+    {
+        JS_ASSERT_NOT_ON_TRACE(cx);  /* for static analysis */
+        if (cx->fp && cx->fp->regs) {
+            pc = cx->fp->regs->pc;
+            imacpc = cx->fp->imacpc;
+        } else {
+            return NULL;
+        }
     }
 
     /*
