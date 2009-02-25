@@ -449,6 +449,10 @@ imgCacheExpirationTracker::imgCacheExpirationTracker()
 
 void imgCacheExpirationTracker::NotifyExpired(imgCacheEntry *entry)
 {
+  // Hold on to a reference to this entry, because the expiration tracker
+  // mechanism doesn't.
+  nsRefPtr<imgCacheEntry> kungFuDeathGrip(entry);
+
   // We can be called multiple times on the same entry. Don't do work multiple
   // times.
   if (!entry->Evicted())
