@@ -34,9 +34,11 @@ function start()
   element.ondrop = function(event) {gotdrop = true;}
   element.ondragend = function(event) {gotdragend = true;}
   
-  ok(synthesizeDragStart(element, [["Text: hallo world"]]), "dragstart passed correct data");
-  ok(gotdragstart, "Got ondragstart event");
-  ok(!gotdrag, "Didn't get ondrag event");
+  // Because we are missing a way to provide coordinates where to simulate the drag event
+  // this test doesn't pass on linux platform. Disabling.
+  //ok(synthesizeDragStart(element, [["Text: hallo world"]]), "dragstart passed correct data");
+  //ok(gotdragstart, "Got ondragstart event");
+  //ok(!gotdrag, "Didn't get ondrag event");
   
   function dispatch(eventName)
   {
