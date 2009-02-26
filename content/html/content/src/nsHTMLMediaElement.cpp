@@ -529,7 +529,8 @@ nsHTMLMediaElement::nsHTMLMediaElement(nsINodeInfo *aNodeInfo, PRBool aFromParse
     mPaused(PR_TRUE),
     mMuted(PR_FALSE),
     mIsDoneAddingChildren(!aFromParser),
-    mPlayingBeforeSeek(PR_FALSE)
+    mPlayingBeforeSeek(PR_FALSE),
+    mWaitingFired(PR_FALSE)
 {
 }
 
@@ -1043,16 +1044,21 @@ PRBool nsHTMLMediaElement::ShouldCheckAllowOrigin()
 // or other conditions are worse than expected
 static const PRInt32 gDownloadSizeSafetyMargin = 1000000;
 
-void nsHTMLMediaElement::UpdateReadyStateForData(PRBool aNextFrameAvailable)
+void nsHTMLMediaElement::UpdateReadyStateForData(NextFrameStatus aNextFrame)
 {
   if (mReadyState < nsIDOMHTMLMediaElement::HAVE_METADATA) {
-    NS_ASSERTION(!aNextFrameAvailable, "How can we have a frame but no metadata?");
+    NS_ASSERTION(aNextFrame != NEXT_FRAME_AVAILABLE,
+                 "How can we have a frame but no metadata?");
     // The arrival of more data can't change us out of this state.
     return;
   }
 
-  if (!aNextFrameAvailable && !mDecoder->IsEnded()) {
+  if (aNextFrame != NEXT_FRAME_AVAILABLE && !mDecoder->IsEnded()) {
     ChangeReadyState(nsIDOMHTMLMediaElement::HAVE_CURRENT_DATA);
+    if (!mWaitingFired && aNextFrame == NEXT_FRAME_UNAVAILABLE_BUFFERING) {
+      DispatchAsyncSimpleEvent(NS_LITERAL_STRING("waiting"));
+      mWaitingFired = PR_TRUE;
+    }
     return;
   }
 
@@ -1110,6 +1116,7 @@ void nsHTMLMediaElement::ChangeReadyState(nsMediaReadyState aState)
     case nsIDOMHTMLMediaElement::HAVE_CURRENT_DATA:
       if (oldState != mReadyState) {
         LOG(PR_LOG_DEBUG, ("Ready state changed to HAVE_CURRENT_DATA"));
+        mWaitingFired = PR_FALSE;
       }
       if (oldState <= nsIDOMHTMLMediaElement::HAVE_METADATA &&
           !mLoadedFirstFrame) {
