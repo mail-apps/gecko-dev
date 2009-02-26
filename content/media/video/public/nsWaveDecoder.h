@@ -192,7 +192,13 @@ class nsWaveDecoder : public nsMediaDecoder
   virtual nsresult PlaybackRateChanged();
 
   // Getter/setter for mContentLength.
-  virtual PRInt64 GetTotalBytes();
+  virtual void NotifyBytesDownloaded(PRInt64 aBytes);
+  virtual void NotifyDownloadSeeked(PRInt64 aOffset);
+  virtual void NotifyDownloadEnded(nsresult aStatus);
+  virtual void NotifyBytesConsumed(PRInt64 aBytes);
+
+  virtual Statistics GetStatistics();
+
   virtual void SetTotalBytes(PRInt64 aBytes);
 
   // Setter for the duration. This is ignored by the wave decoder since it can
@@ -202,10 +208,6 @@ class nsWaveDecoder : public nsMediaDecoder
   // Getter/setter for mSeekable.
   virtual void SetSeekable(PRBool aSeekable);
   virtual PRBool GetSeekable();
-
-  // Getter/setter for mBytesDownloaded.
-  virtual PRUint64 GetBytesLoaded();
-  virtual void UpdateBytesDownloaded(PRUint64 aBytes);
 
   // Must be called by the owning object before disposing the decoder.
   virtual void Shutdown();
@@ -221,8 +223,8 @@ class nsWaveDecoder : public nsMediaDecoder
   virtual void Resume();
 
 private:
-  // Notifies the nsHTMLMediaElement that buffering has started.
-  void BufferingStarted();
+  // Change the element's ready state as necessary
+  void UpdateReadyStateForData();
 
   // Notifies the element that buffering has stopped.
   void BufferingStopped();
@@ -245,12 +247,6 @@ private:
 
   void RegisterShutdownObserver();
   void UnregisterShutdownObserver();
-
-  // Length of the current resource, or -1 if not available.
-  PRInt64 mContentLength;
-
-  // Total bytes downloaded by mStream so far.
-  PRUint64 mBytesDownloaded;
 
   // Volume that the audio backend will be initialized with.
   float mInitialVolume;
@@ -292,6 +288,12 @@ private:
   // True when the media resource has completely loaded. Accessed on
   // the main thread only.
   PRPackedBool mResourceLoaded;
+
+  // True if MetadataLoaded has been reported to the element.
+  PRPackedBool mMetadataLoadedReported;
+
+  // True if ResourceLoaded has been reported to the element.
+  PRPackedBool mResourceLoadedReported;
 };
 
 #endif
