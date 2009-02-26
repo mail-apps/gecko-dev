@@ -420,17 +420,13 @@ NS_IMETHODIMP nsHTMLMediaElement::GetPaused(PRBool *aPaused)
 /* void pause (); */
 NS_IMETHODIMP nsHTMLMediaElement::Pause()
 {
-  if (!mDecoder) 
-    return NS_OK;
-
-  nsresult rv;
-
   if (mNetworkState == nsIDOMHTMLMediaElement::NETWORK_EMPTY) {
-    rv = Load();
+    nsresult rv = Load();
     NS_ENSURE_SUCCESS(rv, rv);
+  } else if (mDecoder) {
+    mDecoder->Pause();
   }
 
-  mDecoder->Pause();
   PRBool oldPaused = mPaused;
   mPaused = PR_TRUE;
   mAutoplaying = PR_FALSE;
@@ -534,8 +530,6 @@ NS_IMETHODIMP nsHTMLMediaElement::Play()
     return NS_OK;
   }
 
-  nsresult rv;
-
   if (mNetworkState == nsIDOMHTMLMediaElement::NETWORK_EMPTY) {
     mPlayRequested = PR_TRUE;
     return Load();
@@ -548,7 +542,7 @@ NS_IMETHODIMP nsHTMLMediaElement::Play()
   // TODO: If the playback has ended, then the user agent must set 
   // currentLoop to zero and seek to the effective start.
   // TODO: The playback rate must be set to the default playback rate.
-  rv = mDecoder->Play();
+  nsresult rv = mDecoder->Play();
   NS_ENSURE_SUCCESS(rv, rv);
 
   PRBool oldPaused = mPaused;
