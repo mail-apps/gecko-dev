@@ -48,7 +48,7 @@
 interface nsIDOMElement;
 interface nsIDOMHTMLCanvasElement;
 
-[scriptable, uuid(440D036F-0879-4497-9364-35DE49F6849F)]
+[scriptable, uuid(6e3510b9-806d-4a2a-be79-73d2a495b4b8)]
 interface nsIDOMWindowUtils : nsISupports {
 
   /**
@@ -287,4 +287,13 @@ interface nsIDOMWindowUtils : nsISupports {
   PRUint32 compareCanvases(in nsIDOMHTMLCanvasElement aCanvas1,
                            in nsIDOMHTMLCanvasElement aCanvas2,
                            out unsigned long aMaxDifference);
+
+  /*
+   * Suppresses/unsuppresses user initiated event handling in window's document
+   * and subdocuments.
+   *
+   * @throw NS_ERROR_DOM_SECURITY_ERR if called without UniversalXPConnect
+   *        privileges and NS_ERROR_FAILURE if window doesn't have a document.
+   */
+  void suppressEventHandling(in boolean aSuppress);
 };
