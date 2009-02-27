@@ -145,6 +145,21 @@
 
 #define NS_PROGRESS_EVENT_INTERVAL 50
 
+class nsResumeTimeoutsEvent : public nsRunnable
+{
+public:
+  nsResumeTimeoutsEvent(nsPIDOMWindow* aWindow) : mWindow(aWindow) {}
+
+  NS_IMETHOD Run()
+  {
+    mWindow->ResumeTimeouts(PR_FALSE);
+    return NS_OK;
+  }
+
+private:
+  nsCOMPtr<nsPIDOMWindow> mWindow;
+};
+
 NS_IMPL_CYCLE_COLLECTION_CLASS(nsDOMEventListenerWrapper)
 
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(nsDOMEventListenerWrapper)
@@ -499,30 +514,6 @@ nsACProxyListener::GetInterface(const nsIID & aIID, void **aResult)
 {
   return QueryInterface(aIID, aResult);
 }
-
-/**
- * Simple class to resume timeouts on a window asynchronously.
- */
-class nsResumeTimeoutsRunnable : public nsIRunnable
-{
-public:
-  NS_DECL_ISUPPORTS
-
-  nsResumeTimeoutsRunnable(nsPIDOMWindow* aWindow)
-  : mWindow(aWindow)
-  {
-    NS_ASSERTION(aWindow, "Null pointer!");
-  }
-
-  NS_IMETHOD Run() {
-    return mWindow->ResumeTimeouts();
-  }
-
-private:
-  nsCOMPtr<nsPIDOMWindow> mWindow;
-};
-
-NS_IMPL_THREADSAFE_ISUPPORTS1(nsResumeTimeoutsRunnable, nsIRunnable)
 
 /**
  * Gets the nsIDocument given the script context. Will return nsnull on failure.
@@ -2817,13 +2808,14 @@ nsXMLHttpRequest::Send(nsIVariant *aBody)
       nsCOMPtr<nsIDOMWindow> topWindow;
       if (NS_SUCCEEDED(mOwner->GetTop(getter_AddRefs(topWindow)))) {
         nsCOMPtr<nsPIDOMWindow> suspendedWindow(do_QueryInterface(topWindow));
-        if (suspendedWindow) {
+        if (suspendedWindow &&
+            (suspendedWindow = suspendedWindow->GetCurrentInnerWindow())) {
           suspendedDoc = do_QueryInterface(suspendedWindow->GetExtantDocument());
           if (suspendedDoc) {
             suspendedDoc->SuppressEventHandling();
           }
-          suspendedWindow->SuspendTimeouts();
-          resumeTimeoutRunnable = new nsResumeTimeoutsRunnable(suspendedWindow);
+          suspendedWindow->SuspendTimeouts(1, PR_FALSE);
+          resumeTimeoutRunnable = new nsResumeTimeoutsEvent(suspendedWindow);
         }
       }
     }
