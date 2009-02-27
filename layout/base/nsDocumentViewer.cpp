@@ -1021,7 +1021,7 @@ DocumentViewerImpl::LoadComplete(nsresult aStatus)
   // it was just loaded). Note: mDocument may be null now if the above
   // firing of onload caused the document to unload.
   if (mDocument)
-    mDocument->OnPageShow(restoring, nsnull);
+    mDocument->OnPageShow(restoring);
 
   // Now that the document has loaded, we can tell the presshell
   // to unsuppress painting.
@@ -1171,7 +1171,7 @@ DocumentViewerImpl::PageHide(PRBool aIsUnload)
     return NS_ERROR_NULL_POINTER;
   }
 
-  mDocument->OnPageHide(!aIsUnload, nsnull);
+  mDocument->OnPageHide(!aIsUnload);
   if (aIsUnload) {
     // if Destroy() was called during OnPageHide(), mDocument is nsnull.
     NS_ENSURE_STATE(mDocument);

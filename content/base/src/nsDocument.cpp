@@ -7087,7 +7087,7 @@ nsDocument::DispatchEventToWindow(nsEvent *aEvent)
 }
 
 void
-nsDocument::OnPageShow(PRBool aPersisted, nsIDOMEventTarget* aDispatchStartTarget)
+nsDocument::OnPageShow(PRBool aPersisted)
 {
   mVisible = PR_TRUE;
   UpdateLinkMap();
@@ -7110,24 +7110,16 @@ nsDocument::OnPageShow(PRBool aPersisted, nsIDOMEventTarget* aDispatchStartTarge
     }
   }
 
-  // See nsIDocument
-  if (!aDispatchStartTarget) {
-    // Set mIsShowing before firing events, in case those event handlers
-    // move us around.
-    mIsShowing = PR_TRUE;
-  }
+  // Set mIsShowing before firing events, in case those event handlers
+  // move us around.
+  mIsShowing = PR_TRUE;
   
   nsPageTransitionEvent event(PR_TRUE, NS_PAGE_SHOW, aPersisted);
-  if (aDispatchStartTarget) {
-    event.target = static_cast<nsIDocument*>(this);
-    nsEventDispatcher::Dispatch(aDispatchStartTarget, nsnull, &event);
-  } else {
-    DispatchEventToWindow(&event);
-  }
+  DispatchEventToWindow(&event);
 }
 
 void
-nsDocument::OnPageHide(PRBool aPersisted, nsIDOMEventTarget* aDispatchStartTarget)
+nsDocument::OnPageHide(PRBool aPersisted)
 {
   // Send out notifications that our <link> elements are detached,
   // but only if this is not a full unload.
@@ -7148,12 +7140,9 @@ nsDocument::OnPageHide(PRBool aPersisted, nsIDOMEventTarget* aDispatchStartTarge
     }
   }
 
-  // See nsIDocument
-  if (!aDispatchStartTarget) {
-    // Set mIsShowing before firing events, in case those event handlers
-    // move us around.
-    mIsShowing = PR_TRUE;
-  }
+  // Set mIsShowing before firing events, in case those event handlers
+  // move us around.
+  mIsShowing = PR_FALSE;
   
   // Now send out a PageHide event.
   nsPageTransitionEvent event(PR_TRUE, NS_PAGE_HIDE, aPersisted);

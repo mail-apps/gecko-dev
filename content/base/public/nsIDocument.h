@@ -66,7 +66,6 @@ class nsIViewManager;
 class nsIScriptGlobalObject;
 class nsPIDOMWindow;
 class nsIDOMEvent;
-class nsIDOMEventTarget;
 class nsIDeviceContext;
 class nsIParser;
 class nsIDOMNode;
@@ -98,8 +97,8 @@ class nsFrameLoader;
 
 // IID for the nsIDocument interface
 #define NS_IDOCUMENT_IID      \
-{0x05fc4e18, 0x3a98, 0x4d98, \
- {0xba, 0xc3, 0x61, 0x85, 0xa6, 0xdf, 0x06, 0x9d}}
+{ 0x29f7a5d7, 0xb217, 0x4ea2, \
+  {0x95, 0x40, 0x46, 0x41, 0xb9, 0xf5, 0x99, 0xd9 } }
 
 // Flag for AddStyleSheet().
 #define NS_STYLESHEET_FROM_CATALOG                (1 << 0)
@@ -846,14 +845,9 @@ public:
    * or to the page's presentation being restored into an existing DOM window.
    * This notification fires applicable DOM events to the content window.  See
    * nsIDOMPageTransitionEvent.idl for a description of the |aPersisted|
-   * parameter. If aDispatchStartTarget is null, the pageshow event is
-   * dispatched on the ScriptGlobalObject for this document, otherwise it's
-   * dispatched on aDispatchStartTarget.
-   * Note: if aDispatchStartTarget isn't null, the showing state of the
-   * document won't be altered.
+   * parameter.
    */
-  virtual void OnPageShow(PRBool aPersisted,
-                          nsIDOMEventTarget* aDispatchStartTarget) = 0;
+  virtual void OnPageShow(PRBool aPersisted) = 0;
 
   /**
    * Notification that the page has been hidden, for documents which are loaded
@@ -861,14 +855,9 @@ public:
    * to the document's presentation being saved but removed from an existing
    * DOM window.  This notification fires applicable DOM events to the content
    * window.  See nsIDOMPageTransitionEvent.idl for a description of the
-   * |aPersisted| parameter. If aDispatchStartTarget is null, the pagehide
-   * event is dispatched on the ScriptGlobalObject for this document,
-   * otherwise it's dispatched on aDispatchStartTarget.
-   * Note: if aDispatchStartTarget isn't null, the showing state of the
-   * document won't be altered.
+   * |aPersisted| parameter.
    */
-  virtual void OnPageHide(PRBool aPersisted,
-                          nsIDOMEventTarget* aDispatchStartTarget) = 0;
+  virtual void OnPageHide(PRBool aPersisted) = 0;
   
   /*
    * We record the set of links in the document that are relevant to
