@@ -145,6 +145,21 @@
 
 #define NS_PROGRESS_EVENT_INTERVAL 50
 
+class nsResumeTimeoutsEvent : public nsRunnable
+{
+public:
+  nsResumeTimeoutsEvent(nsPIDOMWindow* aWindow) : mWindow(aWindow) {}
+
+  NS_IMETHOD Run()
+  {
+    mWindow->ResumeTimeouts(PR_FALSE);
+    return NS_OK;
+  }
+
+private:
+  nsCOMPtr<nsPIDOMWindow> mWindow;
+};
+
 NS_IMPL_CYCLE_COLLECTION_CLASS(nsDOMEventListenerWrapper)
 
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(nsDOMEventListenerWrapper)
@@ -2817,13 +2832,14 @@ nsXMLHttpRequest::Send(nsIVariant *aBody)
       nsCOMPtr<nsIDOMWindow> topWindow;
       if (NS_SUCCEEDED(mOwner->GetTop(getter_AddRefs(topWindow)))) {
         nsCOMPtr<nsPIDOMWindow> suspendedWindow(do_QueryInterface(topWindow));
-        if (suspendedWindow) {
+        if (suspendedWindow &&
+            (suspendedWindow = suspendedWindow->GetCurrentInnerWindow())) {
           suspendedDoc = do_QueryInterface(suspendedWindow->GetExtantDocument());
           if (suspendedDoc) {
             suspendedDoc->SuppressEventHandling();
           }
-          suspendedWindow->SuspendTimeouts();
-          resumeTimeoutRunnable = new nsResumeTimeoutsRunnable(suspendedWindow);
+          suspendedWindow->SuspendTimeouts(1, PR_FALSE);
+          resumeTimeoutRunnable = new nsResumeTimeoutsEvent(suspendedWindow);
         }
       }
     }
