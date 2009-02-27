@@ -2772,11 +2772,6 @@ ShapeOf(JSContext *cx, uintN argc, jsval *vp)
     return JS_NewNumberValue(cx, ShapeOf_tn(JSVAL_TO_OBJECT(v)), vp);
 }
 
-static void
-Callback(JSRuntime *rt)
-{
-}
-
 #ifdef JS_THREADSAFE
 
 static JSBool
