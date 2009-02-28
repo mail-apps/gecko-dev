@@ -3211,7 +3211,7 @@ static HANDLE gTimerHandle = 0;
 VOID CALLBACK
 TimerCallback(PVOID lpParameter, BOOLEAN TimerOrWaitFired)
 {
-    CancelExecution(rt);
+    CancelExecution((JSRuntime *) lpParameter);
 }
 
 #else
