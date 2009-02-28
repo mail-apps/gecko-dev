@@ -1,4 +1,4 @@
-<html xmlns="http://www.w3.org/1999/xhtml" manifest="http://localhost:8888/tests/dom/tests/mochitest/ajax/offline/redirects.cacheManifest">
+<html xmlns="http://www.w3.org/1999/xhtml" manifest="http://localhost:8888/tests/dom/tests/mochitest/ajax/offline/redirects.sjs">
 <head>
 <title>Entries redirection handling during update test</title>
 
@@ -8,29 +8,6 @@
 <link rel="stylesheet" type="text/css" href="/tests/SimpleTest/test.css" />
 
 <script class="testbody" type="text/javascript">
-
-/**
- */
-
-// The manifest is always the same, we just update its version comment
-var manifestVersion2Content =
-  "CACHE MANIFEST\n" +
-  "# v2\n" +
-  "\n" +
-  "http://localhost:8888/tests/SimpleTest/SimpleTest.js\n" +
-  "http://localhost:8888/MochiKit/packed.js\n" +
-  "http://localhost:8888/tests/dom/tests/mochitest/ajax/offline/offlineTests.js\n" +
-  "http://localhost:8888/tests/dom/tests/mochitest/ajax/offline/explicitRedirect.sjs";
-
-var manifestVersion3Content =
-  "CACHE MANIFEST\n" +
-  "# v3\n" +
-  "\n" +
-  "http://localhost:8888/tests/SimpleTest/SimpleTest.js\n" +
-  "http://localhost:8888/MochiKit/packed.js\n" +
-  "http://localhost:8888/tests/dom/tests/mochitest/ajax/offline/offlineTests.js\n" +
-  "http://localhost:8888/tests/dom/tests/mochitest/ajax/offline/explicitRedirect.sjs";
-
 
 var gCurrentManifestVersion = 1;
 
@@ -54,14 +31,15 @@ function manifestCached()
       OfflineTest.checkCache(
         "http://localhost:8888/tests/dom/tests/mochitest/ajax/offline/dynamicRedirect.sjs", true);
 
-      // ...delete content of the dynamic entry from the server, now we get the redirect...
-      OfflineTest.deleteData(
-        "http://localhost:8888/tests/dom/tests/mochitest/ajax/offline/dynamicRedirect.sjs");
+      // ...revert state of the dynamic entry on the server, now we get the redirect...
+      OfflineTest.setSJSState(
+        "http://localhost:8888/tests/dom/tests/mochitest/ajax/offline/dynamicRedirect.sjs",
+        "");
 
       // ...update manifest to the new version on the server...
-      OfflineTest.putData(
-        "http://localhost:8888/tests/dom/tests/mochitest/ajax/offline/redirects.cacheManifest",
-        "text/cache-manifest", manifestVersion2Content);
+      OfflineTest.setSJSState(
+        "http://localhost:8888/tests/dom/tests/mochitest/ajax/offline/redirects.sjs",
+        "second");
       gCurrentManifestVersion = 2;
 
       // ...and finally invoke the cache update.
@@ -79,13 +57,14 @@ function manifestUpdated()
         "http://localhost:8888/tests/dom/tests/mochitest/ajax/offline/dynamicRedirect.sjs", false);
 
       // ...return back redirect for the explicit entry...
-      OfflineTest.deleteData(
-        "http://localhost:8888/tests/dom/tests/mochitest/ajax/offline/explicitRedirect.sjs");
+      OfflineTest.setSJSState(
+        "http://localhost:8888/tests/dom/tests/mochitest/ajax/offline/explicitRedirect.sjs",
+        "");
 
       // ...update the manifest to the third version...
-      OfflineTest.putData(
-        "http://localhost:8888/tests/dom/tests/mochitest/ajax/offline/redirects.cacheManifest",
-        "text/cache-manifest", manifestVersion3Content);
+      OfflineTest.setSJSState(
+        "http://localhost:8888/tests/dom/tests/mochitest/ajax/offline/redirects.sjs",
+        "third");
       gCurrentManifestVersion = 3;
 
       // ...and invoke the cache update, now we must get error.
@@ -93,7 +72,7 @@ function manifestUpdated()
       break;
 
     case 3:
-      OfflineTest.ok(false, "Update failed for third version of the manifest");
+      OfflineTest.ok(false, "Update didn't fail for third version of the manifest");
       finish();
       break;
   }
@@ -132,14 +111,12 @@ if (OfflineTest.setup()) {
   applicationCache.oncached = OfflineTest.priv(manifestCached);
 
   // Override sjs redirects on the server, it will now return 200 OK and the content
-  OfflineTest.putData(
+  OfflineTest.setSJSState(
       "http://localhost:8888/tests/dom/tests/mochitest/ajax/offline/explicitRedirect.sjs",
-      "text/html",
-      "<html><body>Explicit page</body></html>");
-  OfflineTest.putData(
+      "on");
+  OfflineTest.setSJSState(
       "http://localhost:8888/tests/dom/tests/mochitest/ajax/offline/dynamicRedirect.sjs",
-      "text/html",
-      "<html><body>Dynamic page</body></html>");
+      "on");
 }
 
 </script>
