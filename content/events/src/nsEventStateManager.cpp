@@ -5870,7 +5870,7 @@ nsEventStateManager::MoveCaretToFocus()
           nsCOMPtr<nsIDOMNode> currentFocusNode(do_QueryInterface(mCurrentFocus));
           // First clear the selection
           domSelection->RemoveAllRanges();
-          if (currentFocusNode && !mCurrentFocus->IsNodeOfType(nsINode::eXUL)) {
+          if (currentFocusNode) {
             nsCOMPtr<nsIDOMRange> newRange;
             nsresult rv = rangeDoc->CreateRange(getter_AddRefs(newRange));
             if (NS_SUCCEEDED(rv)) {
