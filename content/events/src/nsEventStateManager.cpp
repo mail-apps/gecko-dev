@@ -5857,13 +5857,6 @@ nsEventStateManager::MoveCaretToFocus()
   }
 
   if (itemType != nsIDocShellTreeItem::typeChrome) {
-    nsCOMPtr<nsIContent> selectionContent, endSelectionContent;
-    nsIFrame *selectionFrame;
-    PRUint32 selectionOffset;
-    GetDocSelectionLocation(getter_AddRefs(selectionContent),
-                            getter_AddRefs(endSelectionContent),
-                            &selectionFrame, &selectionOffset);
-
     nsIPresShell *shell = mPresContext->GetPresShell();
     if (shell) {
       // rangeDoc is a document interface we can create a range with
@@ -5877,7 +5870,7 @@ nsEventStateManager::MoveCaretToFocus()
           nsCOMPtr<nsIDOMNode> currentFocusNode(do_QueryInterface(mCurrentFocus));
           // First clear the selection
           domSelection->RemoveAllRanges();
-          if (currentFocusNode) {
+          if (currentFocusNode && !mCurrentFocus->IsNodeOfType(nsINode::eXUL)) {
             nsCOMPtr<nsIDOMRange> newRange;
             nsresult rv = rangeDoc->CreateRange(getter_AddRefs(newRange));
             if (NS_SUCCEEDED(rv)) {
