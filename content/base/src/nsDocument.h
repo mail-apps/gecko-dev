@@ -976,12 +976,6 @@ public:
   virtual NS_HIDDEN_(void)
     EnumerateExternalResources(nsSubDocEnumFunc aCallback, void* aData);
 
-  virtual void SuppressEventHandling(PRUint32 aIncrease);
-
-  virtual void UnsuppressEventHandlingAndFireEvents(PRBool aFireEvents);
-  
-  void DecreaseEventSuppression() { --mEventsSuppressed; }
-
   NS_DECL_CYCLE_COLLECTION_CLASS_AMBIGUOUS(nsDocument, nsIDocument)
 
   /**

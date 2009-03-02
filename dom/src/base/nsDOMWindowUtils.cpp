@@ -673,22 +673,3 @@ nsDOMWindowUtils::CompareCanvases(nsIDOMHTMLCanvasElement *aCanvas1,
   *retVal = different;
   return NS_OK;
 }
-
-NS_IMETHODIMP
-nsDOMWindowUtils::SuppressEventHandling(PRBool aSuppress)
-{
-  PRBool hasCap = PR_FALSE;
-  if (NS_FAILED(nsContentUtils::GetSecurityManager()->IsCapabilityEnabled("UniversalXPConnect", &hasCap)) || !hasCap)
-    return NS_ERROR_DOM_SECURITY_ERR;
-
-  nsCOMPtr<nsIDocument> doc(do_QueryInterface(mWindow->GetExtantDocument()));
-  NS_ENSURE_TRUE(doc, NS_ERROR_FAILURE);
-
-  if (aSuppress) {
-    doc->SuppressEventHandling();
-  } else {
-    doc->UnsuppressEventHandling();
-  }
-  return NS_OK;
-}
-

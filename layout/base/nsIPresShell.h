@@ -98,15 +98,14 @@ class nsWeakFrame;
 class nsIScrollableFrame;
 class gfxASurface;
 class gfxContext;
-class nsPIDOMEventTarget;
 
 typedef short SelectionType;
 typedef PRUint32 nsFrameState;
 
-// 8355e7a9-4118-47dc-97e3-a3c251332e86
+// 5c103bc2-788e-4bbe-b82e-635bea34e78f
 #define NS_IPRESSHELL_IID \
-{ 0x8355e7a9, 0x4118, 0x47dc, \
-  { 0x97, 0xe3, 0xa3, 0xc2, 0x51, 0x33, 0x2e, 0x86 } }
+{ 0x5c103bc2, 0x788e, 0x4bbe, \
+  { 0xb8, 0x2e, 0x63, 0x5b, 0xea, 0x34, 0xe7, 0x8f } }
 
 // Constants for ScrollContentIntoView() function
 #define NS_PRESSHELL_SCROLL_TOP      0
@@ -695,9 +694,6 @@ public:
    * presentations of subdocuments, then do a full invalidate of the content area.
    */
   virtual void Thaw() = 0;
-
-  virtual void NeedsBlurAfterSuppression(nsPIDOMEventTarget* aTarget) = 0;
-  virtual void FireOrClearDelayedEvents(PRBool aFireEvents) = 0;
 
   /**
    * When this shell is disconnected from its containing docshell, we
