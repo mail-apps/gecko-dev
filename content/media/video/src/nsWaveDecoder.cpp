@@ -536,7 +536,7 @@ nsWaveStateMachine::Run()
       if (!mAudioStream) {
         OpenAudioStream();
         if (!mAudioStream) {
-          mState = STATE_ERROR;
+          ChangeState(STATE_ERROR);
           break;
         }
       }
@@ -806,6 +806,10 @@ void
 nsWaveStateMachine::ChangeState(State aState)
 {
   nsAutoMonitor monitor(mMonitor);
+  if (mState == STATE_SHUTDOWN) {
+    LOG(PR_LOG_WARNING, ("In shutdown, state transition ignored"));
+    return;
+  }
 #if defined(DEBUG)
   NS_ABORT_IF_FALSE(IsValidStateTransition(mState, aState), "Invalid state transition");
 #endif
