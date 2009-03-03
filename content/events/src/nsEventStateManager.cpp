@@ -277,15 +277,17 @@ EventHandlingSuppressed(nsPIDOMEventTarget* aTarget)
 }
 
 static void
-FireBlurEvent(nsPIDOMEventTarget* aTarget, nsEvent* aEvent, nsPresContext* aContext)
+FireFocusOrBlurEvent(nsPIDOMEventTarget* aTarget, nsEvent* aEvent, nsPresContext* aContext)
 {
-  NS_ASSERTION(aEvent->message == NS_BLUR_CONTENT, "Wrong event!");
+  NS_ASSERTION(aEvent->message == NS_BLUR_CONTENT ||
+               aEvent->message == NS_FOCUS_CONTENT,
+               "Wrong event!");
   nsIDocument* doc = EventHandlingSuppressed(aTarget);
   if (doc) {
     if (aContext) {
       nsIPresShell* shell = aContext->GetPresShell();
       if (shell) {
-        shell->NeedsBlurAfterSuppression(aTarget);
+        shell->NeedsFocusOrBlurAfterSuppression(aTarget, aEvent->message);
       }
     }
   } else if (aTarget) {
@@ -1023,8 +1025,8 @@ nsEventStateManager::PreHandleEvent(nsPresContext* aPresContext,
             nsEvent blurEvent(PR_TRUE, NS_BLUR_CONTENT);
             blurEvent.flags |= NS_EVENT_FLAG_CANT_BUBBLE;
 
-            FireBlurEvent(gLastFocusedDocument, &blurEvent,
-                          gLastFocusedPresContextWeak);
+            FireFocusOrBlurEvent(gLastFocusedDocument, &blurEvent,
+                                 gLastFocusedPresContextWeak);
 
             nsCOMPtr<nsIEventStateManager> esm;
             if (!mCurrentFocus && gLastFocusedContent) {
@@ -1046,14 +1048,14 @@ nsEventStateManager::PreHandleEvent(nsPresContext* aPresContext,
               }
               nsCOMPtr<nsIContent> blurContent = gLastFocusedContent;
               blurEvent.target = nsnull;
-              FireBlurEvent(gLastFocusedContent, &blurEvent,
-                            gLastFocusedPresContextWeak);
+              FireFocusOrBlurEvent(gLastFocusedContent, &blurEvent,
+                                   gLastFocusedPresContextWeak);
             }
             if (ourWindow) {
               // Clear the target so that Dispatch can set it back correctly.
               blurEvent.target = nsnull;
               nsCOMPtr<nsPIDOMEventTarget> win = do_QueryInterface(ourWindow);
-              FireBlurEvent(win, &blurEvent, gLastFocusedPresContextWeak);
+              FireFocusOrBlurEvent(win, &blurEvent, gLastFocusedPresContextWeak);
             }
 
             if (esm) {
@@ -1082,25 +1084,22 @@ nsEventStateManager::PreHandleEvent(nsPresContext* aPresContext,
 
           nsIMEStateManager::OnChangeFocus(mPresContext, currentFocus);
 
-          nsEventStatus status = nsEventStatus_eIgnore;
-          nsEvent focusevent(PR_TRUE, NS_FOCUS_CONTENT);
-          focusevent.flags |= NS_EVENT_FLAG_CANT_BUBBLE;
+          nsEvent focusEvent(PR_TRUE, NS_FOCUS_CONTENT);
+          focusEvent.flags |= NS_EVENT_FLAG_CANT_BUBBLE;
 
           if (gLastFocusedDocument != mDocument) {
-            nsEventDispatcher::Dispatch(mDocument, aPresContext,
-                                        &focusevent, nsnull, &status);
+            FireFocusOrBlurEvent(mDocument, &focusEvent, aPresContext);
             if (currentFocus && currentFocus != gLastFocusedContent) {
               // Clear the target so that Dispatch can set it back correctly.
-              focusevent.target = nsnull;
-              nsEventDispatcher::Dispatch(currentFocus, aPresContext,
-                                          &focusevent, nsnull, &status);
+              focusEvent.target = nsnull;
+              FireFocusOrBlurEvent(currentFocus, &focusEvent, aPresContext);
             }
           }
 
           // Clear the target so that Dispatch can set it back correctly.
-          focusevent.target = nsnull;
-          nsEventDispatcher::Dispatch(window, aPresContext, &focusevent,
-                                      nsnull, &status);
+          focusEvent.target = nsnull;
+          nsCOMPtr<nsPIDOMEventTarget> win = do_QueryInterface(window);
+          FireFocusOrBlurEvent(win, &focusEvent, aPresContext);
 
           SetFocusedContent(currentFocus); // we kept this reference above
           NS_IF_RELEASE(gLastFocusedContent);
@@ -1196,7 +1195,7 @@ nsEventStateManager::PreHandleEvent(nsPresContext* aPresContext,
                 nsCOMPtr<nsIEventStateManager> esm =
                   oldPresContext->EventStateManager();
                 esm->SetFocusedContent(gLastFocusedContent);
-                FireBlurEvent(gLastFocusedContent, &blurEvent, oldPresContext);
+                FireFocusOrBlurEvent(gLastFocusedContent, &blurEvent, oldPresContext);
                 esm->SetFocusedContent(nsnull);
                 NS_IF_RELEASE(gLastFocusedContent);
               }
@@ -1219,12 +1218,12 @@ nsEventStateManager::PreHandleEvent(nsPresContext* aPresContext,
             nsCOMPtr<nsPIDOMWindow> window(lastFocusedDocument->GetWindow());
 
             blurEvent.target = nsnull;
-            FireBlurEvent(lastFocusedDocument, &blurEvent, lastFocusedPresContext);
+            FireFocusOrBlurEvent(lastFocusedDocument, &blurEvent, lastFocusedPresContext);
 
             if (window) {
               blurEvent.target = nsnull;
               nsCOMPtr<nsPIDOMEventTarget> win = do_QueryInterface(window);
-              FireBlurEvent(win, &blurEvent ,lastFocusedPresContext);
+              FireFocusOrBlurEvent(win, &blurEvent ,lastFocusedPresContext);
             }
           }
         }
@@ -1375,7 +1374,7 @@ nsEventStateManager::PreHandleEvent(nsPresContext* aPresContext,
             nsCOMPtr<nsIContent> focusedContent = do_QueryInterface(focusedElement);
             if (focusedContent) {
               // Blur the element.
-              FireBlurEvent(focusedContent, &blurEvent, oldPresContext);
+              FireFocusOrBlurEvent(focusedContent, &blurEvent, oldPresContext);
             }
 
             esm->SetFocusedContent(nsnull);
@@ -1391,12 +1390,12 @@ nsEventStateManager::PreHandleEvent(nsPresContext* aPresContext,
 
         // fire blur on document and window
         blurEvent.target = nsnull;
-        FireBlurEvent(mDocument, &blurEvent, aPresContext);
+        FireFocusOrBlurEvent(mDocument, &blurEvent, aPresContext);
 
         if (ourWindow) {
           blurEvent.target = nsnull;
           nsCOMPtr<nsPIDOMEventTarget> win = do_QueryInterface(ourWindow);
-          FireBlurEvent(win, &blurEvent, aPresContext);
+          FireFocusOrBlurEvent(win, &blurEvent, aPresContext);
         }
         if (clearFirstDocumentBlurEvent) {
           mFirstDocumentBlurEvent = nsnull;
@@ -5121,7 +5120,7 @@ nsEventStateManager::SendFocusBlur(nsPresContext* aPresContext,
 
           nsCxPusher pusher;
           if (pusher.Push(temp)) {
-            FireBlurEvent(temp, &blurEvent, oldPresContext);
+            FireFocusOrBlurEvent(temp, &blurEvent, oldPresContext);
             pusher.Pop();
           }
 
@@ -5182,7 +5181,7 @@ nsEventStateManager::SendFocusBlur(nsPresContext* aPresContext,
 
       nsCxPusher pusher;
       if (pusher.Push(temp)) {
-        FireBlurEvent(temp, &blurEvent, gLastFocusedPresContextWeak);
+        FireFocusOrBlurEvent(temp, &blurEvent, gLastFocusedPresContextWeak);
         pusher.Pop();
       }
 
@@ -5198,7 +5197,7 @@ nsEventStateManager::SendFocusBlur(nsPresContext* aPresContext,
       nsCOMPtr<nsPIDOMEventTarget> target = do_QueryInterface(window);
       if (pusher.Push(target)) {
         blurEvent.target = nsnull;
-        FireBlurEvent(target, &blurEvent, gLastFocusedPresContextWeak);
+        FireFocusOrBlurEvent(target, &blurEvent, gLastFocusedPresContextWeak);
   
         if (previousFocus && mCurrentFocus != previousFocus) {
           // The window's blur handler focused something else.
@@ -5266,15 +5265,13 @@ nsEventStateManager::SendFocusBlur(nsPresContext* aPresContext,
     }
 
     //fire focus
-    nsEventStatus status = nsEventStatus_eIgnore;
-    nsEvent event(PR_TRUE, NS_FOCUS_CONTENT);
-    event.flags |= NS_EVENT_FLAG_CANT_BUBBLE;
+    nsEvent focusEvent(PR_TRUE, NS_FOCUS_CONTENT);
+    focusEvent.flags |= NS_EVENT_FLAG_CANT_BUBBLE;
 
     if (nsnull != mPresContext) {
       nsCxPusher pusher;
       if (pusher.Push(aContent)) {
-        nsEventDispatcher::Dispatch(aContent, mPresContext, &event, nsnull,
-                                    &status);
+        FireFocusOrBlurEvent(aContent, &focusEvent, mPresContext);
       }
     }
 
@@ -5291,15 +5288,13 @@ nsEventStateManager::SendFocusBlur(nsPresContext* aPresContext,
   } else if (!aContent && !EventHandlingSuppressed(mDocument)) {
     //fire focus on document even if the content isn't focusable (ie. text)
     //see bugzilla bug 93521
-    nsEventStatus status = nsEventStatus_eIgnore;
-    nsEvent event(PR_TRUE, NS_FOCUS_CONTENT);
-    event.flags |= NS_EVENT_FLAG_CANT_BUBBLE;
+    nsEvent focusEvent(PR_TRUE, NS_FOCUS_CONTENT);
+    focusEvent.flags |= NS_EVENT_FLAG_CANT_BUBBLE;
 
     if (nsnull != mPresContext && mDocument) {
       nsCxPusher pusher;
       if (pusher.Push(mDocument)) {
-        nsEventDispatcher::Dispatch(mDocument, mPresContext, &event, nsnull,
-                                    &status);
+        FireFocusOrBlurEvent(mDocument, &focusEvent, mPresContext);
       }
     }
   }
