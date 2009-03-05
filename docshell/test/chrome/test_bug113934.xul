@@ -22,9 +22,6 @@ https://bugzilla.mozilla.org/show_bug.cgi?id=113934
 
   <!-- test code goes here -->
   <script type="application/javascript"><![CDATA[
-    // bug 481528
-    return;
-
     SimpleTest.waitForExplicitFinish();
 
     addLoadEvent(function() {
