@@ -1043,6 +1043,12 @@ nsContentSink::ProcessOfflineManifest(nsIContent *aElement)
     return;
   }
 
+  // Don't bother processing offline manifest for documents
+  // without a docshell
+  if (!mDocShell) {
+    return;
+  }
+
   nsresult rv;
 
   // Check for a manifest= attribute.
