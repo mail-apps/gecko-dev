@@ -433,7 +433,7 @@ def fillCertificateDB(profileDir, certPath, utilityPath, xrePath):
   certutil = os.path.join(utilityPath, "certutil" + BIN_SUFFIX)
   pk12util = os.path.join(utilityPath, "pk12util" + BIN_SUFFIX)
 
-  status = Process([certutil, "-N", "-d", profileDir, "-f", pwfilePath], env = env).wait()
+  status = Process(certutil, ["-N", "-d", profileDir, "-f", pwfilePath], env).wait()
   if status != 0:
     return status
 
@@ -445,13 +445,13 @@ def fillCertificateDB(profileDir, certPath, utilityPath, xrePath):
       trustBits = "CT,,"
       if root.endswith("-object"):
         trustBits = "CT,,CT"
-      Process([certutil, "-A", "-i", os.path.join(certPath, item),
+      Process(certutil, ["-A", "-i", os.path.join(certPath, item),
         "-d", profileDir, "-f", pwfilePath, "-n", root, "-t", trustBits],
-        env = env).wait()
+        env).wait()
     if ext == ".client":
-      Process([pk12util, "-i", os.path.join(certPath, item), "-w",
+      Process(pk12util, ["-i", os.path.join(certPath, item), "-w",
         pwfilePath, "-d", profileDir], 
-        env = env).wait()
+        env).wait()
 
   os.unlink(pwfilePath)
   return 0
@@ -478,22 +478,19 @@ def environment(env = None, xrePath = DIST_BIN):
 ###############
 
 def runApp(testURL, env, app, profileDir, extraArgs, runSSLTunnel = False, utilityPath = DIST_BIN, xrePath = DIST_BIN, certPath = CERTS_SRC_DIR):
-  "Run the app, returning a tuple containing the status code and the time at which it was started."
+  "Run the app, log the duration it took to execute, return the status code."
+
   if IS_TEST_BUILD and runSSLTunnel:
     # create certificate database for the profile
     certificateStatus = fillCertificateDB(profileDir, certPath, utilityPath, xrePath)
     if certificateStatus != 0:
-      log.info("TEST-UNEXPECTED-FAIL | Certificate integration failed")
+      log.info("TEST-UNEXPECTED FAIL | (automation.py) | Certificate integration failed")
       return certificateStatus
-  
+
     # start ssltunnel to provide https:// URLs capability
     ssltunnel = os.path.join(utilityPath, "ssltunnel" + BIN_SUFFIX)
-    ssltunnelProcess = Process([ssltunnel, os.path.join(profileDir, "ssltunnel.cfg")], env = environment(xrePath = xrePath))
-    log.info("SSL tunnel pid: %d", ssltunnelProcess.pid)
-  
-  "Run the app, returning the time at which it was started."
-  # mark the start
-  start = datetime.now()
+    ssltunnelProcess = Process(ssltunnel, [os.path.join(profileDir, "ssltunnel.cfg")], environment(xrePath = xrePath))
+    log.info("INFO | (automation.py) | SSL tunnel pid: %d", ssltunnelProcess.pid)
 
   # now run with the profile we created
   cmd = app
@@ -517,13 +514,16 @@ def runApp(testURL, env, app, profileDir, extraArgs, runSSLTunnel = False, utili
     else:
       args.append((testURL))
   args.extend(extraArgs)
-  proc = Process(cmd, args, env = environment(env))
-  log.info("Application pid: %d", proc.pid)
+
+  startTime = datetime.now()
+  proc = Process(cmd, args, environment(env))
+  log.info("INFO | (automation.py) | Application pid: %d", proc.pid)
   status = proc.wait()
   if status != 0:
-    log.info("TEST-UNEXPECTED-FAIL | Exited with code %d during test run", status)
+    log.info("TEST-UNEXPECTED-FAIL | (automation.py) | Exited with code %d during test run", status)
+  log.info("INFO | (automation.py) | Application ran for: %s", str(datetime.now() - startTime))
 
   if IS_TEST_BUILD and runSSLTunnel:
     ssltunnelProcess.kill()
   
-  return (status, start)
+  return status
