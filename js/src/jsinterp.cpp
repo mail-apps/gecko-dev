@@ -6186,8 +6186,6 @@ js_Interpret(JSContext *cx)
                     if (sprop->parent != scope->lastProp)
                         goto do_initprop_miss;
 
-                    TRACE_2(SetPropHit, entry, sprop);
-
                     /*
                      * Otherwise this entry must be for a direct property of
                      * obj, not a proto-property, and there cannot have been
@@ -6235,6 +6233,8 @@ js_Interpret(JSContext *cx)
                                      rval);
                     LOCKED_OBJ_SET_SLOT(obj, slot, rval);
                     JS_UNLOCK_SCOPE(cx, scope);
+
+                    TRACE_2(SetPropHit, entry, sprop);
                     break;
                 }
 
