@@ -426,6 +426,8 @@ Load(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
         file = fopen(filename, "r");
         script = JS_CompileFileHandleForPrincipals(cx, obj, filename, file,
                                                    gJSPrincipals);
+        if (file)
+            fclose(file);
         if (!script)
             ok = JS_FALSE;
         else {
@@ -909,6 +911,8 @@ Process(JSContext *cx, JSObject *obj, const char *filename, JSBool forceTTY)
     }
 
     ProcessFile(cx, obj, filename, file, forceTTY);
+    if (file != stdin)
+        fclose(file);
 }
 
 static int
@@ -936,6 +940,7 @@ ProcessArgs(JSContext *cx, JSObject *obj, char **argv, int argc)
     if (rcfile) {
         printf("[loading '%s'...]\n", rcfilename);
         ProcessFile(cx, obj, rcfilename, rcfile, JS_FALSE);
+        fclose(rcfile);
     }
 
     /*
