@@ -4756,9 +4756,12 @@ TraceRecorder::activeCallOrGlobalSlot(JSObject* obj, jsval*& vp)
     if (obj == globalObj) {
         JSScopeProperty* sprop = (JSScopeProperty*) prop;
 
+        if (setflags && !SPROP_HAS_STUB_SETTER(sprop))
+            ABORT_TRACE("non-stub setter");
+        if (setflags != JOF_SET && !SPROP_HAS_STUB_GETTER(sprop))
+            ABORT_TRACE("non-stub getter");
         if (setflags && (sprop->attrs & JSPROP_READONLY))
             ABORT_TRACE("writing to a readonly property");
-
         if (obj2 != obj || !SPROP_HAS_VALID_SLOT(sprop, OBJ_SCOPE(obj))) {
             OBJ_DROP_PROPERTY(cx, obj2, prop);
             ABORT_TRACE("prototype or slotless globalObj property");
@@ -5789,10 +5792,10 @@ TraceRecorder::test_property_cache_direct_slot(JSObject* obj, LIns* obj_ins, uin
             ABORT_TRACE("non-stub setter");
         if (setflags != JOF_SET && !SPROP_HAS_STUB_GETTER(sprop))
             ABORT_TRACE("non-stub getter");
-        if (!SPROP_HAS_VALID_SLOT(sprop, OBJ_SCOPE(obj)))
-            ABORT_TRACE("no valid slot");
         if (setflags && (sprop->attrs & JSPROP_READONLY))
             ABORT_TRACE("writing to a readonly property");
+        if (!SPROP_HAS_VALID_SLOT(sprop, OBJ_SCOPE(obj)))
+            ABORT_TRACE("no valid slot");
         slot = sprop->slot;
     } else {
         if (!PCVAL_IS_SLOT(pcval))
@@ -7009,8 +7012,8 @@ TraceRecorder::record_JSOP_SETPROP()
 JS_REQUIRES_STACK bool
 TraceRecorder::record_SetPropHit(JSPropCacheEntry* entry, JSScopeProperty* sprop)
 {
-    if (sprop->setter == js_watch_set)
-        ABORT_TRACE("watchpoint detected");
+    JS_ASSERT(!(sprop->attrs & JSPROP_READONLY));
+    JS_ASSERT(SPROP_HAS_STUB_SETTER(sprop));
 
     jsbytecode* pc = cx->fp->regs->pc;
     jsval& r = stackval(-1);
@@ -7019,9 +7022,6 @@ TraceRecorder::record_SetPropHit(JSPropCacheEntry* entry, JSScopeProperty* sprop
     JS_ASSERT(!JSVAL_IS_PRIMITIVE(l));
     JSObject* obj = JSVAL_TO_OBJECT(l);
     LIns* obj_ins = get(&l);
-
-    if (sprop->attrs & JSPROP_READONLY)
-        ABORT_TRACE("SetPropHit on readonly prop");
 
     if (obj == globalObj) {
         JS_ASSERT(SPROP_HAS_VALID_SLOT(sprop, OBJ_SCOPE(obj)));
