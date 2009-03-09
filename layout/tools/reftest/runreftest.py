@@ -117,17 +117,18 @@ Are you executing $objdir/_tests/reftest/runreftest.py?""" \
 
     # run once with -silent to let the extension manager do its thing
     # and then exit the app
-    start = automation.runApp(None, browserEnv, options.app,
-                              profileDir,
-                              extraArgs = ["-silent"])
+    (status, start) = automation.runApp(None, browserEnv, options.app,
+                                        profileDir,
+                                        extraArgs = ["-silent"])
     # then again to actually run reftest
     reftestlist = getFullPath(args[0])
-    start = automation.runApp(None, browserEnv, options.app,
-                              profileDir,
-                              extraArgs = ["-reftest", reftestlist])
+    (status, start) = automation.runApp(None, browserEnv, options.app,
+                                        profileDir,
+                                        extraArgs = ["-reftest", reftestlist])
   finally:
     if profileDir is not None:
       shutil.rmtree(profileDir)
+  sys.exit(status)
 
 def copyExtraFilesToProfile(options, profileDir):
   "Copy extra files or dirs specified on the command line to the testing profile."
