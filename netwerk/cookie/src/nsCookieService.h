@@ -164,7 +164,7 @@ class nsCookieService : public nsICookieService
 
   protected:
     void                          PrefChanged(nsIPrefBranch *aPrefBranch);
-    nsresult                      InitDB();
+    nsresult                      InitDB(PRBool aDeleteExistingDB = PR_FALSE);
     nsresult                      CreateTable();
     nsresult                      Read();
     void                          GetCookieInternal(nsIURI *aHostURI, nsIChannel *aChannel, PRBool aHttpBound, char **aCookie);
