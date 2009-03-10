@@ -1710,16 +1710,21 @@ function loadOneOrMoreURIs(aURIString)
   }
 }
 
+function focusAndSelectUrlBar() {
+  if (gURLBar && isElementVisible(gURLBar) && !gURLBar.readOnly) {
+    gURLBar.focus();
+    gURLBar.select();
+    return true;
+  }
+  return false;
+}
+
 function openLocation() {
   if (window.fullScreen)
     FullScreen.mouseoverToggle(true);
 
-  if (gURLBar && isElementVisible(gURLBar) && !gURLBar.readOnly) {
-    gURLBar.focus();
-    gURLBar.select();
+  if (focusAndSelectUrlBar())
     return;
-  }
-
 #ifdef XP_MACOSX
   if (window.location.href != getBrowserURL()) {
     var win = getTopWin();
