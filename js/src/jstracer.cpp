@@ -1885,6 +1885,7 @@ TraceRecorder::writeBack(LIns* i, LIns* base, ptrdiff_t offset)
 JS_REQUIRES_STACK void
 TraceRecorder::set(jsval* p, LIns* i, bool initializing)
 {
+    JS_ASSERT(i != NULL);
     JS_ASSERT(initializing || known(p));
     checkForGlobalObjectReallocation();
     tracker.set(p, i);
@@ -6708,7 +6709,10 @@ TraceRecorder::functionCall(bool constructing, uintN argc)
             jsval& v = stackval(0 - argc);
             if (!JSVAL_IS_PRIMITIVE(v))
                 return call_imacro(call_imacros.String);
-            set(&fval, stringify(v));
+            LIns *i = stringify(v);
+            if (!i)
+                ABORT_TRACE("can't stringify value");
+            set(&fval, i);
             return true;
         }
     }
