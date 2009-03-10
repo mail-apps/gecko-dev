@@ -1682,7 +1682,7 @@ struct JSPropertyDescriptor {
     uintN        attrs;
     JSPropertyOp getter;
     JSPropertyOp setter;
-    jsval        storedValue;
+    jsval        value;
 };
 
 /*
