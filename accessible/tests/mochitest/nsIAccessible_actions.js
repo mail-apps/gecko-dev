@@ -63,7 +63,7 @@ var gEventHandler =
 {
   initialize: function(aID, aElm, aExpectedEvents)
   {
-    this.ID = aID,
+    this.ID = aID;
     this.element = aElm;
     this.mExpectedEvents = aExpectedEvents;
     this.mFiredEvents = 0;

@@ -3,6 +3,8 @@ const state_focusable = nsIAccessibleStates.STATE_FOCUSABLE;
 const state_focused = nsIAccessibleStates.STATE_FOCUSED;
 const state_readonly = nsIAccessibleStates.STATE_READONLY;
 
+const ext_state_supports_autocompletion =
+      nsIAccessibleStates.EXT_STATE_SUPPORTS_AUTOCOMPLETION;
 const ext_state_multi_line = nsIAccessibleStates.EXT_STATE_MULTI_LINE;
 const ext_state_editable = nsIAccessibleStates.EXT_STATE_EDITABLE;
 const ext_state_required = nsIAccessibleStates.STATE_REQUIRED;
@@ -27,7 +29,8 @@ function testValue(aID, aAcc, aValue, aRole)
     is(aAcc.value, aValue, "Wrong value for " + aID + "!");
 }
 
-function testStates(aID, aAcc, aState, aExtraState, aAbsentState)
+function testStates(aID, aAcc, aState, aExtraState, aAbsentState,
+                    aAbsentExtraState)
 {
   var state = {}, extraState = {};
   aAcc.getState(state, extraState);
@@ -37,6 +40,9 @@ function testStates(aID, aAcc, aState, aExtraState, aAbsentState)
   if (aAbsentState != 0)
     is(state.value & aAbsentState, 0, "state bits should not be present in ID "
        + aID + "!");
+  if (aAbsentExtraState != 0)
+    is(extraState.value & aAbsentExtraState, 0,
+       "extraState bits should not be present in ID " + aID + "!");
   if (state.value & state_readonly)
     // if state is readonly, ext state must not be ext_state_editable.
     is(extraState.value & ext_state_editable, 0,
