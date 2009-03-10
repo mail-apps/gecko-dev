@@ -4344,14 +4344,14 @@ TraceRecorder::monitorRecording(JSContext* cx, TraceRecorder* tr, JSOp op)
         if (!js_CloseLoop(cx))
             return JSMRS_STOP;
     } else {
-        // Clear one-shot state used to communicate between record_JSOP_CALL and post-
-        // opcode-case-guts record hook (record_FastNativeCallComplete).
+        /* Clear one-shot state used to communicate between record_JSOP_CALL and post-
+           opcode-case-guts record hook (record_FastNativeCallComplete). */
         tr->pendingTraceableNative = NULL;
 
         jsbytecode* pc = cx->fp->regs->pc;
 
-        /* If we hit a break, end the loop and generate an always taken loop exit guard. For other
-           downward gotos (like if/else) continue recording. */
+        /* If we hit a break, end the loop and generate an always taken loop exit guard.
+           For other downward gotos (like if/else) continue recording. */
         if (*pc == JSOP_GOTO || *pc == JSOP_GOTOX) {
             jssrcnote* sn = js_GetSrcNote(cx->fp->script, pc);
             if (sn && SN_TYPE(sn) == SRC_BREAK) {
@@ -4369,8 +4369,9 @@ TraceRecorder::monitorRecording(JSContext* cx, TraceRecorder* tr, JSOp op)
             js_DeleteRecorder(cx);
             return JSMRS_STOP; /* done recording */
         }
+
 #ifdef NANOJIT_IA32
-        /* Handle tableswitches specially--prepare a jump table if needed. */
+        /* Handle tableswitches specially -- prepare a jump table if needed. */
         if (*pc == JSOP_TABLESWITCH || *pc == JSOP_TABLESWITCHX) {
             LIns* guardIns = tr->tableswitch();
             if (guardIns) {
@@ -4383,10 +4384,10 @@ TraceRecorder::monitorRecording(JSContext* cx, TraceRecorder* tr, JSOp op)
 #endif
     }
 
-    /* If it's not a break or a return from a loop, continue recording and follow the trace. */
+    /* If op is not a break or a return from a loop, continue recording and follow the
+       trace. We check for imacro-calling bytecodes inside each switch case to resolve
+       the if (JSOP_IS_IMACOP(x)) conditions at compile time. */
 
-    /* We check for imacro-calling bytecodes inside the switch cases to resolve
-       the "if" condition at the compile time. */
     bool flag;
     switch (op) {
       default: goto abort_recording;
@@ -4401,12 +4402,8 @@ TraceRecorder::monitorRecording(JSContext* cx, TraceRecorder* tr, JSOp op)
                                       jsbytecode),                            \
                             !cx->fp->imacpc, stdout);)                        \
         flag = tr->record_##x();                                              \
-        if (x == JSOP_ITER || x == JSOP_NEXTITER || x == JSOP_APPLY ||        \
-            x == JSOP_GETELEM || x == JSOP_SETELEM || x== JSOP_INITELEM ||    \
-            x == JSOP_CALL || JSOP_IS_BINARY(x) || JSOP_IS_UNARY(x) ||        \
-            JSOP_IS_EQUALITY(x)) {                                            \
+        if (JSOP_IS_IMACOP(x))                                                \
             goto imacro;                                                      \
-        }                                                                     \
         break;
 # include "jsopcode.tbl"
 # undef OPDEF
@@ -5018,9 +5015,9 @@ TraceRecorder::ifop()
 }
 
 #ifdef NANOJIT_IA32
-/* Record LIR for a tableswitch or tableswitchx op. We record LIR only
- * the "first" time we hit the op. Later, when we start traces after
- * exiting that trace, we just patch. */
+/* Record LIR for a tableswitch or tableswitchx op. We record LIR only the
+   "first" time we hit the op. Later, when we start traces after exiting that
+   trace, we just patch. */
 JS_REQUIRES_STACK LIns*
 TraceRecorder::tableswitch()
 {
@@ -5035,9 +5032,11 @@ TraceRecorder::tableswitch()
 
     jsbytecode* pc = cx->fp->regs->pc;
     /* Starting a new trace after exiting a trace via switch. */
-    if (anchor && (anchor->exitType == CASE_EXIT ||
-                   anchor->exitType == DEFAULT_EXIT) && fragment->ip == pc)
+    if (anchor &&
+        (anchor->exitType == CASE_EXIT || anchor->exitType == DEFAULT_EXIT) &&
+        fragment->ip == pc) {
         return NULL;
+    }
 
     /* Decode jsop. */
     jsint low, high;
@@ -5053,8 +5052,8 @@ TraceRecorder::tableswitch()
         high = GET_JUMPX_OFFSET(pc);            
     }
 
-    /* Really large tables won't fit in a page. This is a conservative
-     * check. If it matters in practice we need to go off-page. */
+    /* Really large tables won't fit in a page. This is a conservative check.
+       If it matters in practice we need to go off-page. */
     if ((high + 1 - low) * sizeof(intptr_t*) + 128 > (unsigned) LARGEST_UNDERRUN_PROT) {
         // This throws away the return value of switchop but it seems
         // ok because switchop always returns true.
