@@ -2486,7 +2486,7 @@ JS_EncodeString(JSContext *cx, JSString *str);
 typedef JSBool (* JSONWriteCallback)(const jschar *buf, uint32 len, void *data);
 
 /*
- * JSON.stringify as specificed by ES3.1 (draft)
+ * JSON.stringify as specified by ES3.1 (draft)
  */
 JS_PUBLIC_API(JSBool)
 JS_Stringify(JSContext *cx, jsval *vp, JSObject *replacer,
@@ -2499,7 +2499,7 @@ JS_PUBLIC_API(JSBool)
 JS_TryJSON(JSContext *cx, jsval *vp);
 
 /*
- * JSON.parse as specificed by ES3.1 (draft)
+ * JSON.parse as specified by ES3.1 (draft)
  */
 JS_PUBLIC_API(JSONParser *)
 JS_BeginJSONParse(JSContext *cx, jsval *vp);
