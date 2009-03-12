@@ -83,9 +83,9 @@ _TEST_FILES =\
 		test_nsIAccessible_focus.html \
 		test_nsIAccessibleDocument.html \
 		test_nsIAccessibleEditableText.html \
-		test_nsIAccessibleHyperLink.html \
+		$(warning test_nsIAccessibleHyperLink.html temporarily disabled) \
 		$(warning test_nsIAccessibleHyperLink.xul temporarily disabled) \
-		test_nsIAccessibleHyperText.html \
+		$(warning test_nsIAccessibleHyperText.html temporarily disabled) \
 		test_nsIAccessibleImage.html \
 		test_nsIAccessibleTable_1.html \
 		test_nsIAccessibleTable_2.html \
