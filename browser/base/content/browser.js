@@ -6973,7 +6973,15 @@ let gPrivateBrowsingUI = {
 
     this._privateBrowsingAutoStarted = this._privateBrowsingService.autoStarted;
 
-    if (!this._privateBrowsingAutoStarted) {
+    if (this._privateBrowsingAutoStarted) {
+      // Disable the menu item in auto-start mode
+      let pbMenuItem = document.getElementById("privateBrowsingItem");
+      if (pbMenuItem)
+        pbMenuItem.setAttribute("disabled", "true");
+      document.getElementById("Tools:PrivateBrowsing")
+              .setAttribute("disabled", "true");
+    }
+    else if (window.location.href == getBrowserURL()) {
       // Adjust the window's title
       let docElement = document.documentElement;
       docElement.setAttribute("title",
@@ -6981,14 +6989,6 @@ let gPrivateBrowsingUI = {
       docElement.setAttribute("titlemodifier",
         docElement.getAttribute("titlemodifier_privatebrowsing"));
       docElement.setAttribute("browsingmode", "private");
-    }
-    else {
-      // Disable the menu item in auto-start mode
-      let pbMenuItem = document.getElementById("privateBrowsingItem");
-      if (pbMenuItem)
-        pbMenuItem.setAttribute("disabled", "true");
-      document.getElementById("Tools:PrivateBrowsing")
-              .setAttribute("disabled", "true");
     }
   },
 
@@ -7007,7 +7007,7 @@ let gPrivateBrowsingUI = {
 
     this._setPBMenuTitle("start");
 
-    if (!this._privateBrowsingAutoStarted) {
+    if (window.location.href == getBrowserURL()) {
       // Adjust the window's title
       let docElement = document.documentElement;
       docElement.setAttribute("title",
@@ -7016,8 +7016,8 @@ let gPrivateBrowsingUI = {
         docElement.getAttribute("titlemodifier_normal"));
       docElement.setAttribute("browsingmode", "normal");
     }
-    else
-      this._privateBrowsingAutoStarted = false;
+
+    this._privateBrowsingAutoStarted = false;
   },
 
   _setPBMenuTitle: function PBUI__setPBMenuTitle(aMode) {
