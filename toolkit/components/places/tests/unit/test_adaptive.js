@@ -190,6 +190,15 @@ function setCountRank(aURI, aCount, aRank, aSearch)
   return Math.floor(targetUseCount);
 }
 
+/**
+ * Decay the adaptive entries by sending the daily idle topic
+ */
+function doAdaptiveDecay()
+{
+  for (let i = 0; i < 10; i++)
+    obs.notifyObservers(null, "idle-daily", null);
+}
+
 let uri1 = uri("http://site.tld/1");
 let uri2 = uri("http://site.tld/2");
 
