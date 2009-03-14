@@ -2237,7 +2237,7 @@ DocumentViewerImpl::MakeWindow(const nsSize& aSize)
       if (container) {
         container->GetSameTypeParent(getter_AddRefs(sameTypeParent));
       }
-      if (!sameTypeParent) {
+      if (!sameTypeParent && mParentWidget->GetTransparencyMode() != eTransparencyTransparent) {
         containerView = nsnull;
       }
     }
