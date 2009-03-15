@@ -2390,6 +2390,34 @@ IsTableRelated(nsIAtom* aParentType,
   else return PR_FALSE;
 }
            
+// Return whether the given frame is a table pseudo-frame.  Note that
+// cell-content and table-outer frames have pseudo-types, but are always
+// created, even for non-anonymous cells and tables respectively.  So for those
+// we have to examine the cell or table frame to see whether it's a pseudo
+// frame.  In particular, a lone table caption will have an outer table as its
+// parent, but will also trigger construction of an empty inner table, which
+// will be the one we can examine to see whether the outer was a pseudo-frame.
+static PRBool
+IsTablePseudo(nsIFrame* aFrame)
+{
+  nsIAtom* pseudoType = aFrame->GetStyleContext()->GetPseudoType();
+  return pseudoType &&
+    (pseudoType == nsCSSAnonBoxes::table ||
+     pseudoType == nsCSSAnonBoxes::inlineTable ||
+     pseudoType == nsCSSAnonBoxes::tableColGroup ||
+     pseudoType == nsCSSAnonBoxes::tableRowGroup ||
+     pseudoType == nsCSSAnonBoxes::tableRow ||
+     pseudoType == nsCSSAnonBoxes::tableCell ||
+     (pseudoType == nsCSSAnonBoxes::cellContent &&
+      aFrame->GetParent()->GetStyleContext()->GetPseudoType() ==
+        nsCSSAnonBoxes::tableCell) ||
+     (pseudoType == nsCSSAnonBoxes::tableOuter &&
+      (aFrame->GetFirstChild(nsnull)->GetStyleContext()->GetPseudoType() ==
+         nsCSSAnonBoxes::table ||
+       aFrame->GetFirstChild(nsnull)->GetStyleContext()->GetPseudoType() ==
+         nsCSSAnonBoxes::inlineTable)));
+}
+
 static nsIFrame*
 AdjustCaptionParentFrame(nsIFrame* aParentFrame) 
 {
@@ -9383,12 +9411,8 @@ nsCSSFrameConstructor::ContentRemoved(nsIContent* aContainer,
   if (childFrame) {
     InvalidateCanvasIfNeeded(childFrame);
     
-    // If the frame we are manipulating is a special frame then do
-    // something different instead of just inserting newly created
-    // frames.
-    // NOTE: if we are in ReinsertContent, 
-    //       then do not reframe as we are already doing just that!
-    if (MaybeRecreateContainerForIBSplitterFrame(childFrame, &rv)) {
+    // See whether we need to remove more than just childFrame
+    if (MaybeRecreateContainerForFrameRemoval(childFrame, &rv)) {
       *aDidReconstruct = PR_TRUE;
       return rv;
     }
@@ -11096,8 +11120,8 @@ nsCSSFrameConstructor::MaybeRecreateFramesForContent(nsIContent* aContent)
 }
 
 PRBool
-nsCSSFrameConstructor::MaybeRecreateContainerForIBSplitterFrame(nsIFrame* aFrame,
-                                                                nsresult* aResult)
+nsCSSFrameConstructor::MaybeRecreateContainerForFrameRemoval(nsIFrame* aFrame,
+                                                             nsresult* aResult)
 {
   NS_PRECONDITION(aFrame, "Must have a frame");
   NS_PRECONDITION(aFrame->GetParent(), "Frame shouldn't be root");
@@ -11110,7 +11134,7 @@ nsCSSFrameConstructor::MaybeRecreateContainerForIBSplitterFrame(nsIFrame* aFrame
     // need to rebuild the containing block.
 #ifdef DEBUG
     if (gNoisyContentUpdates) {
-      printf("nsCSSFrameConstructor::MaybeRecreateContainerForIBSplitterFrame: "
+      printf("nsCSSFrameConstructor::MaybeRecreateContainerForFrameRemoval: "
              "frame=");
       nsFrame::ListTag(stdout, aFrame);
       printf(" is special\n");
@@ -11121,10 +11145,32 @@ nsCSSFrameConstructor::MaybeRecreateContainerForIBSplitterFrame(nsIFrame* aFrame
     return PR_TRUE;
   }
 
-  // We might still need to reconstruct things if the parent of aFrame is
+  // Now check for possibly needing to reconstruct due to a pseudo parent
+  nsIFrame* inFlowFrame =
+    (aFrame->GetStateBits() & NS_FRAME_OUT_OF_FLOW) ?
+      mPresShell->FrameManager()->GetPlaceholderFrameFor(aFrame) : aFrame;
+  NS_ASSERTION(inFlowFrame, "How did that happen?");
+  nsIFrame* parent = inFlowFrame->GetParent();
+  if (IsTablePseudo(parent)) {
+    if (parent->GetFirstChild(nsnull) == inFlowFrame ||
+        !inFlowFrame->GetLastContinuation()->GetNextSibling() ||
+        // If we're a table-column-group, then the GetFirstChild check above is
+        // not going to catch cases when we're the first child.
+        (inFlowFrame->GetType() == nsGkAtoms::tableColGroupFrame &&
+         parent->GetFirstChild(nsGkAtoms::colGroupList) == inFlowFrame) ||
+        // Similar if we're a table-caption.
+        (inFlowFrame->GetType() == nsGkAtoms::tableCaptionFrame &&
+         parent->GetFirstChild(nsGkAtoms::captionList) == inFlowFrame)) {
+      // We're the first or last frame in the pseudo.  Need to reframe.
+      // Good enough to recreate frames for |parent|'s content
+      *aResult = RecreateFramesForContent(parent->GetContent());
+      return PR_TRUE;
+    }
+  }
+
+  // We might still need to reconstruct things if the parent of inFlowFrame is
   // special, since in that case the removal of aFrame might affect the
   // splitting of its parent.
-  nsIFrame* parent = aFrame->GetParent();
   if (!IsFrameSpecial(parent)) {
     return PR_FALSE;
   }
@@ -11136,20 +11182,20 @@ nsCSSFrameConstructor::MaybeRecreateContainerForIBSplitterFrame(nsIFrame* aFrame
   // case when it's needed is if the inline is the only child of the tail end
   // of an {ib} split, because the splitting code doesn't produce this tail end
   // if it would have no kids.  If that ever changes, this code should change.
-  if (IsInlineOutside(aFrame) &&
+  if (IsInlineOutside(inFlowFrame) &&
       (
        // Not a kid of the third part of the IB split
        GetSpecialSibling(parent) || !IsInlineOutside(parent) ||
        // Or not the only child
-       aFrame->GetTailContinuation()->GetNextSibling() ||
-       aFrame != parent->GetFirstContinuation()->GetFirstChild(nsnull)
+       inFlowFrame->GetTailContinuation()->GetNextSibling() ||
+       inFlowFrame != parent->GetFirstContinuation()->GetFirstChild(nsnull)
       )) {
     return PR_FALSE;
   }
 
 #ifdef DEBUG
   if (gNoisyContentUpdates) {
-    printf("nsCSSFrameConstructor::MaybeRecreateContainerForIBSplitterFrame: "
+    printf("nsCSSFrameConstructor::MaybeRecreateContainerForFrameRemoval: "
            "frame=");
     nsFrame::ListTag(stdout, parent);
     printf(" is special\n");
@@ -11200,7 +11246,7 @@ nsCSSFrameConstructor::RecreateFramesForContent(nsIContent* aContent)
 
   nsresult rv = NS_OK;
 
-  if (frame && MaybeRecreateContainerForIBSplitterFrame(frame, &rv)) {
+  if (frame && MaybeRecreateContainerForFrameRemoval(frame, &rv)) {
     return rv;
   }
 
