@@ -1440,11 +1440,6 @@ sidebarheader > .tabs-closebutton > .toolbarbutton-text {
 /* ----- PAGE REPORT DISPLAY ----- */
 
 #page-report-button {
-  display: none;
-}
-
-#page-report-button[blocked] {
-  display: -moz-box;
   list-style-image: url("chrome://browser/skin/Popup-blocked.png");
   padding: 0px 3px 0px 3px;
 }
