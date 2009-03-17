@@ -1011,3 +1011,7 @@ fails == 461512-1.html 461512-1-ref.html # Bug 461512
 == 476598-1b.html 476598-1-ref2.html
 != 476598-1-ref.html about:blank
 == 478377-1.xul 478377-1-ref.xul
+== 482659-1a.html 482659-1-ref.html
+== 482659-1b.html 482659-1-ref.html
+== 482659-1c.html 482659-1-ref.html
+== 482659-1d.html 482659-1-ref.html
