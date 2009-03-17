@@ -2230,6 +2230,10 @@ TraceRecorder::snapshot(ExitType exitType)
 LIns*
 TraceRecorder::guard(bool expected, LIns* cond, LIns* exit)
 {
+    if (!cond->isCond()) {
+        expected = !expected;
+        cond = lir->ins_eq0(cond);
+    }
     return lir->insGuard(expected ? LIR_xf : LIR_xt, cond, exit);
 }
 
@@ -4899,11 +4903,8 @@ TraceRecorder::alu(LOpcode v, jsdouble v0, jsdouble v1, LIns* s0, LIns* s1)
          * The result doesn't fit into the integer domain, so either generate
          * a floating point constant or a floating point operation.
          */
-        if (s0->isconst() && s1->isconst()) {
-            jsdpun u;
-            u.d = r;
-            return lir->insImmq(u.u64);
-        }
+        if (s0->isconst() && s1->isconst())
+            return lir->insImmf(r);
         return lir->ins2(v, s0, s1);
     }
     return lir->ins2(v, s0, s1);
@@ -4995,11 +4996,9 @@ TraceRecorder::ifop()
     } else if (isNumber(v)) {
         jsdouble d = asNumber(v);
         cond = !JSDOUBLE_IS_NaN(d) && d;
-        jsdpun u;
-        u.d = 0;
         x = lir->ins2(LIR_and,
                       lir->ins2(LIR_feq, v_ins, v_ins),
-                      lir->ins_eq0(lir->ins2(LIR_feq, v_ins, lir->insImmq(u.u64))));
+                      lir->ins_eq0(lir->ins2(LIR_feq, v_ins, lir->insImmq(0))));
     } else if (JSVAL_IS_STRING(v)) {
         cond = JSSTRING_LENGTH(JSVAL_TO_STRING(v)) != 0;
         x = lir->ins2(LIR_piand,
@@ -5012,12 +5011,7 @@ TraceRecorder::ifop()
         return false;
     }
     flipIf(cx->fp->regs->pc, cond);
-    bool expected = cond;
-    if (!x->isCond()) {
-        x = lir->ins_eq0(x);
-        expected = !expected;
-    }
-    guard(expected, x, BRANCH_EXIT);
+    guard(cond, x, BRANCH_EXIT);
     return true;
 }
 
@@ -5094,10 +5088,8 @@ TraceRecorder::switchop()
         return true;
     if (isNumber(v)) {
         jsdouble d = asNumber(v);
-        jsdpun u;
-        u.d = d;
         guard(true,
-              addName(lir->ins2(LIR_feq, v_ins, lir->insImmq(u.u64)),
+              addName(lir->ins2(LIR_feq, v_ins, lir->insImmf(d)),
                       "guard(switch on numeric)"),
               BRANCH_EXIT);
     } else if (JSVAL_IS_STRING(v)) {
@@ -5137,10 +5129,7 @@ TraceRecorder::inc(jsval& v, LIns*& v_ins, jsint incr, bool pre)
     if (!isNumber(v))
         ABORT_TRACE("can only inc numbers");
 
-    jsdpun u;
-    u.d = jsdouble(incr);
-
-    LIns* v_after = alu(LIR_fadd, asNumber(v), incr, v_ins, lir->insImmq(u.u64));
+    LIns* v_after = alu(LIR_fadd, asNumber(v), incr, v_ins, lir->insImmf(incr));
 
     const JSCodeSpec& cs = js_CodeSpec[*cx->fp->regs->pc];
     JS_ASSERT(cs.ndefs == 1);
@@ -6530,9 +6519,7 @@ TraceRecorder::record_JSOP_NEG()
     }
 
     if (JSVAL_IS_NULL(v)) {
-        jsdpun u;
-        u.d = -0.0;
-        set(&v, lir->insImmq(u.u64));
+        set(&v, lir->insImmf(-0.0));
         return true;
     }
 
@@ -6852,9 +6839,7 @@ success:
       case FAIL_NEG:
       {
         res_ins = lir->ins1(LIR_i2f, res_ins);
-        jsdpun u;
-        u.d = 0.0;
-        guard(false, lir->ins2(LIR_flt, res_ins, lir->insImmq(u.u64)), OOM_EXIT);
+        guard(false, lir->ins2(LIR_flt, res_ins, lir->insImmq(0)), OOM_EXIT);
         break;
       }
       case FAIL_VOID:
@@ -7933,9 +7918,7 @@ JS_REQUIRES_STACK bool
 TraceRecorder::record_JSOP_DOUBLE()
 {
     jsval v = jsval(atoms[GET_INDEX(cx->fp->regs->pc)]);
-    jsdpun u;
-    u.d = *JSVAL_TO_DOUBLE(v);
-    stack(0, lir->insImmq(u.u64));
+    stack(0, lir->insImmf(*JSVAL_TO_DOUBLE(v)));
     return true;
 }
 
@@ -7951,18 +7934,14 @@ TraceRecorder::record_JSOP_STRING()
 JS_REQUIRES_STACK bool
 TraceRecorder::record_JSOP_ZERO()
 {
-    jsdpun u;
-    u.d = 0.0;
-    stack(0, lir->insImmq(u.u64));
+    stack(0, lir->insImmq(0));
     return true;
 }
 
 JS_REQUIRES_STACK bool
 TraceRecorder::record_JSOP_ONE()
 {
-    jsdpun u;
-    u.d = 1.0;
-    stack(0, lir->insImmq(u.u64));
+    stack(0, lir->insImmf(1));
     return true;
 }
 
@@ -8095,9 +8074,7 @@ TraceRecorder::record_JSOP_SETLOCAL()
 JS_REQUIRES_STACK bool
 TraceRecorder::record_JSOP_UINT16()
 {
-    jsdpun u;
-    u.d = (jsdouble)GET_UINT16(cx->fp->regs->pc);
-    stack(0, lir->insImmq(u.u64));
+    stack(0, lir->insImmf(GET_UINT16(cx->fp->regs->pc)));
     return true;
 }
 
@@ -8590,9 +8567,7 @@ JS_REQUIRES_STACK bool
 TraceRecorder::record_JSOP_ARGCNT()
 {
     if (!(cx->fp->fun->flags & JSFUN_HEAVYWEIGHT)) {
-        jsdpun u;
-        u.d = cx->fp->argc;
-        stack(0, lir->insImmq(u.u64));
+        stack(0, lir->insImmf(cx->fp->argc));
         return true;
     }
     ABORT_TRACE("can't trace heavyweight JSOP_ARGCNT");
@@ -9037,9 +9012,7 @@ TraceRecorder::record_JSOP_DELDESC()
 JS_REQUIRES_STACK bool
 TraceRecorder::record_JSOP_UINT24()
 {
-    jsdpun u;
-    u.d = (jsdouble)GET_UINT24(cx->fp->regs->pc);
-    stack(0, lir->insImmq(u.u64));
+    stack(0, lir->insImmf(GET_UINT24(cx->fp->regs->pc)));
     return true;
 }
 
@@ -9418,18 +9391,14 @@ TraceRecorder::record_JSOP_NULLTHIS()
 JS_REQUIRES_STACK bool
 TraceRecorder::record_JSOP_INT8()
 {
-    jsdpun u;
-    u.d = (jsdouble)GET_INT8(cx->fp->regs->pc);
-    stack(0, lir->insImmq(u.u64));
+    stack(0, lir->insImmf(GET_INT8(cx->fp->regs->pc)));
     return true;
 }
 
 JS_REQUIRES_STACK bool
 TraceRecorder::record_JSOP_INT32()
 {
-    jsdpun u;
-    u.d = (jsdouble)GET_INT32(cx->fp->regs->pc);
-    stack(0, lir->insImmq(u.u64));
+    stack(0, lir->insImmf(GET_INT32(cx->fp->regs->pc)));
     return true;
 }
 
