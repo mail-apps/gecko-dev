@@ -165,9 +165,9 @@ nsAboutProtocolHandler::NewChannel(nsIURI* uri, nsIChannel* *result)
         rv = aboutMod->NewChannel(uri, result);
         if (NS_SUCCEEDED(rv)) {
             nsRefPtr<nsNestedAboutURI> aboutURI;
-            rv = uri->QueryInterface(kNestedAboutURICID,
-                                     getter_AddRefs(aboutURI));
-            if (NS_SUCCEEDED(rv) && aboutURI->GetBaseURI()) {
+            nsresult rv2 = uri->QueryInterface(kNestedAboutURICID,
+                                               getter_AddRefs(aboutURI));
+            if (NS_SUCCEEDED(rv2) && aboutURI->GetBaseURI()) {
                 nsCOMPtr<nsIWritablePropertyBag2> writableBag =
                     do_QueryInterface(*result);
                 if (writableBag) {
