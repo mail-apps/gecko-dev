@@ -85,8 +85,7 @@ var gCookiesWindow = {
       if ("arguments" in window && window.arguments[0] &&
           window.arguments[0].filterString)
       {
-        document.getElementById("filter").value = window.arguments[0].filterString;
-        this.filter();
+        this.setFilter(window.arguments[0].filterString);
       }
     }
     else {
@@ -926,6 +925,11 @@ var gCookiesWindow = {
       view.selection.select(0);
 
     document.getElementById("cookiesIntro").value = gCookiesWindow._bundle.getString("cookiesFiltered");
+  },
+
+  setFilter: function (aFilterString) {
+    document.getElementById("filter").value = aFilterString;
+    this.filter();
   },
 
   focusFilterBox: function ()
