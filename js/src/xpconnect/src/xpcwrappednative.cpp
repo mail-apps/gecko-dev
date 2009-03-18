@@ -337,25 +337,37 @@ XPCWrappedNative::GetNewOrUsed(XPCCallContext& ccx,
     AutoMarkingWrappedNativePtr wrapper(ccx);
 
     Native2WrappedNativeMap* map = Scope->GetWrappedNativeMap();
+    if(!cache)
+    {
+        {   // scoped lock
+            XPCAutoLock lock(mapLock);
+            wrapper = map->Find(identity);
+            if(wrapper)
+                wrapper->AddRef();
+        }
+
+        if(wrapper)
+        {
+            if(Interface &&
+               !wrapper->FindTearOff(ccx, Interface, JS_FALSE, &rv))
+            {
+                NS_RELEASE(wrapper);
+                NS_ASSERTION(NS_FAILED(rv), "returning NS_OK on failure");
+                return rv;
+            }
+            DEBUG_CheckWrapperThreadSafety(wrapper);
+            *resultWrapper = wrapper;
+            return NS_OK;
+        }
+    }
+#ifdef DEBUG
+    else if(!cache->GetWrapper())
     {   // scoped lock
         XPCAutoLock lock(mapLock);
-        wrapper = map->Find(identity);
-        if(wrapper)
-            wrapper->AddRef();
+        NS_ASSERTION(!map->Find(identity),
+                     "There's a wrapper in the hashtable but it wasn't cached?");
     }
-
-    if(wrapper)
-    {
-        if(Interface && !wrapper->FindTearOff(ccx, Interface, JS_FALSE, &rv))
-        {
-            NS_RELEASE(wrapper);
-            NS_ASSERTION(NS_FAILED(rv), "returning NS_OK on failure");
-            return rv;
-        }
-        DEBUG_CheckWrapperThreadSafety(wrapper);
-        *resultWrapper = wrapper;
-        return NS_OK;
-    }
+#endif
 
     // There is a chance that the object wants to have the self-same JSObject
     // reflection regardless of the scope into which we are reflecting it.
@@ -434,6 +446,13 @@ XPCWrappedNative::GetNewOrUsed(XPCCallContext& ccx,
         // the preCreate call caused the wrapper to get created through some
         // interesting path (the DOM code tends to make this happen sometimes).
 
+        if(cache)
+        {
+            wrapper = static_cast<XPCWrappedNative*>(cache->GetWrapper());
+            if(wrapper)
+                wrapper->AddRef();
+        }
+        else
         {   // scoped lock
             XPCAutoLock lock(mapLock);
             wrapper = map->Find(identity);
@@ -472,7 +491,7 @@ XPCWrappedNative::GetNewOrUsed(XPCCallContext& ccx,
 
         proto->CacheOffsets(identity);
 
-        wrapper = new XPCWrappedNative(identity, proto);
+        wrapper = new XPCWrappedNative(identity.get(), proto);
         if(!wrapper)
             return NS_ERROR_FAILURE;
     }
@@ -484,12 +503,17 @@ XPCWrappedNative::GetNewOrUsed(XPCCallContext& ccx,
         if(!set)
             return NS_ERROR_FAILURE;
 
-        wrapper = new XPCWrappedNative(identity, Scope, set);
+        wrapper = new XPCWrappedNative(identity.get(), Scope, set);
         if(!wrapper)
             return NS_ERROR_FAILURE;
 
         DEBUG_ReportShadowedMembers(set, wrapper, nsnull);
     }
+
+    // The strong reference was taken over by the wrapper, so make the nsCOMPtr
+    // forget about it.
+    // Note that identity is null from here on!
+    identity.forget();
 
     NS_ADDREF(wrapper);
 
@@ -667,7 +691,7 @@ XPCWrappedNative::GetUsedOnly(XPCCallContext& ccx,
 }
 
 // This ctor is used if this object will have a proto.
-XPCWrappedNative::XPCWrappedNative(nsISupports* aIdentity,
+XPCWrappedNative::XPCWrappedNative(already_AddRefed<nsISupports> aIdentity,
                                    XPCWrappedNativeProto* aProto)
     : mMaybeProto(aProto),
       mSet(aProto->GetSet()),
@@ -675,7 +699,7 @@ XPCWrappedNative::XPCWrappedNative(nsISupports* aIdentity,
       mScriptableInfo(nsnull),
       mWrapper(nsnull)
 {
-    NS_ADDREF(mIdentity = aIdentity);
+    mIdentity = aIdentity.get();
 
     NS_ASSERTION(mMaybeProto, "bad ctor param");
     NS_ASSERTION(mSet, "bad ctor param");
@@ -684,7 +708,7 @@ XPCWrappedNative::XPCWrappedNative(nsISupports* aIdentity,
 }
 
 // This ctor is used if this object will NOT have a proto.
-XPCWrappedNative::XPCWrappedNative(nsISupports* aIdentity,
+XPCWrappedNative::XPCWrappedNative(already_AddRefed<nsISupports> aIdentity,
                                    XPCWrappedNativeScope* aScope,
                                    XPCNativeSet* aSet)
 
@@ -694,7 +718,7 @@ XPCWrappedNative::XPCWrappedNative(nsISupports* aIdentity,
       mScriptableInfo(nsnull),
       mWrapper(nsnull)
 {
-    NS_ADDREF(mIdentity = aIdentity);
+    mIdentity = aIdentity.get();
 
     NS_ASSERTION(aScope, "bad ctor param");
     NS_ASSERTION(aSet, "bad ctor param");
