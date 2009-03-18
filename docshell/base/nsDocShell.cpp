@@ -8567,11 +8567,6 @@ NS_IMETHODIMP nsDocShell::PersistLayoutHistoryState()
     nsresult  rv = NS_OK;
     
     if (mOSHE) {
-        PRBool shouldSave;
-        GetShouldSaveLayoutState(&shouldSave);
-        if (!shouldSave)
-            return NS_OK;
-
         nsCOMPtr<nsIPresShell> shell;
         rv = GetPresShell(getter_AddRefs(shell));
         if (NS_SUCCEEDED(rv) && shell) {
