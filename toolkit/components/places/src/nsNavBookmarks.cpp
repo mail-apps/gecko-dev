@@ -1185,6 +1185,10 @@ nsNavBookmarks::RemoveItem(PRInt64 aItemId)
     return NS_OK;
   }
 
+  ENUMERATE_WEAKARRAY(mObservers,
+                      nsINavBookmarkObserver_MOZILLA_1_9_1_ADDITIONS,
+                      OnBeforeItemRemoved(aItemId))
+
   mozStorageTransaction transaction(mDBConn, PR_FALSE);
 
   // First, remove item annotations
@@ -1596,6 +1600,10 @@ nsNavBookmarks::RemoveFolder(PRInt64 aFolderId)
 {
   NS_ENSURE_TRUE(aFolderId != mRoot, NS_ERROR_INVALID_ARG);
 
+  ENUMERATE_WEAKARRAY(mObservers,
+                      nsINavBookmarkObserver_MOZILLA_1_9_1_ADDITIONS,
+                      OnBeforeItemRemoved(aFolderId))
+
   mozStorageTransaction transaction(mDBConn, PR_FALSE);
 
   nsresult rv;
@@ -1783,12 +1791,19 @@ nsNavBookmarks::RemoveFolderChildren(PRInt64 aFolderId)
   nsCString foldersToRemove;
   for (PRUint32 i = 0; i < folderChildrenArray.Length(); i++) {
     folderChildrenInfo child = folderChildrenArray[i];
+
+    // Notify observers that we are about to remove this child.
+    ENUMERATE_WEAKARRAY(mObservers,
+                        nsINavBookmarkObserver_MOZILLA_1_9_1_ADDITIONS,
+                        OnBeforeItemRemoved(child.itemId))
+
     if (child.itemType == TYPE_FOLDER) {
       foldersToRemove.AppendLiteral(",");
       foldersToRemove.AppendInt(child.itemId);
 
       // If this is a dynamic container, try to notify its service that we
       // are going to remove it.
+      // XXX (bug 484094) this should use a bookmark observer!
       if (child.folderType.Length() > 0) {
         nsCOMPtr<nsIDynamicContainer> bmcServ =
           do_GetService(child.folderType.get());
@@ -2753,6 +2768,11 @@ nsNavBookmarks::SetItemIndex(PRInt64 aItemId, PRInt32 aNewIndex)
   rv = mDBSetItemIndex->Execute();
   NS_ENSURE_SUCCESS(rv, rv);
 
+  // XXX (bug 484096) this is really inefficient and we should look into using
+  //     onItemChanged here!
+  ENUMERATE_WEAKARRAY(mObservers,
+                      nsINavBookmarkObserver_MOZILLA_1_9_1_ADDITIONS,
+                      OnBeforeItemRemoved(aItemId))
   ENUMERATE_WEAKARRAY(mObservers, nsINavBookmarkObserver,
                       OnItemRemoved(aItemId, parent, oldIndex))
   ENUMERATE_WEAKARRAY(mObservers, nsINavBookmarkObserver,

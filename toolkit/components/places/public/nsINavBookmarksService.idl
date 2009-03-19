@@ -162,6 +162,28 @@ interface nsINavBookmarkObserver : nsISupports
 };
 
 /**
+ * Additional notifications for bookmark observers.  Your observer will not be
+ * notified for this unless it can QI to this interface.
+ *
+ * This interface was added after the binary compatibility freeze, so it lives
+ * in a separate interface for 1.9.1.  In future releases, the methods found in
+ * this interface will be in nsINavBookmarkObserver.
+ */
+[scriptable, uuid(76440c39-1085-4f2b-9535-5ba4658fcdad)]
+interface nsINavBookmarkObserver_MOZILLA_1_9_1_ADDITIONS : nsISupports
+{
+  /**
+   * Notify this observer that an item is about to be removed.  Called before
+   * the actual removal will take place.
+   *
+   * @param aItemId
+   *        The id of the bookmark to be removed.
+   */
+  void onBeforeItemRemoved(in long long aItemId);
+};
+
+
+/**
  * The BookmarksService interface provides methods for managing bookmarked
  * history items.  Bookmarks consist of a set of user-customizable
  * folders.  A URI in history can be contained in one or more such folders.
