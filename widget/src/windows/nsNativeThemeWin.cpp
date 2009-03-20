@@ -278,6 +278,7 @@ nsNativeThemeWin::GetTheme(PRUint8 aWidgetType)
     case NS_THEME_BUTTON:
     case NS_THEME_RADIO:
     case NS_THEME_CHECKBOX:
+    case NS_THEME_GROUPBOX:
       return nsUXThemeData::GetTheme(eUXButton);
     case NS_THEME_TEXTFIELD:
     case NS_THEME_TEXTFIELD_MULTILINE:
@@ -460,6 +461,13 @@ nsNativeThemeWin::GetThemePartAndState(nsIFrame* aFrame, PRUint8 aWidgetType,
       }
       else if (isCheckbox ? IsChecked(aFrame) : IsSelected(aFrame))
         aState += 4; // 4 unchecked states, 4 checked states.
+      return NS_OK;
+    }
+    case NS_THEME_GROUPBOX: {
+      aPart = BP_GROUPBOX;
+      aState = TS_NORMAL;
+      // Since we don't support groupbox disabled and GBS_DISABLED looks the
+      // same as GBS_NORMAL don't bother supporting GBS_DISABLED.
       return NS_OK;
     }
     case NS_THEME_TEXTFIELD:
@@ -1705,6 +1713,7 @@ nsNativeThemeWin::ClassicThemeSupportsWidget(nsPresContext* aPresContext,
     case NS_THEME_TEXTFIELD_MULTILINE:
     case NS_THEME_CHECKBOX:
     case NS_THEME_RADIO:
+    case NS_THEME_GROUPBOX:
     case NS_THEME_SCROLLBAR_BUTTON_UP:
     case NS_THEME_SCROLLBAR_BUTTON_DOWN:
     case NS_THEME_SCROLLBAR_BUTTON_LEFT:
@@ -1758,6 +1767,7 @@ nsNativeThemeWin::ClassicGetWidgetBorder(nsIDeviceContext* aContext,
                                   nsMargin* aResult)
 {
   switch (aWidgetType) {
+    case NS_THEME_GROUPBOX:
     case NS_THEME_BUTTON:
       (*aResult).top = (*aResult).left = (*aResult).bottom = (*aResult).right = 2; 
       break;
@@ -1888,6 +1898,7 @@ nsNativeThemeWin::ClassicGetMinimumWidgetSize(nsIRenderingContext* aContext, nsI
       break;
     case NS_THEME_DROPDOWN:
     case NS_THEME_BUTTON:
+    case NS_THEME_GROUPBOX:
     case NS_THEME_LISTBOX:
     case NS_THEME_TREEVIEW:
     case NS_THEME_TEXTFIELD:
@@ -2123,6 +2134,7 @@ nsresult nsNativeThemeWin::ClassicGetThemePartAndState(nsIFrame* aFrame, PRUint8
     case NS_THEME_TAB_PANELS:
     case NS_THEME_MENUBAR:
     case NS_THEME_MENUPOPUP:
+    case NS_THEME_GROUPBOX:
       // these don't use DrawFrameControl
       return NS_OK;
     case NS_THEME_DROPDOWN_BUTTON: {
@@ -2514,6 +2526,10 @@ RENDER_AGAIN:
       ::FillRect(hdc, &widgetRect, ::GetSysColorBrush(COLOR_INFOBK));
 
       break;
+    case NS_THEME_GROUPBOX:
+      ::DrawEdge(hdc, &widgetRect, EDGE_ETCHED, BF_RECT | BF_ADJUST);
+      ::FillRect(hdc, &widgetRect, (HBRUSH) (COLOR_BTNFACE+1));
+      break;
     // Draw 3D face background controls
     case NS_THEME_PROGRESSBAR:
     case NS_THEME_PROGRESSBAR_VERTICAL:
@@ -2766,6 +2782,7 @@ nsNativeThemeWin::GetWidgetNativeDrawingFlags(PRUint8 aWidgetType)
     // these are definitely no; they're all graphics that don't get scaled up
     case NS_THEME_CHECKBOX:
     case NS_THEME_RADIO:
+    case NS_THEME_GROUPBOX:
     case NS_THEME_CHECKMENUITEM:
     case NS_THEME_RADIOMENUITEM:
     case NS_THEME_MENUCHECKBOX:
