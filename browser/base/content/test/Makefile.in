@@ -94,6 +94,7 @@ _BROWSER_FILES = browser_sanitize-timespans.js \
                  browser_bug386835.js \
                  bug386835.html \
                  browser_sanitize-sitepermissions.js \
+                 browser_scope.js \
     $(NULL)
 
 ifeq (,$(filter mac cocoa,$(MOZ_WIDGET_TOOLKIT)))
