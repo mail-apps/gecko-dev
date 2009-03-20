@@ -154,7 +154,7 @@ clean clobber realclean clobber_all::
 	cd $(MKDEPEND_DIR); $(MAKE) $@
 endif
 
-PYUNITS := unit-Expression.py unit-Preprocessor.py
+PYUNITS := unit-Expression.py unit-Preprocessor.py unit-printprereleasesuffix.py
 
 check:: check-preprocessor check-jar-mn
 
