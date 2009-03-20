@@ -282,6 +282,8 @@
 #ifndef MOZ_WIDGET_GTK2
     <key id="bookmarkAllTabsKb" key="&bookmarkThisPageCmd.commandkey;" command="Browser:BookmarkAllTabs" modifiers="accel,shift"/>
     <key id="manBookmarkKb" key="&bookmarksSidebarCmd.commandkey;" command="Browser:ShowAllBookmarks" modifiers="accel,shift"/>
+#else
+    <key id="manBookmarkKb" key="&bookmarksSidebarGtkCmd.commandkey;" command="Browser:ShowAllBookmarks" modifiers="accel,shift"/>
 #endif
     <key id="viewBookmarksSidebarKb" key="&bookmarksSidebarCmd.commandkey;" command="viewBookmarksSidebar" modifiers="accel"/>
 #ifdef XP_WIN
