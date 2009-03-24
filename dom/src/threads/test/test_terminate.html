@@ -25,6 +25,7 @@ Tests of DOM Worker terminate feature
   function maybeFinish() {
     if (!count) {
       clearInterval(id);
+      ok(true, "no more messages");
       SimpleTest.finish();
       return;
     }
