@@ -1643,6 +1643,7 @@ GK_ATOM(viewProperty, "ViewProperty")
 
 // Content property names
 GK_ATOM(genConInitializerProperty, "QuoteNodeProperty")
+GK_ATOM(labelMouseDownPtProperty, "LabelMouseDownPtProperty")
 
 // Languages for lang-specific transforms
 GK_ATOM(Japanese, "ja")
