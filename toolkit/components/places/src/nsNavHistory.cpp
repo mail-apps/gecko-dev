@@ -83,11 +83,12 @@
 #include "nsIClassInfoImpl.h"
 #include "nsThreadUtils.h"
 
-#include "mozIStorageService.h"
 #include "mozIStorageConnection.h"
-#include "mozIStorageValueArray.h"
-#include "mozIStorageStatement.h"
 #include "mozIStorageFunction.h"
+#include "mozIStoragePendingStatement.h"
+#include "mozIStorageService.h"
+#include "mozIStorageStatement.h"
+#include "mozIStorageValueArray.h"
 #include "mozStorageCID.h"
 #include "mozStorageHelper.h"
 #include "nsPlacesTriggers.h"
@@ -331,6 +332,7 @@ const PRInt32 nsNavHistory::kAutoCompleteBehaviorTyped = 1 << 5;
 static const char* gQuitApplicationGrantedMessage = "quit-application-granted";
 static const char* gXpcomShutdown = "xpcom-shutdown";
 static const char* gAutoCompleteFeedback = "autocomplete-will-enter-text";
+static const char* gIdleDaily = "idle-daily";
 
 // annotation names
 const char nsNavHistory::kAnnotationPreviousEncoding[] = "history/encoding";
@@ -522,6 +524,7 @@ nsNavHistory::Init()
   observerService->AddObserver(this, gQuitApplicationGrantedMessage, PR_FALSE);
   observerService->AddObserver(this, gXpcomShutdown, PR_FALSE);
   observerService->AddObserver(this, gAutoCompleteFeedback, PR_FALSE);
+  observerService->AddObserver(this, gIdleDaily, PR_FALSE);
   observerService->AddObserver(this, NS_PRIVATE_BROWSING_SWITCH_TOPIC, PR_FALSE);
   // In case we've either imported or done a migration from a pre-frecency
   // build, we will calculate the first cutoff period's frecencies once the rest
@@ -908,9 +911,6 @@ nsNavHistory::InitializeIdleTimer()
   NS_ENSURE_SUCCESS(rv, rv);
 
   PRInt32 idleTimerTimeout = EXPIRE_IDLE_TIME_IN_MSECS;
-  if (mFrecencyUpdateIdleTime)
-    idleTimerTimeout = PR_MIN(idleTimerTimeout, mFrecencyUpdateIdleTime);
-
   rv = mIdleTimer->InitWithFuncCallback(IdleTimerCallback, this,
                                         idleTimerTimeout,
                                         nsITimer::TYPE_REPEATING_SLACK);
@@ -5196,12 +5196,6 @@ nsNavHistory::OnIdle()
   rv = idleService->GetIdleTime(&idleTime);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  // If we've been idle for more than mFrecencyUpdateIdleTime
-  // recalculate some frecency values. A value of zero indicates that
-  // frecency recalculation on idle is disabled.
-  if (mFrecencyUpdateIdleTime && idleTime > mFrecencyUpdateIdleTime)
-    (void)RecalculateFrecencies(mNumCalculateFrecencyOnIdle, PR_TRUE);
-
   // If we've been idle for more than EXPIRE_IDLE_TIME_IN_MSECS
   // keep the expiration engine chugging along.
   // Note: This is done prior to a possible vacuum, to optimize space reduction
@@ -5355,6 +5349,7 @@ nsNavHistory::Observe(nsISupports *aSubject, const char *aTopic,
       do_GetService("@mozilla.org/observer-service;1", &rv);
     NS_ENSURE_SUCCESS(rv, rv);
     observerService->RemoveObserver(this, NS_PRIVATE_BROWSING_SWITCH_TOPIC);
+    observerService->RemoveObserver(this, gIdleDaily);
     observerService->RemoveObserver(this, gAutoCompleteFeedback);
     observerService->RemoveObserver(this, gXpcomShutdown);
     observerService->RemoveObserver(this, gQuitApplicationGrantedMessage);
@@ -5401,6 +5396,54 @@ nsNavHistory::Observe(nsISupports *aSubject, const char *aTopic,
     if (oldDaysMin != mExpireDaysMin || oldDaysMax != mExpireDaysMax ||
         oldVisits != mExpireSites)
       mExpire.OnExpirationChanged();
+  }
+  else if (strcmp(aTopic, gIdleDaily) == 0) {
+    // Recalculate some frecency values (zero time means don't recalculate)
+    if (mFrecencyUpdateIdleTime)
+      (void)RecalculateFrecencies(mNumCalculateFrecencyOnIdle, PR_TRUE);
+
+    if (mDBConn) {
+      // Globally decay places frecency rankings to estimate reduced frecency
+      // values of pages that haven't been visited for a while, i.e., they do
+      // not get an updated frecency. We directly modify moz_places to avoid
+      // bringing the whole database into places_temp through places_view. A
+      // scaling factor of .975 results in .5 the original value after 28 days.
+      nsCOMPtr<mozIStorageStatement> decayFrecency;
+      nsresult rv = mDBConn->CreateStatement(NS_LITERAL_CSTRING(
+        "UPDATE moz_places SET frecency = ROUND(frecency * .975) "
+        "WHERE frecency > 0"),
+        getter_AddRefs(decayFrecency));
+      NS_WARN_IF_FALSE(NS_SUCCEEDED(rv), "Failed to create decayFrecency");
+
+      // Decay potentially unused adaptive entries (e.g. those that are at 1)
+      // to allow better chances for new entries that will start at 1
+      nsCOMPtr<mozIStorageStatement> decayAdaptive;
+      rv = mDBConn->CreateStatement(NS_LITERAL_CSTRING(
+        "UPDATE moz_inputhistory SET use_count = use_count * .975"),
+        getter_AddRefs(decayAdaptive));
+      NS_WARN_IF_FALSE(NS_SUCCEEDED(rv), "Failed to create decayAdaptive");
+
+      // Delete any adaptive entries that won't help in ordering anymore
+      nsCOMPtr<mozIStorageStatement> deleteAdaptive;
+      rv = mDBConn->CreateStatement(NS_LITERAL_CSTRING(
+        "DELETE FROM moz_inputhistory WHERE use_count < .01"),
+        getter_AddRefs(deleteAdaptive));
+      NS_WARN_IF_FALSE(NS_SUCCEEDED(rv), "Failed to create deleteAdaptive");
+
+      // Run these statements asynchronously if they were created successfully
+      if (decayFrecency && decayAdaptive && deleteAdaptive) {
+        nsCOMPtr<mozIStoragePendingStatement> ps;
+        mozIStorageStatement *stmts[] = {
+          decayFrecency,
+          decayAdaptive,
+          deleteAdaptive
+        };
+
+        rv = mDBConn->ExecuteAsync(stmts, NS_ARRAY_LENGTH(stmts), nsnull,
+                                    getter_AddRefs(ps));
+        NS_WARN_IF_FALSE(NS_SUCCEEDED(rv), "Failed to exec async idle stmts");
+      }
+    }
   }
   else if (strcmp(aTopic, NS_PRIVATE_BROWSING_SWITCH_TOPIC) == 0) {
     if (NS_LITERAL_STRING(NS_PRIVATE_BROWSING_ENTER).Equals(aData)) {
