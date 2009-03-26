@@ -2248,11 +2248,16 @@ public:
     GetRuntime() const {XPCWrappedNativeScope* scope = GetScope();
                         return scope ? scope->GetRuntime() : nsnull;}
 
+    /**
+     * If Object has a nsWrapperCache it should be passed in. If a cache is
+     * passed in then cache->GetWrapper() must be null.
+     */
     static nsresult
     GetNewOrUsed(XPCCallContext& ccx,
                  nsISupports* Object,
                  XPCWrappedNativeScope* Scope,
                  XPCNativeInterface* Interface,
+                 nsWrapperCache* cache,
                  JSBool isGlobal,
                  XPCWrappedNative** wrapper);
 
