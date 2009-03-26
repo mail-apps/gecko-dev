@@ -5956,7 +5956,8 @@ missingPluginInstaller.prototype.newDisabledPlugin = function(aEvent){
 }
 
 missingPluginInstaller.prototype.refreshBrowser = function(aEvent) {
-  var browser = aEvent.target;
+  // browser elements are anonymous so we can't just use target.
+  var browser = aEvent.originalTarget;
   var notificationBox = gBrowser.getNotificationBox(browser);
   var notification = notificationBox.getNotificationWithValue("missing-plugins");
 
