@@ -122,7 +122,7 @@ class Process(subprocess.Popen):
         try:
           subprocess.Popen(["kill", "-f", pid]).wait()
         except:
-          log.info("ERROR FAIL Missing 'kill' utility to kill process with pid=%s. Kill it manually !", pid)
+          log.info("TEST-UNEXPECTED-FAIL | Missing 'kill' utility to kill process with pid=%s. Kill it manually !", pid)
       else:
         # Windows XP and later.
         subprocess.Popen(["taskkill", "/F", "/PID", pid]).wait()
