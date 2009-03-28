@@ -1906,7 +1906,7 @@ PresShell::SetPrefNoScriptRule()
     ((mPresContext->Type() == nsPresContext::eContext_PrintPreview || 
       mPresContext->Type() == nsPresContext::eContext_Print) &&
      NS_PTR_TO_INT32(mDocument->GetProperty(
-                       nsGkAtoms::scriptEnabledBeforePrintOrPreview)));
+                       nsGkAtoms::scriptEnabledBeforePrintPreview)));
 
   if (scriptEnabled) {
     if (!mPrefStyleSheet) {
