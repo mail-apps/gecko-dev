@@ -1310,8 +1310,16 @@ tabpanels {
   list-style-image: url("chrome://global/skin/icons/loading_16.png");
 }
 
+.tabs-alltabs-button {
+  margin-bottom: 1px;
+}
+
+.tabs-alltabs-button > .toolbarbutton-menu-dropmarker {
+  margin-bottom: -1px;
+}
+
 .tabs-alltabs-button > .toolbarbutton-icon {
-  margin: 0px;
+  display: none;
 }
 
 %else
