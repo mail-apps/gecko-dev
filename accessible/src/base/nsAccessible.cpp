@@ -1979,27 +1979,10 @@ nsAccessible::GetAttributes(nsIPersistentProperties **aAttributes)
     attributes->SetStringProperty(NS_LITERAL_CSTRING("valuetext"), valuetext, oldValueUnused);
   }
 
-
-  PRUint32 role = nsAccUtils::Role(this);
-  if (role == nsIAccessibleRole::ROLE_CHECKBUTTON ||
-      role == nsIAccessibleRole::ROLE_PUSHBUTTON ||
-      role == nsIAccessibleRole::ROLE_MENUITEM ||
-      role == nsIAccessibleRole::ROLE_LISTITEM ||
-      role == nsIAccessibleRole::ROLE_OPTION ||
-      role == nsIAccessibleRole::ROLE_RADIOBUTTON ||
-      role == nsIAccessibleRole::ROLE_RICH_OPTION ||
-      role == nsIAccessibleRole::ROLE_OUTLINEITEM ||
-      content->HasAttr(kNameSpaceID_None, nsAccessibilityAtoms::aria_checked)) {
-    // Might be checkable -- checking role & ARIA attribute first is faster than getting state
-    PRUint32 state = 0;
-    GetState(&state, nsnull);
-    if (state & nsIAccessibleStates::STATE_CHECKABLE) {
-      // No official state for checkable, so use object attribute to expose that
-      attributes->SetStringProperty(NS_LITERAL_CSTRING("checkable"), NS_LITERAL_STRING("true"),
-                                    oldValueUnused);
-    }
-  }
-
+  // Expose checkable object attribute if the accessible has checkable state
+  if (nsAccUtils::State(this) & nsIAccessibleStates::STATE_CHECKABLE)
+    nsAccUtils::SetAccAttr(attributes, nsAccessibilityAtoms::checkable, NS_LITERAL_STRING("true"));
+  
   // Level/setsize/posinset
   if (!nsAccUtils::HasAccGroupAttrs(attributes)) {
     // The role of an accessible can be pointed by ARIA attribute but ARIA
@@ -2008,6 +1991,7 @@ nsAccessible::GetAttributes(nsIPersistentProperties **aAttributes)
 
     // If accessible is invisible we don't want to calculate group ARIA
     // attributes for it.
+    PRUint32 role = nsAccUtils::Role(this);
     if ((role == nsIAccessibleRole::ROLE_LISTITEM ||
          role == nsIAccessibleRole::ROLE_MENUITEM ||
          role == nsIAccessibleRole::ROLE_CHECK_MENU_ITEM ||

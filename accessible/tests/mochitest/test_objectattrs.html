@@ -20,13 +20,23 @@ https://bugzilla.mozilla.org/show_bug.cgi?id=475006
   <script type="application/javascript">
     function doTest()
     {
+      // aria
       testAttrs("atomic", {"atomic" : "true"}, true); 
       testAttrs("autocomplete", {"autocomplete" : "true"}, true); 
-      // bug 477876 testAttrs("checked", {"checkable" : "true"}, true); 
+      testAttrs("checkbox", {"checkable" : "true"}, true); 
+      testAttrs("checkedCheckbox", {"checkable" : "true"}, true); 
+      testAttrs("checkedMenuitem", {"checkable" : "true"}, true); 
+      testAttrs("checkedOption", {"checkable" : "true"}, true); 
+      testAttrs("checkedRadio", {"checkable" : "true"}, true); 
+      testAttrs("checkedTreeitem", {"checkable" : "true"}, true); 
       testAttrs("dropeffect", {"dropeffect" : "copy"}, true); 
       testAttrs("live", {"live" : "polite"}, true);
       testAttrs("me", {"container-live" : "polite"}, true);
       
+      // html
+      testAttrs("radio", {"checkable" : "true"}, true); 
+      testAttrs("checkbox", {"checkable" : "true"}, true); 
+
       SimpleTest.finish();
     }
 
@@ -46,11 +56,20 @@ https://bugzilla.mozilla.org/show_bug.cgi?id=475006
   <pre id="test">
   </pre>
 
+  <!-- aria -->
   <div id="atomic" aria-atomic="true"></div>
   <div id="autocomplete" role="textbox" aria-autocomplete="true"></div>
-  <div id="checked" aria-checked="true"></div>
+  <div id="checkbox" role="checkbox"></div>
+  <div id="checkedCheckbox" role="checkbox" aria-checked="true"></div>
+  <div id="checkedMenuitem" role="menuitem" aria-checked="true"></div>
+  <div id="checkedOption" role="option" aria-checked="true"></div>
+  <div id="checkedRadio" role="radio" aria-checked="true"></div>
+  <div id="checkedTreeitem" role="treeitem" aria-checked="true"></div>
   <div id="dropeffect" aria-dropeffect="copy"></div>
   <div id="live" aria-live="polite">excuse <div id="me">me</div></div>  
   
+  <!-- html -->
+  <input id="radio" type="radio"/>
+  <input id="checkbox" type="checkbox"/>
 </body>
 </html>
