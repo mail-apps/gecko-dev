@@ -97,7 +97,7 @@
 .search-go-container {
   -moz-box-align: center;
   background: url("chrome://browser/skin/urlbar/endcap.png") no-repeat right top;
-  -moz-padding-end: 4px;
+  -moz-padding-end: 5px;
 }
 
 .search-go-container[chromedir="rtl"] {
