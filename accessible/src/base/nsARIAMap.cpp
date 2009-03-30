@@ -143,15 +143,6 @@ nsRoleMapEntry nsARIAMap::gWAIRoleMap[] =
     kEndEntry
   },
   {
-    "description",
-    nsIAccessibleRole::ROLE_TEXT_CONTAINER,
-    eNameOkFromChildren,
-    eNoValue,
-    eNoAction,
-    kNoReqStates,
-    kEndEntry
-  },
-  {
     "dialog",
     nsIAccessibleRole::ROLE_DIALOG,
     eNameLabelOrTitle,
