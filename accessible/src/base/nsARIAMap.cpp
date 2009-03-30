@@ -93,7 +93,7 @@ nsRoleMapEntry nsARIAMap::gWAIRoleMap[] =
     eNameLabelOrTitle,
     eNoValue,
     eNoAction,
-    kNoReqStates,
+    nsIAccessibleStates::STATE_READONLY,
     kEndEntry
   },
   {
@@ -157,7 +157,7 @@ nsRoleMapEntry nsARIAMap::gWAIRoleMap[] =
     eNameLabelOrTitle,
     eNoValue,
     eNoAction,
-    kNoReqStates,
+    nsIAccessibleStates::STATE_READONLY,
     kEndEntry
   },
   {

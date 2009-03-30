@@ -2411,7 +2411,11 @@ nsAccessible::GetState(PRUint32 *aState, PRUint32 *aExtraState)
       *aExtraState |= nsIAccessibleStates::EXT_STATE_HORIZONTAL;
     }
   }
-
+  
+  // If we are editable, force readonly bit off
+  if (*aExtraState & nsIAccessibleStates::EXT_STATE_EDITABLE)
+    *aState &= ~nsIAccessibleStates::STATE_READONLY;
+ 
   return NS_OK;
 }
 
@@ -2430,7 +2434,8 @@ nsAccessible::GetARIAState(PRUint32 *aState)
   }
 
   if (mRoleMapEntry) {
-    // Once DHTML role is used, we're only readonly if DHTML readonly used
+    // Once an ARIA role is used, default to not-readonly. This can be overridden
+    // by aria-readonly, or if the ARIA role is mapped to readonly by default
     *aState &= ~nsIAccessibleStates::STATE_READONLY;
 
     if (content->HasAttr(kNameSpaceID_None, content->GetIDAttributeName())) {
@@ -2462,6 +2467,7 @@ nsAccessible::GetARIAState(PRUint32 *aState)
   if (!mRoleMapEntry)
     return NS_OK;
 
+  // Note: the readonly bitflag will be overridden later if content is editable
   *aState |= mRoleMapEntry->state;
   if (MappedAttrState(content, aState, &mRoleMapEntry->attributeMap1) &&
       MappedAttrState(content, aState, &mRoleMapEntry->attributeMap2) &&
