@@ -80,6 +80,7 @@
 #include "gfxTypes.h"
 #include "gfxUserFontSet.h"
 
+#include "nsTextFragment.h"
 #ifdef MOZ_SVG
 #include "nsSVGUtils.h"
 #include "nsSVGIntegrationUtils.h"
@@ -3184,6 +3185,45 @@ nsLayoutUtils::IsReallyFixedPos(nsIFrame* aFrame)
   nsIAtom *parentType = aFrame->GetParent()->GetType();
   return parentType == nsGkAtoms::viewportFrame ||
          parentType == nsGkAtoms::pageContentFrame;
+}
+
+static void DeleteTextFragment(void* aObject, nsIAtom* aPropertyName,
+                               void* aPropertyValue, void* aData)
+{
+  delete static_cast<nsTextFragment*>(aPropertyValue);
+}
+
+
+/* static */ nsresult
+nsLayoutUtils::InitTextRunContainerForPrinting(nsIContent* aContent,
+                                               nsIFrame* aFrame,
+                                               nsFrameState aBits)
+{
+  NS_PRECONDITION(aFrame->GetType() == nsGkAtoms::textFrame ||
+                  aFrame->GetType() == nsGkAtoms::svgGlyphFrame,
+                  "Wrong frame type!");
+
+  nsPresContext* presContext = aFrame->PresContext();
+  if (presContext->IsDynamic()) {
+    return NS_OK;
+  }
+  
+  if (!presContext->PropertyTable()->
+        GetProperty(aContent, nsGkAtoms::clonedTextForPrint)) {
+    nsTextFragment* frag = new nsTextFragment();
+    NS_ENSURE_TRUE(frag, NS_ERROR_OUT_OF_MEMORY);
+    *frag = *aContent->GetText();
+    nsresult rv = presContext->PropertyTable()->
+                    SetProperty(aContent, nsGkAtoms::clonedTextForPrint, frag,
+                                DeleteTextFragment, nsnull);
+    if (NS_FAILED(rv)) {
+      delete frag;
+      return rv;
+    }
+  }
+
+  aFrame->AddStateBits(aBits);
+  return NS_OK;
 }
 
 nsSetAttrRunnable::nsSetAttrRunnable(nsIContent* aContent, nsIAtom* aAttrName,

@@ -54,6 +54,7 @@
 #include "gfxMatrix.h"
 #include "gfxPlatform.h"
 #include "gfxTextRunWordCache.h"
+#include "nsTextFrame.h"
 
 struct CharacterPosition {
   gfxPoint pos;
@@ -286,6 +287,20 @@ nsSVGGlyphFrame::IsSelectable(PRBool* aIsSelectable,
   printf("nsSVGGlyphFrame(%p)::IsSelectable()=(%d,%d)\n", this, *aIsSelectable, aSelectStyle);
 #endif
   return rv;
+}
+
+NS_IMETHODIMP
+nsSVGGlyphFrame::Init(nsIContent* aContent,
+                      nsIFrame* aParent,
+                      nsIFrame* aPrevInFlow)
+{ 
+
+  nsresult rv = nsLayoutUtils::InitTextRunContainerForPrinting(aContent,
+                                                               this,
+                                                               NS_STATE_SVG_PRINTING);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  return nsSVGGlyphFrameBase::Init(aContent, aParent, aPrevInFlow);
 }
 
 nsIAtom *
@@ -597,7 +612,7 @@ PRBool
 nsSVGGlyphFrame::GetCharacterData(nsAString & aCharacterData)
 {
   nsAutoString characterData;
-  mContent->AppendTextTo(characterData);
+  GetFragment()->AppendTo(characterData);
 
   if (mWhitespaceHandling & COMPRESS_WHITESPACE) {
     PRBool trimLeadingWhitespace, trimTrailingWhitespace;
@@ -749,7 +764,7 @@ nsSVGGlyphFrame::GetHighlight(PRUint32 *charnum, PRUint32 *nchars,
 
   // The selection ranges are relative to the uncompressed text in
   // the content element. We'll need the text fragment:
-  const nsTextFragment *fragment = mContent->GetText();
+  const nsTextFragment* fragment = GetFragment();
   NS_ASSERTION(fragment, "no text");
   
   // get the selection details 
@@ -1056,7 +1071,7 @@ NS_IMETHODIMP_(PRUint32)
 nsSVGGlyphFrame::GetNumberOfChars()
 {
   if (mWhitespaceHandling == PRESERVE_WHITESPACE)
-    return mContent->TextLength();
+    return GetFragment()->GetLength();
 
   nsAutoString text;
   GetCharacterData(text);
