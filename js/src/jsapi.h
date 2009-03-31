@@ -115,7 +115,6 @@ JSVAL_TO_STRING(jsval v)
 static JS_ALWAYS_INLINE jsval
 OBJECT_TO_JSVAL(JSObject *obj)
 {
-    JS_STATIC_ASSERT(JSVAL_OBJECT == 0);
     JS_ASSERT(((jsval) obj & JSVAL_TAGMASK) == JSVAL_OBJECT);
     return (jsval) obj;
 }
@@ -1016,10 +1015,6 @@ JS_MarkGCThing(JSContext *cx, void *thing, const char *name, void *arg);
 #define JSVAL_TO_TRACEABLE(v)   (JSVAL_TO_GCTHING(v))
 #define JSVAL_TRACE_KIND(v)     (JSVAL_TAG(v) >> 1)
 
-JS_STATIC_ASSERT(JSVAL_TRACE_KIND(JSVAL_OBJECT) == JSTRACE_OBJECT);
-JS_STATIC_ASSERT(JSVAL_TRACE_KIND(JSVAL_DOUBLE) == JSTRACE_DOUBLE);
-JS_STATIC_ASSERT(JSVAL_TRACE_KIND(JSVAL_STRING) == JSTRACE_STRING);
-
 struct JSTracer {
     JSContext           *context;
     JSTraceCallback     callback;
@@ -1433,15 +1428,6 @@ struct JSObjectOps {
     JSFinalizeOp        clear;
     JSGetRequiredSlotOp getRequiredSlot;
     JSSetRequiredSlotOp setRequiredSlot;
-};
-
-struct JSXMLObjectOps {
-    JSObjectOps         base;
-    JSGetMethodOp       getMethod;
-    JSSetMethodOp       setMethod;
-    JSEnumerateValuesOp enumerateValues;
-    JSEqualityOp        equality;
-    JSConcatenateOp     concatenate;
 };
 
 /*
@@ -2491,7 +2477,7 @@ JS_EncodeString(JSContext *cx, JSString *str);
 typedef JSBool (* JSONWriteCallback)(const jschar *buf, uint32 len, void *data);
 
 /*
- * JSON.stringify as specificed by ES3.1 (draft)
+ * JSON.stringify as specified by ES3.1 (draft)
  */
 JS_PUBLIC_API(JSBool)
 JS_Stringify(JSContext *cx, jsval *vp, JSObject *replacer,
@@ -2504,7 +2490,7 @@ JS_PUBLIC_API(JSBool)
 JS_TryJSON(JSContext *cx, jsval *vp);
 
 /*
- * JSON.parse as specificed by ES3.1 (draft)
+ * JSON.parse as specified by ES3.1 (draft)
  */
 JS_PUBLIC_API(JSONParser *)
 JS_BeginJSONParse(JSContext *cx, jsval *vp);

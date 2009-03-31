@@ -19,6 +19,12 @@ if ("gSkipSlowTests" in this && gSkipSlowTests) {
     gDoMandelbrotTest = false;
 }
 
+if (!('gSrcdir' in this))
+    gSrcdir = '.';
+
+if (!('gReportSummary' in this))
+    gReportSummary = true;
+
 var testName = null;
 if ("arguments" in this && arguments.length > 0)
   testName = arguments[0];
@@ -97,7 +103,7 @@ function check(desc, actual, expected, oldJITstats, expectedJITstats)
                    });
     if (pass) {
       passes.push(desc);
-      return print(desc, ": passed");
+      return print("TEST-PASS | trace-test.js |", desc);
     }
   }
   fails.push(desc);
@@ -122,7 +128,8 @@ function check(desc, actual, expected, oldJITstats, expectedJITstats)
                        }
                      });
   }
-  print(desc, ": FAILED: expected", typeof(expected), "(", expected, ")",
+  print("TEST-UNEXPECTED-FAIL | trace-test.js |", desc, ": expected", typeof(expected),
+        "(", uneval(expected), ")",
         (expectedStats ? " [" + expectedStats + "] " : ""),
         "!= actual",
         typeof(actual), "(", uneval(actual), ")",
@@ -1192,12 +1199,12 @@ function testContinueWithLabel() {
     var i = 0;
     var j = 20;
     checkiandj :
-    while (i<10) {
-        i+=1;
+    while (i < 10) {
+        i += 1;
         checkj :
-        while (j>10) {
-            j-=1;
-            if ((j%2)==0)
+        while (j > 10) {
+            j -= 1;
+            if ((j % 2) == 0)
             continue checkj;
         }
     }
@@ -1619,8 +1626,8 @@ function testNestedExitStackOuter() {
 testNestedExitStackOuter.expected = 81;
 testNestedExitStackOuter.jitstats = {
     recorderStarted: 5,
-    recorderAborted: 2,
-    traceTriggered: 11
+    recorderAborted: 1,
+    traceTriggered: 10
 };
 test(testNestedExitStackOuter);
 
@@ -2525,9 +2532,9 @@ function testWeirdDateParse() {
 }
 testWeirdDateParse.expected = "11,17,2008,11,17,2008,11,17,2008,11,17,2008,11,17,2008";
 testWeirdDateParse.jitstats = {
-    recorderStarted: 7,
+    recorderStarted: 8,
     recorderAborted: 1,
-    traceCompleted: 6,
+    traceCompleted: 7,
     traceTriggered: 14,
     unstableLoopVariable: 3,
     noCompatInnerTrees: 1
@@ -4359,6 +4366,119 @@ testUndefinedPropertyAccess.jitstats = {
 };
 test(testUndefinedPropertyAccess);
 
+q = "";
+function g() { q += "g"; }
+function h() { q += "h"; }
+a = [g, g, g, g, h];
+for (i=0; i<5; i++) { f = a[i];  f(); }
+
+function testRebranding() {
+    return q;
+}
+testRebranding.expected = "ggggh";
+test(testRebranding);
+delete q;
+delete g;
+delete h;
+delete a;
+delete f;
+
+function testLambdaCtor() {
+    var a = [];
+    for (var x = 0; x < RUNLOOP; ++x) {
+        var f = function(){};
+        a[a.length] = new f;
+    }
+
+    // This prints false until the upvar2 bug is fixed:
+    // print(a[HOTLOOP].__proto__ !== a[HOTLOOP-1].__proto__);
+
+    // Assert that the last f was properly constructed.
+    return a[RUNLOOP-1].__proto__ === f.prototype;
+}
+testLambdaCtor.expected = true;
+test(testLambdaCtor);
+
+function testNonStubGetter() {
+    let ([] = false) { (this.watch("x", /a/g)); };
+    (function () { (eval("(function(){for each (x in [1, 2, 2]);});"))(); })();
+    this.unwatch("x");
+    return "ok";
+}
+testNonStubGetter.expected = "ok";
+test(testNonStubGetter);
+
+function testString() {
+    var q;
+    for (var i = 0; i <= RUNLOOP; ++i) {
+        q = [];
+        q.push(String(void 0));
+        q.push(String(true));
+        q.push(String(5));
+        q.push(String(5.5));
+        q.push(String("5"));
+        q.push(String([5]));
+    }
+    return q.join(",");
+}
+testString.expected = "undefined,true,5,5.5,5,5";
+testString.jitstats = {
+    recorderStarted: 1,
+    sideExitIntoInterpreter: 1
+};
+test(testString);
+
+function testToStringBeforeValueOf()
+{
+  var o = {toString: function() { return "s"; }, valueOf: function() { return "v"; } };
+  var a = [];
+  for (var i = 0; i < 10; i++)
+    a.push(String(o));
+  return a.join(",");
+}
+testToStringBeforeValueOf.expected = "s,s,s,s,s,s,s,s,s,s";
+testToStringBeforeValueOf.jitstats = {
+  recorderStarted: 1,
+  sideExitIntoInterpreter: 1
+};
+test(testToStringBeforeValueOf);
+
+function testNullToString()
+{
+  var a = [];
+  for (var i = 0; i < 10; i++)
+    a.push(String(null));
+  for (i = 0; i < 10; i++) {
+    var t = typeof a[i];
+    if (t != "string")
+      a.push(t);
+  }
+  return a.join(",");
+}
+testNullToString.expected = "null,null,null,null,null,null,null,null,null,null";
+testNullToString.jitstats = {
+  recorderStarted: 2,
+  sideExitIntoInterpreter: 2,
+  recorderAborted: 0
+};
+test(testNullToString);
+
+function testAddNull()
+{
+  var rv;
+  for (var x = 0; x < HOTLOOP + 1; ++x)
+    rv = null + [,,];
+  return rv;
+}
+testAddNull.expected = "null,";
+testAddNull.jitstats = {
+  recorderStarted: 1,
+  sideExitIntoInterpreter: 1,
+  recorderAborted: 0
+};
+test(testAddNull);
+
+
 /*****************************************************************************
  *                                                                           *
  *  _____ _   _  _____ ______ _____ _______                                  *
@@ -4386,14 +4506,14 @@ test(testUndefinedPropertyAccess);
  *                                                                           *
  *****************************************************************************/
 
-load("math-trace-tests.js");
+load(gSrcdir + "/math-trace-tests.js");
 
 // BEGIN MANDELBROT STUFF
 // XXXbz I would dearly like to wrap it up into a function to avoid polluting
 // the global scope, but the function ends up heavyweight, and then we lose on
 // the jit.
 if (gDoMandelbrotTest) {
-load("mandelbrot-results.js");
+load(gSrcdir + "/mandelbrot-results.js");
 //function testMandelbrotAll() {
   // Configuration options that affect which codepaths we follow.
   var doImageData = true;
@@ -4668,5 +4788,7 @@ testGlobalProtoAccess.expected = "ok";
 test(testGlobalProtoAccess);
 
 /* Keep these at the end so that we can see the summary after the trace-debug spew. */
-print("\npassed:", passes.length && passes.join(","));
-print("\nFAILED:", fails.length && fails.join(","));
+if (gReportSummary) {
+    print("\npassed:", passes.length && passes.join(","));
+    print("\nFAILED:", fails.length && fails.join(","));
+ }

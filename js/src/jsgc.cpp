@@ -133,6 +133,47 @@ extern "C" {
 #endif
 
 /*
+ * Check JSTempValueUnion has the size of jsval and void * so we can
+ * reinterpret jsval as void* GC-thing pointer and use JSTVU_SINGLE for
+ * different GC-things.
+ */
+JS_STATIC_ASSERT(sizeof(JSTempValueUnion) == sizeof(jsval));
+JS_STATIC_ASSERT(sizeof(JSTempValueUnion) == sizeof(void *));
+
+
+/*
+ * Check that JSTRACE_XML follows JSTRACE_OBJECT, JSTRACE_DOUBLE and
+ * JSTRACE_STRING.
+ */
+JS_STATIC_ASSERT(JSTRACE_OBJECT == 0);
+JS_STATIC_ASSERT(JSTRACE_DOUBLE == 1);
+JS_STATIC_ASSERT(JSTRACE_STRING == 2);
+JS_STATIC_ASSERT(JSTRACE_XML    == 3);
+
+/*
+ * JS_IS_VALID_TRACE_KIND assumes that JSTRACE_STRING is the last non-xml
+ * trace kind when JS_HAS_XML_SUPPORT is false.
+ */
+JS_STATIC_ASSERT(JSTRACE_STRING + 1 == JSTRACE_XML);
+
+/*
+ * The number of used GCX-types must stay within GCX_LIMIT.
+ */
+JS_STATIC_ASSERT(GCX_NTYPES <= GCX_LIMIT);
+
+
+/*
+ * Check that we can reinterpret double as JSGCDoubleCell.
+ */
+JS_STATIC_ASSERT(sizeof(JSGCDoubleCell) == sizeof(double));
+
+/*
+ * Check that we can use memset(p, 0, ...) to implement JS_CLEAR_WEAK_ROOTS.
+ */
+JS_STATIC_ASSERT(JSVAL_NULL == 0);
+
+
+/*
  * A GC arena contains a fixed number of flag bits for each thing in its heap,
  * and supports O(1) lookup of a flag given its thing's address.
  *
@@ -1675,7 +1716,7 @@ CloseNativeIterators(JSContext *cx)
 #define NGCHIST 64
 
 static struct GCHist {
-    JSBool      lastDitch;
+    bool        lastDitch;
     JSGCThing   *freeList;
 } gchist[NGCHIST];
 
@@ -1750,15 +1791,21 @@ EnsureLocalFreeList(JSContext *cx)
 
 #endif
 
-static JS_INLINE JSBool
+static JS_INLINE bool
 IsGCThresholdReached(JSRuntime *rt)
 {
+#ifdef JS_GC_ZEAL
+    if (rt->gcZeal >= 1)
+        return true;
+#endif
+
     /*
      * Since the initial value of the gcLastBytes parameter is not equal to
      * zero (see the js_InitGC function) the return value is false when
      * the gcBytes value is close to zero at the JS engine start.
      */
-    return rt->gcBytes / rt->gcTriggerFactor >= rt->gcLastBytes / 100;
+    return rt->gcMallocBytes >= rt->gcMaxMallocBytes ||
+           rt->gcBytes / rt->gcTriggerFactor >= rt->gcLastBytes / 100;
 }
 
 void *
@@ -1766,7 +1813,7 @@ js_NewGCThing(JSContext *cx, uintN flags, size_t nbytes)
 {
     JSRuntime *rt;
     uintN flindex;
-    JSBool doGC;
+    bool doGC;
     JSGCThing *thing;
     uint8 *flagp;
     JSGCArenaList *arenaList;
@@ -1827,17 +1874,13 @@ js_NewGCThing(JSContext *cx, uintN flags, size_t nbytes)
         return NULL;
     }
 
-    doGC = (rt->gcMallocBytes >= rt->gcMaxMallocBytes && rt->gcPoke) ||
-           IsGCThresholdReached(rt);
-#ifdef JS_GC_ZEAL
-    doGC = doGC || rt->gcZeal >= 2 || (rt->gcZeal >= 1 && rt->gcPoke);
-# ifdef JS_TRACER
+#if defined JS_GC_ZEAL && defined JS_TRACER
     if (rt->gcZeal >= 1 && JS_TRACE_MONITOR(cx).useReservedObjects)
         goto testReservedObjects;
-# endif
 #endif
 
     arenaList = &rt->gcArenaList[flindex];
+    doGC = IsGCThresholdReached(rt);
     for (;;) {
         if (doGC
 #ifdef JS_TRACER
@@ -1868,9 +1911,9 @@ js_NewGCThing(JSContext *cx, uintN flags, size_t nbytes)
              * Refill the local free list by taking several things from the
              * global free list unless we are still at rt->gcMaxMallocBytes
              * barrier or the free list is already populated. The former
-             * happens when GC is canceled due to !gcCallback(cx, JSGC_BEGIN)
-             * or no gcPoke. The latter is caused via allocating new things
-             * in gcCallback(cx, JSGC_END).
+             * happens when GC is canceled due to gcCallback(cx, JSGC_BEGIN)
+             * returning false. The latter is caused via allocating new
+             * things in gcCallback(cx, JSGC_END).
              */
             if (rt->gcMallocBytes >= rt->gcMaxMallocBytes)
                 break;
@@ -1927,7 +1970,7 @@ testReservedObjects:
             if (!a) {
                 if (doGC || JS_ON_TRACE(cx))
                     goto fail;
-                doGC = JS_TRUE;
+                doGC = true;
                 continue;
             }
             a->list = arenaList;
@@ -2060,14 +2103,8 @@ RefillDoubleFreeList(JSContext *cx)
         return NULL;
     }
 
-    if ((rt->gcMallocBytes >= rt->gcMaxMallocBytes && rt->gcPoke) ||
-        IsGCThresholdReached(rt)
-#ifdef JS_GC_ZEAL
-        || rt->gcZeal >= 2 || (rt->gcZeal >= 1 && rt->gcPoke)
-#endif
-        ) {
+    if (IsGCThresholdReached(rt))
         goto do_gc;
-    }
 
     /*
      * Loop until we find a flag bitmap byte with unset bits indicating free
@@ -2262,11 +2299,7 @@ js_AddAsGCBytes(JSContext *cx, size_t sz)
     rt = cx->runtime;
     if (rt->gcBytes >= rt->gcMaxBytes ||
         sz > (size_t) (rt->gcMaxBytes - rt->gcBytes) ||
-        IsGCThresholdReached(rt)
-#ifdef JS_GC_ZEAL
-        || rt->gcZeal >= 2 || (rt->gcZeal >= 1 && rt->gcPoke)
-#endif
-        ) {
+        IsGCThresholdReached(rt)) {
         if (JS_ON_TRACE(cx)) {
             /*
              * If we can't leave the trace, signal OOM condition, otherwise

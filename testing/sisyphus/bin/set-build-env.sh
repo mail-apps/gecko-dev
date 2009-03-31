@@ -304,6 +304,11 @@ for step in step1; do # dummy loop for handling exits
         darwin)
             export JS_EDITLINE=1 # required for mac
             ;;
+        -narcissus)
+            export XCFLAGS="-DNARCISSUS=1"
+            export CFLAGS="-DNARCISSUS=1"
+            export CXXFLAGS="-DNARCISSUS=1"
+            ;;
     esac
     # end js shell builds
 

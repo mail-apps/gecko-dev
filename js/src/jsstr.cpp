@@ -1825,6 +1825,10 @@ str_replace(JSContext *cx, uintN argc, jsval *vp)
 static JSString* FASTCALL
 String_p_replace_str(JSContext* cx, JSString* str, JSObject* regexp, JSString* repstr)
 {
+    /* Make sure we will not call regexp.toString() later. This is not a _FAIL builtin. */
+    if (OBJ_GET_CLASS(cx, regexp) != &js_RegExpClass)
+        return NULL;
+
     jsval vp[4] = {
         JSVAL_NULL, STRING_TO_JSVAL(str), OBJECT_TO_JSVAL(regexp), STRING_TO_JSVAL(repstr)
     };
@@ -2557,7 +2561,7 @@ JS_DEFINE_TRCINFO_3(str_replace,
     (4, (static, STRING_RETRY,      String_p_replace_str2, CONTEXT, THIS_STRING, STRING, STRING, 1, 1)),
     (5, (static, STRING_RETRY,      String_p_replace_str3, CONTEXT, THIS_STRING, STRING, STRING, STRING, 1, 1)))
 JS_DEFINE_TRCINFO_1(str_split,
-    (3, (static, OBJECT_RETRY_NULL, String_p_split, CONTEXT, THIS_STRING, STRING,             0, 0)))
+    (3, (static, OBJECT_RETRY,      String_p_split, CONTEXT, THIS_STRING, STRING,             0, 0)))
 JS_DEFINE_TRCINFO_1(str_toLowerCase,
     (2, (extern, STRING_RETRY,      js_toLowerCase, CONTEXT, THIS_STRING,                     1, 1)))
 JS_DEFINE_TRCINFO_1(str_toUpperCase,
@@ -2624,8 +2628,8 @@ static JSFunctionSpec string_methods[] = {
     JS_FS_END
 };
 
-static JSBool
-String(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
+JSBool
+js_String(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
 {
     JSString *str;
 
@@ -2851,7 +2855,7 @@ js_InitStringClass(JSContext *cx, JSObject *obj)
     if (!JS_DefineFunctions(cx, obj, string_functions))
         return NULL;
 
-    proto = JS_InitClass(cx, obj, NULL, &js_StringClass, String, 1,
+    proto = JS_InitClass(cx, obj, NULL, &js_StringClass, js_String, 1,
                          string_props, string_methods,
                          NULL, string_static_methods);
     if (!proto)
