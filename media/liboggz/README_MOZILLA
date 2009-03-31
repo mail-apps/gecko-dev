@@ -7,3 +7,6 @@ Mozilla build system.
 The svn revision number used was r3867.
 
 endian.patch is applied to fix bug 452698.
+
+The oggz_off_t.patch fixes a compile error on Solaris see bug 449754
+for details
