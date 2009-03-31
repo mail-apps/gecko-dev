@@ -295,10 +295,9 @@ nsSVGGlyphFrame::Init(nsIContent* aContent,
                       nsIFrame* aPrevInFlow)
 { 
 
-  nsresult rv = nsLayoutUtils::InitTextRunContainerForPrinting(aContent,
-                                                               this,
-                                                               NS_STATE_SVG_PRINTING);
-  NS_ENSURE_SUCCESS(rv, rv);
+  if (!PresContext()->IsDynamic()) {
+    AddStateBits(NS_STATE_SVG_PRINTING);
+  }
 
   return nsSVGGlyphFrameBase::Init(aContent, aParent, aPrevInFlow);
 }

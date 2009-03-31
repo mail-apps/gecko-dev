@@ -470,7 +470,7 @@ PRInt32 nsTextFrame::GetInFlowContentLength() {
     }
   }
 #endif //IBMBIDI
-  return mContent->TextLength() - mContentOffset;
+  return GetFragment()->GetLength() - mContentOffset;
 }
 
 // Smarter versions of XP_IS_SPACE.
@@ -3321,10 +3321,9 @@ nsTextFrame::Init(nsIContent*      aContent,
   NS_PRECONDITION(aContent->IsNodeOfType(nsINode::eTEXT),
                   "Bogus content!");
 
-  nsresult rv = nsLayoutUtils::InitTextRunContainerForPrinting(aContent,
-                                                               this,
-                                                               TEXT_BLINK_ON_OR_PRINTING);
-  NS_ENSURE_SUCCESS(rv, rv);
+  if (!PresContext()->IsDynamic()) {
+    AddStateBits(TEXT_BLINK_ON_OR_PRINTING);
+  }
 
   // We're not a continuing frame.
   // mContentOffset = 0; not necessary since we get zeroed out at init
@@ -3404,13 +3403,12 @@ nsContinuingTextFrame::Init(nsIContent* aContent,
 {
   NS_ASSERTION(aPrevInFlow, "Must be a continuation!");
 
-  nsresult rv = nsLayoutUtils::InitTextRunContainerForPrinting(aContent,
-                                                               this,
-                                                               TEXT_BLINK_ON_OR_PRINTING);
-  NS_ENSURE_SUCCESS(rv, rv);
+  if (!PresContext()->IsDynamic()) {
+    AddStateBits(TEXT_BLINK_ON_OR_PRINTING);
+  }
 
   // NOTE: bypassing nsTextFrame::Init!!!
-  rv = nsFrame::Init(aContent, aParent, aPrevInFlow);
+  nsresult rv = nsFrame::Init(aContent, aParent, aPrevInFlow);
 
 #ifdef IBMBIDI
   nsTextFrame* nextContinuation =
@@ -6616,6 +6614,5 @@ const nsTextFragment*
 nsTextFrame::GetFragmentInternal() const
 {
   return PresContext()->IsDynamic() ? mContent->GetText() :
-    static_cast<const nsTextFragment*>(PresContext()->PropertyTable()->
-                                         GetProperty(mContent, nsGkAtoms::clonedTextForPrint));
+    nsLayoutUtils::GetTextFragmentForPrinting(this);
 }
