@@ -383,6 +383,7 @@ class TraceRecorder : public avmplus::GCObject {
     JSContext*              cx;
     JSTraceMonitor*         traceMonitor;
     JSObject*               globalObj;
+    JSObject*               lexicalBlock;
     Tracker                 tracker;
     Tracker                 nativeFrameTracker;
     char*                   entryTypeMap;
