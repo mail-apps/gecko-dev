@@ -465,9 +465,7 @@
         <toolbarbutton id="new-tab-button" class="toolbarbutton-1 chromeclass-toolbar-additional"
                        label="&tabCmd.label;"
                        command="cmd_newNavigatorTab"
-                       ondragover="nsDragAndDrop.dragOver(event, newTabButtonObserver);"
-                       ondragdrop="nsDragAndDrop.drop(event, newTabButtonObserver);"
-                       ondragexit="nsDragAndDrop.dragExit(event, newTabButtonObserver);"/>
+                       ondragdrop="nsDragAndDrop.drop(event, newTabButtonObserver);"/>
 
         <toolbarbutton id="new-window-button" class="toolbarbutton-1 chromeclass-toolbar-additional"
                        label="&newNavigatorCmd.label;"
