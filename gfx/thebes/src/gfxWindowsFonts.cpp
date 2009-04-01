@@ -728,13 +728,13 @@ FontEntry::TestCharacterMap(PRUint32 aCh)
                 hasGlyph = PR_TRUE;
         }
 
-        if (hasGlyph) {
-            mCharacterMap.set(aCh);
-            return PR_TRUE;         // jtdcheck -- don't we need to do a ReleaseDC??
-        }
-
         SelectObject(dc, oldFont);
         ReleaseDC(NULL, dc);
+
+        if (hasGlyph) {
+            mCharacterMap.set(aCh);
+            return PR_TRUE;
+        }
     }
 
     return PR_FALSE;
