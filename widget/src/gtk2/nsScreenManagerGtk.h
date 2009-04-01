@@ -75,7 +75,6 @@ private:
   nsCOMArray<nsIScreen> mCachedScreenArray;
 
   PRLibrary *mXineramalib;
-  PRBool mXineramaIsActive;
 
   GdkWindow *mRootWindow;
 #ifdef MOZ_X11
