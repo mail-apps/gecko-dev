@@ -224,7 +224,6 @@ var gEditItemOverlay = {
 
       // tags selector
       this._rebuildTagsSelectorList();
-      this._initialized = true;
     }
 
     // name picker
@@ -239,6 +238,8 @@ var gEditItemOverlay = {
       window.addEventListener("unload", this, false);
       this._observersAdded = true;
     }
+
+    this._initialized = true;
   },
 
   _getCommonTags: function(aArrIndex) {
@@ -777,7 +778,7 @@ var gEditItemOverlay = {
       // breaks the view.
       const FOLDER_TREE_PLACE_URI =
         "place:excludeItems=1&excludeQueries=1&excludeReadOnlyFolders=1&folder=" +
-        window.top.PlacesUIUtils.allBookmarksFolderId;
+        PlacesUIUtils.allBookmarksFolderId;
       this._folderTree.place = FOLDER_TREE_PLACE_URI;
 
       this._element("chooseFolderSeparator").hidden =
