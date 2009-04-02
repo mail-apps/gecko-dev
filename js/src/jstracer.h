@@ -579,6 +579,7 @@ public:
     void pushAbortStack();
     void popAbortStack();
     void removeFragmentoReferences();
+    void deepAbort();
 
     JS_REQUIRES_STACK bool record_EnterFrame();
     JS_REQUIRES_STACK bool record_LeaveFrame();
@@ -587,7 +588,6 @@ public:
     JS_REQUIRES_STACK bool record_DefLocalFunSetSlot(uint32 slot, JSObject* obj);
     JS_REQUIRES_STACK bool record_FastNativeCallComplete();
 
-    void deepAbort() { deepAborted = true; }
     bool wasDeepAborted() { return deepAborted; }
     TreeInfo* getTreeInfo() { return treeInfo; }
 

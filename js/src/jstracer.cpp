@@ -1344,6 +1344,12 @@ void TraceRecorder::removeFragmentoReferences()
     fragment = NULL;
 }
 
+void TraceRecorder::deepAbort()
+{
+    debug_only_v(printf("deep abort");)
+    deepAborted = true;
+}
+
 /* Add debug information to a LIR instruction as we emit it. */
 inline LIns*
 TraceRecorder::addName(LIns* ins, const char* name)
@@ -4404,12 +4410,19 @@ js_AbortRecording(JSContext* cx, const char* reason)
 
     /* Abort the trace and blacklist its starting point. */
     Fragment* f = tm->recorder->getFragment();
-    if (!f) {
+
+    /*
+     * If the recorder already had its fragment disposed, or we actually finished
+     * recording and this recorder merely is passing through the deep abort state
+     * to the next recorder on the stack, just destroy the recorder. There is
+     * nothing to abort.
+     */
+    if (!f || f->lastIns) {
         js_DeleteRecorder(cx);
         return;
     }
-    JS_ASSERT(!f->vmprivate);
 
+    JS_ASSERT(!f->vmprivate);
 #ifdef DEBUG
     TreeInfo* ti = tm->recorder->getTreeInfo();
     debug_only_a(printf("Abort recording of tree %s:%d@%d at %s:%d@%d: %s.\n",
