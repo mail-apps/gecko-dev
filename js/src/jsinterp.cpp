@@ -6940,6 +6940,11 @@ js_Interpret(JSContext *cx)
           L_JSOP_ARRAYPUSH:
 # endif
 
+# if !JS_HAS_SHARP_VARS
+          L_JSOP_DEFSHARP:
+          L_JSOP_USESHARP:
+# endif
+
 # if !JS_HAS_DESTRUCTURING
           L_JSOP_ENUMCONSTELEM:
 # endif
