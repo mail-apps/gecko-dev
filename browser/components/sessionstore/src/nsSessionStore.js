@@ -1664,8 +1664,9 @@ SessionStoreService.prototype = {
     }
 
     // when overwriting tabs, remove all superflous ones
-    for (t = openTabCount - 1; t >= newTabCount; t--) {
-      tabbrowser.removeTab(tabbrowser.mTabs[t]);
+    if (aOverwriteTabs && newTabCount < openTabCount) {
+      Array.slice(tabbrowser.mTabs, newTabCount, openTabCount)
+           .forEach(tabbrowser.removeTab, tabbrowser);
     }
     
     if (aOverwriteTabs) {
