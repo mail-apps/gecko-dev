@@ -37,7 +37,7 @@
 #ifndef NS_SVGUTILS_H
 #define NS_SVGUTILS_H
 
-// include math.h to pick up definition of M_PI if the platform defines it
+// include math.h to pick up definition of M_SQRT1_2 if the platform defines it
 #define _USE_MATH_DEFINES
 #include <math.h>
 
@@ -78,6 +78,7 @@ struct gfxIntSize;
 struct nsStyleFont;
 class nsSVGEnum;
 class nsISVGChildFrame;
+class nsSVGGeometryFrame;
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
@@ -484,6 +485,22 @@ public:
   static void
   WritePPM(const char *fname, gfxImageSurface *aSurface);
 #endif
+
+  /**
+   * Compute the maximum possible device space stroke extents of a path given
+   * the path's device space path extents, its stroke style and its ctm.
+   *
+   * This is a workaround for the lack of suitable cairo API for getting the
+   * tight device space stroke extents of a path. This basically gives us the
+   * tightest extents that we can guarantee fully enclose the inked stroke
+   * without doing the calculations for the actual tight extents. We exploit
+   * the fact that cairo does have an API for getting the tight device space
+   * fill/path extents.
+   *
+   * This should die once bug 478152 is fixed.
+   */
+  static gfxRect PathExtentsToMaxStrokeExtents(const gfxRect& aPathExtents,
+                                               nsSVGGeometryFrame* aFrame);
 
 private:
   /* Computational (nil) surfaces */
