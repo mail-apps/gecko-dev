@@ -720,6 +720,17 @@ nsFrame::SetAdditionalStyleContext(PRInt32 aIndex,
   NS_PRECONDITION(aIndex >= 0, "invalid index number");
 }
 
+nsCSSShadowArray*
+nsIFrame::GetEffectiveBoxShadows()
+{
+  nsCSSShadowArray* shadows = GetStyleBorder()->mBoxShadow;
+  if (!shadows ||
+      (IsThemed() && GetContent() &&
+       !nsContentUtils::IsChromeDoc(GetContent()->GetCurrentDoc())))
+    return nsnull;
+  return shadows;
+}
+
 nscoord
 nsFrame::GetBaseline() const
 {
@@ -950,7 +961,7 @@ nsFrame::DisplayBorderBackgroundOutline(nsDisplayListBuilder*   aBuilder,
   if (!IsVisibleForPainting(aBuilder))
     return NS_OK;
 
-  PRBool hasBoxShadow = !!(GetStyleBorder()->mBoxShadow);
+  PRBool hasBoxShadow = GetEffectiveBoxShadows() != nsnull;
   if (hasBoxShadow) {
     nsresult rv = aLists.BorderBackground()->AppendNewToTop(new (aBuilder)
         nsDisplayBoxShadowOuter(this));
@@ -3857,8 +3868,8 @@ ComputeOutlineAndEffectsRect(nsIFrame* aFrame, PRBool* aAnyOutlineOrEffects,
   *aAnyOutlineOrEffects = PR_FALSE;
 
   // box-shadow
-  nsCSSShadowArray* boxShadows = aFrame->GetStyleBorder()->mBoxShadow;
-  if (boxShadows && !aFrame->IsThemed()) {
+  nsCSSShadowArray* boxShadows = aFrame->GetEffectiveBoxShadows();
+  if (boxShadows) {
     nsRect shadows;
     for (PRUint32 i = 0; i < boxShadows->Length(); ++i) {
       nsRect tmpRect = r;
