@@ -1872,9 +1872,8 @@ TraceRecorder::import(TreeInfo* treeInfo, LIns* sp, unsigned stackSlots, unsigne
     offset = -treeInfo->nativeStackBase;
     m = typeMap;
     FORALL_SLOTS_IN_PENDING_FRAMES(cx, callDepth,
-        if (*m != JSVAL_BOXED) {
+        if (*m != JSVAL_BOXED)
             import(sp, offset, vp, *m, vpname, vpnum, fp);
-        }
         m++; offset += sizeof(double);
     );
 }
