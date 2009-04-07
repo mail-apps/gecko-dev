@@ -108,6 +108,7 @@ MAKEFILES_gfx="
   gfx/src/psshared/Makefile
   gfx/src/thebes/Makefile
   gfx/tests/Makefile
+  gfx/qcms/Makefile
 "
 
 MAKEFILES_htmlparser="
@@ -756,12 +757,6 @@ MAKEFILES_libmar="
   modules/libmar/tool/Makefile
 "
 
-MAKEFILES_lcms="
-  modules/lcms/Makefile
-  modules/lcms/include/Makefile
-  modules/lcms/src/Makefile
-"
-
 add_makefiles "
   $MAKEFILES_db
   $MAKEFILES_dom
@@ -804,7 +799,6 @@ add_makefiles "
   $MAKEFILES_accessible
   $MAKEFILES_zlib
   $MAKEFILES_libmar
-  $MAKEFILES_lcms
 "
 
 #

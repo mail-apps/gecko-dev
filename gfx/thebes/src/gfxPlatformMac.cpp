@@ -52,7 +52,7 @@
 #include "nsServiceManagerUtils.h"
 #include "nsCRT.h"
 
-#include "lcms.h"
+#include "qcms.h"
 
 gfxPlatformMac::gfxPlatformMac()
 {
@@ -336,7 +336,7 @@ gfxPlatformMac::ReadAntiAliasingThreshold()
     return threshold;
 }
 
-cmsHPROFILE
+qcms_profile *
 gfxPlatformMac::GetPlatformCMSOutputProfile()
 {
     CMProfileLocation device;
@@ -347,14 +347,14 @@ gfxPlatformMac::GetPlatformCMSOutputProfile()
     if (err != noErr)
         return nsnull;
 
-    cmsHPROFILE profile = nsnull;
+    qcms_profile *profile = nsnull;
     switch (device.locType) {
     case cmFileBasedProfile: {
         FSRef fsRef;
         if (!FSpMakeFSRef(&device.u.fileLoc.spec, &fsRef)) {
             char path[512];
             if (!FSRefMakePath(&fsRef, (UInt8*)(path), sizeof(path))) {
-                profile = cmsOpenProfileFromFile(path, "r");
+                profile = qcms_profile_from_path(path);
 #ifdef DEBUG_tor
                 if (profile)
                     fprintf(stderr,
@@ -365,7 +365,7 @@ gfxPlatformMac::GetPlatformCMSOutputProfile()
         break;
     }
     case cmPathBasedProfile:
-        profile = cmsOpenProfileFromFile(device.u.pathLoc.path, "r");
+        profile = qcms_profile_from_path(device.u.pathLoc.path);
 #ifdef DEBUG_tor
         if (profile)
             fprintf(stderr,
