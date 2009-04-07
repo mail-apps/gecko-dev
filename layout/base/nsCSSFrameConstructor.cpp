@@ -4749,15 +4749,6 @@ nsCSSFrameConstructor::ConstructRadioControlFrame(nsIFrame**      aNewFrame,
   if (NS_UNLIKELY(!*aNewFrame)) {
     return NS_ERROR_OUT_OF_MEMORY;
   }
-
-  nsRefPtr<nsStyleContext> radioStyle;
-  radioStyle = mPresShell->StyleSet()->ResolvePseudoStyleFor(aContent,
-                                                             nsCSSAnonBoxes::radio,
-                                                             aStyleContext);
-  nsIRadioControlFrame* radio = nsnull;
-  if (*aNewFrame && NS_SUCCEEDED(CallQueryInterface(*aNewFrame, &radio))) {
-    radio->SetRadioButtonFaceStyleContext(radioStyle);
-  }
   return NS_OK;
 }
 
@@ -4769,15 +4760,6 @@ nsCSSFrameConstructor::ConstructCheckboxControlFrame(nsIFrame**      aNewFrame,
   *aNewFrame = NS_NewGfxCheckboxControlFrame(mPresShell, aStyleContext);
   if (NS_UNLIKELY(!*aNewFrame)) {
     return NS_ERROR_OUT_OF_MEMORY;
-  }
-
-  nsRefPtr<nsStyleContext> checkboxStyle;
-  checkboxStyle = mPresShell->StyleSet()->ResolvePseudoStyleFor(aContent,
-                                                                nsCSSAnonBoxes::check, 
-                                                                aStyleContext);
-  nsICheckboxControlFrame* checkbox = nsnull;
-  if (*aNewFrame && NS_SUCCEEDED(CallQueryInterface(*aNewFrame, &checkbox))) {
-    checkbox->SetCheckboxFaceStyleContext(checkboxStyle);
   }
   return NS_OK;
 }
