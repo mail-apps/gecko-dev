@@ -89,7 +89,7 @@ tests.push({
 });
 
 //------------------------------------------------------------------------------
-/* XXX disabled on 1.9.1 till bug 471850 get approval
+
 tests.push({
   description: "import from bookmarks.html, but don't create smart bookmarks if they are disabled",
   exec: function() {
@@ -111,9 +111,9 @@ tests.push({
     next_test();
   }
 });
-*/
+
 //------------------------------------------------------------------------------
-/* XXX disabled on 1.9.1 till bug 471850 get approval
+
 tests.push({
   description: "Import from bookmarks.html, but don't create smart bookmarks if autoExportHTML is true and they are at latest version",
   exec: function() {
@@ -137,7 +137,7 @@ tests.push({
     next_test();
   }
 });
-*/
+
 //------------------------------------------------------------------------------
 
 tests.push({
