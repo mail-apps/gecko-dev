@@ -1788,7 +1788,7 @@ nsComputedDOMStyle::GetEllipseRadii(const nsStyleCorners& aRadius,
 nsresult
 nsComputedDOMStyle::GetCSSShadowArray(nsCSSShadowArray* aArray,
                                       const nscolor& aDefaultColor,
-                                      PRBool aUsesSpread,
+                                      PRBool aIsBoxShadow,
                                       nsIDOMCSSValue** aValue)
 {
   if (!aArray) {
@@ -1812,7 +1812,7 @@ nsComputedDOMStyle::GetCSSShadowArray(nsCSSShadowArray* aArray,
 
   nscoord nsCSSShadowItem::* const * shadowValues;
   PRUint32 shadowValuesLength;
-  if (aUsesSpread) {
+  if (aIsBoxShadow) {
     shadowValues = shadowValuesWithSpread;
     shadowValuesLength = NS_ARRAY_LENGTH(shadowValuesWithSpread);
   } else {
@@ -1857,6 +1857,19 @@ nsComputedDOMStyle::GetCSSShadowArray(nsCSSShadowArray* aArray,
         return NS_ERROR_OUT_OF_MEMORY;
       }
       val->SetAppUnits(item->*(shadowValues[i]));
+    }
+
+    if (item->mInset && aIsBoxShadow) {
+      // This is an inset box-shadow
+      val = GetROCSSPrimitiveValue();
+      if (!val || !itemList->AppendCSSValue(val)) {
+        delete val;
+        delete valueList;
+        return NS_ERROR_OUT_OF_MEMORY;
+      }
+      val->SetIdent(
+        nsCSSProps::ValueToKeywordEnum(NS_STYLE_BOX_SHADOW_INSET,
+                                       nsCSSProps::kBoxShadowTypeKTable));
     }
   }
 

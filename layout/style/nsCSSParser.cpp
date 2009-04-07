@@ -434,7 +434,7 @@ protected:
   PRBool ParseSize();
   PRBool ParseTextDecoration(nsCSSValue& aValue);
 
-  nsCSSValueList* ParseCSSShadowList(PRBool aUsesSpread);
+  nsCSSValueList* ParseCSSShadowList(PRBool aIsBoxShadow);
   PRBool ParseTextShadow();
   PRBool ParseBoxShadow();
 
@@ -7644,7 +7644,7 @@ CSSParserImpl::ParseTextDecoration(nsCSSValue& aValue)
 }
 
 nsCSSValueList*
-CSSParserImpl::ParseCSSShadowList(PRBool aUsesSpread)
+CSSParserImpl::ParseCSSShadowList(PRBool aIsBoxShadow)
 {
   nsAutoParseCompoundProperty compound(this);
 
@@ -7658,7 +7658,8 @@ CSSParserImpl::ParseCSSShadowList(PRBool aUsesSpread)
     IndexY,
     IndexRadius,
     IndexSpread,
-    IndexColor
+    IndexColor,
+    IndexInset
   };
 
   nsCSSValueList *list = nsnull;
@@ -7668,9 +7669,18 @@ CSSParserImpl::ParseCSSShadowList(PRBool aUsesSpread)
       mScanner.SetLowLevelError(NS_ERROR_OUT_OF_MEMORY);
       break;
     }
+
+    nsCSSValue isInset;
+    if (aIsBoxShadow) {
+      // Optional inset keyword (ignore errors)
+      ParseVariant(isInset, VARIANT_KEYWORD,
+                   nsCSSProps::kBoxShadowTypeKTable);
+    }
+
+    PRBool isFirstToken = (cur == list && isInset.GetUnit() == eCSSUnit_Null);
     if (!ParseVariant(cur->mValue,
-                      (cur == list) ? VARIANT_HC | VARIANT_LENGTH | VARIANT_NONE
-                                    : VARIANT_COLOR | VARIANT_LENGTH,
+                      isFirstToken ? VARIANT_HC | VARIANT_LENGTH | VARIANT_NONE
+                                   : VARIANT_COLOR | VARIANT_LENGTH,
                       nsnull)) {
       break;
     }
@@ -7678,7 +7688,7 @@ CSSParserImpl::ParseCSSShadowList(PRBool aUsesSpread)
     nsCSSUnit unit = cur->mValue.GetUnit();
     if (unit != eCSSUnit_None && unit != eCSSUnit_Inherit &&
         unit != eCSSUnit_Initial) {
-      nsRefPtr<nsCSSValue::Array> val = nsCSSValue::Array::Create(5);
+      nsRefPtr<nsCSSValue::Array> val = nsCSSValue::Array::Create(6);
       if (!val) {
         mScanner.SetLowLevelError(NS_ERROR_OUT_OF_MEMORY);
         break;
@@ -7717,7 +7727,7 @@ CSSParserImpl::ParseCSSShadowList(PRBool aUsesSpread)
         break;
       }
 
-      if (aUsesSpread) {
+      if (aIsBoxShadow) {
         // Optional spread (ignore errors)
         ParseVariant(val->Item(IndexSpread), VARIANT_LENGTH,
                      nsnull);
@@ -7727,6 +7737,14 @@ CSSParserImpl::ParseCSSShadowList(PRBool aUsesSpread)
         // Optional color (ignore errors)
         ParseVariant(val->Item(IndexColor), VARIANT_COLOR,
                      nsnull);
+      }
+
+      if (aIsBoxShadow && isInset.GetUnit() == eCSSUnit_Null) {
+        // Optional inset keyword (ignore errors)
+        ParseVariant(val->Item(IndexInset), VARIANT_KEYWORD,
+                     nsCSSProps::kBoxShadowTypeKTable);
+      } else if (isInset.GetUnit() == eCSSUnit_Enumerated) {
+        val->Item(IndexInset) = isInset;
       }
 
       // Might be at a comma now

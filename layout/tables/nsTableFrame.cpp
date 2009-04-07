@@ -1380,10 +1380,11 @@ nsTableFrame::DisplayGenericTablePart(nsDisplayListBuilder* aBuilder,
   NS_ASSERTION(currentItem, "No current table item!");
   currentItem->UpdateForFrameBackground(aFrame);
   
-  // Paint the box-shadow for the table frames
-  if (aFrame->IsVisibleForPainting(aBuilder) &&
-      aFrame->GetStyleBorder()->mBoxShadow) {
-    nsDisplayItem* item = new (aBuilder) nsDisplayBoxShadow(aFrame);
+  // Paint the outset box-shadows for the table frames
+  PRBool hasBoxShadow = aFrame->IsVisibleForPainting(aBuilder) &&
+                        aFrame->GetStyleBorder()->mBoxShadow;
+  if (hasBoxShadow) {
+    nsDisplayItem* item = new (aBuilder) nsDisplayBoxShadowOuter(aFrame);
     nsresult rv = lists->BorderBackground()->AppendNewToTop(item);
     NS_ENSURE_SUCCESS(rv, rv);
   }
@@ -1395,6 +1396,13 @@ nsTableFrame::DisplayGenericTablePart(nsDisplayListBuilder* aBuilder,
       aFrame->IsVisibleForPainting(aBuilder)) {
     nsresult rv = lists->BorderBackground()->AppendNewToTop(new (aBuilder)
         nsDisplayBackground(aFrame));
+    NS_ENSURE_SUCCESS(rv, rv);
+  }
+
+  // Paint the inset box-shadows for the table frames
+  if (hasBoxShadow) {
+    nsDisplayItem* item = new (aBuilder) nsDisplayBoxShadowInner(aFrame);
+    nsresult rv = lists->BorderBackground()->AppendNewToTop(item);
     NS_ENSURE_SUCCESS(rv, rv);
   }
 

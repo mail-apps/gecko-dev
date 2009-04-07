@@ -308,6 +308,7 @@ struct nsCSSShadowItem {
 
   nscolor      mColor;
   PRPackedBool mHasColor; // Whether mColor should be used
+  PRPackedBool mInset;
 
   nsCSSShadowItem() : mHasColor(PR_FALSE) {
     MOZ_COUNT_CTOR(nsCSSShadowItem);
@@ -322,6 +323,7 @@ struct nsCSSShadowItem {
             mRadius == aOther.mRadius &&
             mHasColor == aOther.mHasColor &&
             mSpread == aOther.mSpread &&
+            mInset == aOther.mInset &&
             (!mHasColor || mColor == aOther.mColor));
   }
   PRBool operator!=(const nsCSSShadowItem& aOther) {
