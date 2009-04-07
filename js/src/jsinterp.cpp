@@ -2766,6 +2766,10 @@ js_Interpret(JSContext *cx)
             goto error;                                                       \
     JS_END_MACRO
 
+#ifndef TRACE_RECORDER
+#define TRACE_RECORDER(cx) (false)
+#endif
+
 #define BRANCH(n)                                                             \
     JS_BEGIN_MACRO                                                            \
         regs.pc += (n);                                                       \
@@ -2773,7 +2777,12 @@ js_Interpret(JSContext *cx)
         if ((n) <= 0) {                                                       \
             CHECK_BRANCH();                                                   \
             if (op == JSOP_NOP) {                                             \
-                op = (JSOp) *++regs.pc;                                       \
+                if (TRACE_RECORDER(cx)) {                                     \
+                    MONITOR_BRANCH();                                         \
+                    op = (JSOp) *regs.pc;                                     \
+                } else {                                                      \
+                    op = (JSOp) *++regs.pc;                                   \
+                }                                                             \
             } else if (op == JSOP_LOOP) {                                     \
                 MONITOR_BRANCH();                                             \
                 op = (JSOp) *regs.pc;                                         \
