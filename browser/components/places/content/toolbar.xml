@@ -219,6 +219,9 @@
               this._containerNodesMap.push({ resultNode: aChild,
                                              domNode: popup });
             }
+            else if (PlacesUtils.nodeIsURI(aChild)) {
+              button.setAttribute("scheme", PlacesUIUtils.guessUrlSchemeForUI(aChild.uri))
+            }
           }
 
           button.node = aChild;
@@ -637,6 +640,9 @@
             // If this is a livemark container check if the status menuitem has
             // to be added or removed.
             PlacesUIUtils.ensureLivemarkStatusMenuItem(element.firstChild);
+          }
+          else if (PlacesUtils.nodeIsURI(aNode)) {
+            element.setAttribute("scheme", PlacesUIUtils.guessUrlSchemeForUI(aNode.uri))
           }
         },
 

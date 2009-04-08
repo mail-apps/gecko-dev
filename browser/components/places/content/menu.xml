@@ -820,6 +820,9 @@
             // to be added or removed.
             PlacesUIUtils.ensureLivemarkStatusMenuItem(menuitem.firstChild);
           }
+          else if (PlacesUtils.nodeIsURI(aNode)) {
+              menuitem.setAttribute("scheme", PlacesUIUtils.guessUrlSchemeForUI(aNode.uri))
+          }
         },
 
         itemReplaced:
