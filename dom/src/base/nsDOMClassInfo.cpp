@@ -6943,6 +6943,16 @@ nsNodeSH::PreCreate(nsISupports *nativeObj, JSContext *cx, JSObject *globalObj,
 }
 
 NS_IMETHODIMP
+nsNodeSH::PostCreate(nsIXPConnectWrappedNative *wrapper, JSContext *cx,
+                     JSObject *obj)
+{
+  nsINode* node = static_cast<nsINode*>(wrapper->Native());
+  node->SetWrapper(wrapper);
+
+  return nsEventReceiverSH::PostCreate(wrapper, cx, obj);
+}
+
+NS_IMETHODIMP
 nsNodeSH::AddProperty(nsIXPConnectWrappedNative *wrapper, JSContext *cx,
                       JSObject *obj, jsval id, jsval *vp, PRBool *_retval)
 {
@@ -7391,6 +7401,16 @@ nsEventTargetSH::PreCreate(nsISupports *nativeObj, JSContext *cx,
 }
 
 NS_IMETHODIMP
+nsEventTargetSH::PostCreate(nsIXPConnectWrappedNative *wrapper, JSContext *cx,
+                            JSObject *obj)
+{
+  nsXHREventTarget *target = nsXHREventTarget::FromSupports(wrapper->Native());
+  target->SetWrapper(wrapper);
+
+  return nsDOMGenericSH::PostCreate(wrapper, cx, obj);
+}
+
+NS_IMETHODIMP
 nsEventTargetSH::NewResolve(nsIXPConnectWrappedNative *wrapper,
                             JSContext *cx, JSObject *obj, jsval id,
                             PRUint32 flags, JSObject **objp, PRBool *_retval)
@@ -7719,6 +7739,19 @@ nsNodeListSH::PreCreate(nsISupports *nativeObj, JSContext *cx,
   return rv;
 }
 
+NS_IMETHODIMP
+nsNodeListSH::PostCreate(nsIXPConnectWrappedNative *wrapper, JSContext *cx,
+                         JSObject *obj)
+{
+  nsWrapperCache* cache = nsnull;
+  CallQueryInterface(wrapper->Native(), &cache);
+  if (cache) {
+    cache->SetWrapper(wrapper);
+  }
+
+  return nsArraySH::PostCreate(wrapper, cx, obj);
+}
+
 nsresult
 nsNodeListSH::GetLength(nsIXPConnectWrappedNative *wrapper, JSContext *cx,
                         JSObject *obj, PRUint32 *length)
@@ -7903,6 +7936,16 @@ nsContentListSH::PreCreate(nsISupports *nativeObj, JSContext *cx,
   *parentObj = JSVAL_TO_OBJECT(v);
 
   return rv;
+}
+
+NS_IMETHODIMP
+nsContentListSH::PostCreate(nsIXPConnectWrappedNative *wrapper, JSContext *cx,
+                            JSObject *obj)
+{
+  nsContentList *list = nsContentList::FromSupports(wrapper->Native());
+  list->SetWrapper(wrapper);
+
+  return nsNamedArraySH::PostCreate(wrapper, cx, obj);
 }
 
 nsresult
