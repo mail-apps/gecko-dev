@@ -43,6 +43,8 @@ relativesrcdir  = browser/components/places/tests/browser
 include $(DEPTH)/config/autoconf.mk
 include $(topsrcdir)/config/rules.mk
 
+# Temporarly disabled to investigate crashes (bug 487040)
+# browser_bookmarksProperties.js
 _BROWSER_TEST_FILES = \
 	browser_425884.js \
 	browser_423515.js \
@@ -51,7 +53,6 @@ _BROWSER_TEST_FILES = \
 	browser_library_open_leak.js \
 	browser_library_panel_leak.js \
 	browser_library_search.js \
-	browser_bookmarksProperties.js \
 	$(NULL)
 
 libs:: $(_BROWSER_TEST_FILES)
