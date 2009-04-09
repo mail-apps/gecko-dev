@@ -3967,7 +3967,6 @@ js_ExecuteTree(JSContext* cx, Fragment* f, uintN& inlineCallCount,
                VMSideExit** innermostNestedGuardp)
 {
     JS_ASSERT(f->root == f && f->code() && f->vmprivate);
-    JS_ASSERT(cx->builtinStatus == 0);
 
     JSTraceMonitor* tm = &JS_TRACE_MONITOR(cx);
     JSObject* globalObj = JS_GetGlobalForObject(cx, cx->fp->scopeChain);
@@ -3995,6 +3994,7 @@ js_ExecuteTree(JSContext* cx, Fragment* f, uintN& inlineCallCount,
     state->lastTreeExitGuard = NULL;
     state->lastTreeCallGuard = NULL;
     state->rpAtLastTreeCall = NULL;
+    state->builtinStatus = 0;
 
     /* Setup the native global frame. */
     double* global = (double*)(state+1);
@@ -4116,8 +4116,7 @@ LeaveTree(InterpState& state, VMSideExit* lr)
         JS_ASSERT(state.lastTreeExitGuard->exitType != NESTED_EXIT);
     }
 
-    int32_t bs = cx->builtinStatus;
-    cx->builtinStatus = 0;
+    int32_t bs = state.builtinStatus;
     bool bailed = innermost->exitType == STATUS_EXIT && (bs & JSBUILTIN_BAILED);
     if (bailed) {
         /*
@@ -4131,7 +4130,7 @@ LeaveTree(InterpState& state, VMSideExit* lr)
             /*
              * The native succeeded (no exception or error). After it returned, the
              * trace stored the return value (at the top of the native stack) and
-             * then immediately flunked the guard on cx->builtinStatus.
+             * then immediately flunked the guard on state->builtinStatus.
              *
              * Now LeaveTree has been called again from the tail of
              * js_ExecuteTree. We are about to return to the interpreter. Adjust
@@ -4939,7 +4938,7 @@ js_DeepBail(JSContext *cx)
     JS_TRACE_MONITOR(cx).prohibitRecording = true;
     LeaveTree(*cx->interpState, cx->bailExit);
     cx->bailExit = NULL;
-    cx->builtinStatus |= JSBUILTIN_BAILED;
+    cx->interpState->builtinStatus |= JSBUILTIN_BAILED;
 }
 
 JS_REQUIRES_STACK jsval&
@@ -7459,7 +7458,7 @@ GetProperty_tn(JSContext *cx, jsbytecode *pc, JSObject *obj, JSString *name)
 
     if (!js_ValueToStringId(cx, STRING_TO_JSVAL(name), idr.addr()) ||
         !OBJ_GET_PROPERTY(cx, obj, idr.id(), tvr.addr())) {
-        cx->builtinStatus |= JSBUILTIN_ERROR;
+        js_SetBuiltinError(cx);
         *tvr.addr() = JSVAL_ERROR_COOKIE;
     }
     return tvr.value();
@@ -7488,11 +7487,11 @@ GetElement_tn(JSContext* cx, jsbytecode *pc, JSObject* obj, int32 index)
     JSAutoTempIdRooter idr(cx);
 
     if (!js_Int32ToId(cx, index, idr.addr())) {
-        cx->builtinStatus |= JSBUILTIN_ERROR;
+        js_SetBuiltinError(cx);
         return JSVAL_ERROR_COOKIE;
     }
     if (!OBJ_GET_PROPERTY(cx, obj, idr.id(), tvr.addr())) {
-        cx->builtinStatus |= JSBUILTIN_ERROR;
+        js_SetBuiltinError(cx);
         *tvr.addr() = JSVAL_ERROR_COOKIE;
     }
     return tvr.value();
@@ -7603,7 +7602,7 @@ SetProperty_tn(JSContext* cx, JSObject* obj, JSString* idstr, jsval v)
 
     if (!js_ValueToStringId(cx, STRING_TO_JSVAL(idstr), idr.addr()) ||
         !OBJ_SET_PROPERTY(cx, obj, idr.id(), tvr.addr())) {
-        cx->builtinStatus |= JSBUILTIN_ERROR;
+        js_SetBuiltinError(cx);
     }
     return JSVAL_TO_PSEUDO_BOOLEAN(JSVAL_VOID);
 }
@@ -7634,7 +7633,7 @@ SetElement_tn(JSContext* cx, JSObject* obj, int32 index, jsval v)
 
     if (!js_Int32ToId(cx, index, idr.addr()) ||
         !OBJ_SET_PROPERTY(cx, obj, idr.id(), tvr.addr())) {
-        cx->builtinStatus |= JSBUILTIN_ERROR;
+        js_SetBuiltinError(cx);
     }
     return JSVAL_TO_PSEUDO_BOOLEAN(JSVAL_VOID);
 }
@@ -8044,7 +8043,7 @@ TraceRecorder::record_FastNativeCallComplete()
         // Keep cx->bailExit null when it's invalid.
         lir->insStorei(INS_CONSTPTR(NULL), cx_ins, (int) offsetof(JSContext, bailExit));
 
-        LIns* status = lir->insLoad(LIR_ld, cx_ins, (int) offsetof(JSContext, builtinStatus));
+        LIns* status = lir->insLoad(LIR_ld, lirbuf->state, (int) offsetof(InterpState, builtinStatus));
         if (pendingTraceableNative == generatedTraceableNative) {
             LIns* ok_ins = v_ins;
 
@@ -8082,7 +8081,7 @@ TraceRecorder::record_FastNativeCallComplete()
                                                      lir->ins2i(LIR_and, ok_ins, 1),
                                                      1),
                                           1));
-            lir->insStorei(status, cx_ins, (int) offsetof(JSContext, builtinStatus));
+            lir->insStorei(status, lirbuf->state, (int) offsetof(InterpState, builtinStatus));
         }
         guard(true,
               lir->ins_eq0(status),
@@ -9757,7 +9756,7 @@ ObjectToIterator_tn(JSContext* cx, jsbytecode* pc, JSObject *obj, int32 flags)
     JSBool ok = js_ValueToIterator(cx, flags, &v);
 
     if (!ok) {
-        cx->builtinStatus |= JSBUILTIN_ERROR;
+        js_SetBuiltinError(cx);
         return NULL;
     }
     return JSVAL_TO_OBJECT(v);
@@ -9776,7 +9775,7 @@ CallIteratorNext_tn(JSContext* cx, jsbytecode* pc, JSObject* iterobj)
     JSBool ok = js_CallIteratorNext(cx, iterobj, tvr.addr());
 
     if (!ok) {
-        cx->builtinStatus |= JSBUILTIN_ERROR;
+        js_SetBuiltinError(cx);
         return JSVAL_ERROR_COOKIE;
     }
     return tvr.value();
