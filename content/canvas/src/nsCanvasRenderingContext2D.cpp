@@ -3374,7 +3374,9 @@ nsCanvasRenderingContext2D::DrawWindow(nsIDOMWindow* aWindow, PRInt32 aX, PRInt3
     }
 
     // Flush layout updates
-    if (!(flags & nsIDOMCanvasRenderingContext2D::DRAWWINDOW_DO_NOT_FLUSH))
+    PRBool skipFlush =
+        (flags & nsIDOMCanvasRenderingContext2D::DRAWWINDOW_DO_NOT_FLUSH) != 0;
+    if (!skipFlush)
         FlushLayoutForTree(aWindow);
 
     nsCOMPtr<nsPresContext> presContext;
