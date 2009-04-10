@@ -48,6 +48,10 @@
 #include "nsMathUtils.h"
 #include "prlog.h"
 
+#ifndef PR_ASSERT_CURRENT_THREAD_IN_MONITOR
+#define PR_ASSERT_CURRENT_THREAD_IN_MONITOR(m)
+#endif
+
 #ifdef PR_LOGGING
 PRLogModuleInfo* gMediaCacheLog;
 #define LOG(type, msg) PR_LOG(gMediaCacheLog, type, msg)
