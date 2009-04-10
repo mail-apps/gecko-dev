@@ -56,6 +56,7 @@
 #include "nsDOMError.h"
 #include "nsICachingChannel.h"
 #include "nsURILoader.h"
+#include "ImageErrors.h"
 
 #define HTTP_OK_CODE 200
 #define HTTP_PARTIAL_RESPONSE_CODE 206
@@ -396,7 +397,7 @@ void nsMediaChannelStream::CloseChannel()
     // document load to think there was an error.
     // NS_ERROR_PARSED_DATA_CACHED is the best thing we have for that
     // at the moment.
-    mChannel->Cancel(NS_ERROR_PARSED_DATA_CACHED);
+    mChannel->Cancel(NS_IMAGELIB_ERROR_LOAD_ABORTED);
     mChannel = nsnull;
   }
 }
@@ -735,7 +736,7 @@ nsresult nsMediaFileStream::Close()
 
   nsAutoLock lock(mLock);
   if (mChannel) {
-    mChannel->Cancel(NS_ERROR_PARSED_DATA_CACHED);
+    mChannel->Cancel(NS_IMAGELIB_ERROR_LOAD_ABORTED);
     mChannel = nsnull;
     mInput = nsnull;
     mSeekable = nsnull;
