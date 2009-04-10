@@ -3309,7 +3309,7 @@ nsNavHistoryFolderResultNode::StartIncrementalUpdate()
   }
 
   // otherwise, we don't do incremental updates, invalidate and unregister
-  Refresh();
+  (void)Refresh();
   return PR_FALSE;
 }
 
@@ -3760,8 +3760,11 @@ nsNavHistoryResult::nsNavHistoryResult(nsNavHistoryContainerResultNode* aRoot) :
 
 nsNavHistoryResult::~nsNavHistoryResult()
 {
-  // delete all bookmark folder observer arrays which are allocated on the heap
-  mBookmarkFolderObservers.Enumerate(&RemoveBookmarkFolderObserversCallback, nsnull);
+  // mRootNode has already been destroyed at this point and is null.
+  if (mIsBookmarkFolderObserver) {
+    // Delete all bookmark folder observer arrays which are allocated on the heap.
+    mBookmarkFolderObservers.Enumerate(&RemoveBookmarkFolderObserversCallback, nsnull);
+  }
 }
 
 
@@ -3887,7 +3890,7 @@ nsNavHistoryResult::AddHistoryObserver(nsNavHistoryQueryResultNode* aNode)
 void
 nsNavHistoryResult::AddAllBookmarksObserver(nsNavHistoryQueryResultNode* aNode)
 {
-  if (! mIsAllBookmarksObserver) {
+  if (!mIsAllBookmarksObserver && !mIsBookmarkFolderObserver) {
     nsNavBookmarks* bookmarks = nsNavBookmarks::GetBookmarksService();
     if (! bookmarks) {
       NS_NOTREACHED("Can't create bookmark service");
@@ -3910,9 +3913,9 @@ nsNavHistoryResult::AddAllBookmarksObserver(nsNavHistoryQueryResultNode* aNode)
 
 void
 nsNavHistoryResult::AddBookmarkFolderObserver(nsNavHistoryFolderResultNode* aNode,
-                                        PRInt64 aFolder)
+                                              PRInt64 aFolder)
 {
-  if (! mIsBookmarkFolderObserver) {
+  if (!mIsBookmarkFolderObserver && !mIsAllBookmarksObserver) {
     nsNavBookmarks* bookmarks = nsNavBookmarks::GetBookmarksService();
     if (! bookmarks) {
       NS_NOTREACHED("Can't create bookmark service");
@@ -4075,8 +4078,13 @@ nsNavHistoryResult::GetRoot(nsINavHistoryContainerResultNode** aRoot)
     if (_fol) { \
       FolderObserverList _listCopy(*_fol); \
       for (PRUint32 _fol_i = 0; _fol_i < _listCopy.Length(); _fol_i ++) { \
-        if (_listCopy[_fol_i]) \
+        if (_listCopy[_fol_i] && \
+            _listCopy[_fol_i]->mResult && \
+            _listCopy[_fol_i]->mResult == this && \
+            mRootNode) \
           _listCopy[_fol_i]->_functionCall; \
+        else \
+          NS_NOTREACHED("Trying to notify a self destroyed node"); \
       } \
     } \
   }
@@ -4084,16 +4092,26 @@ nsNavHistoryResult::GetRoot(nsINavHistoryContainerResultNode** aRoot)
   { \
     nsTArray<nsNavHistoryQueryResultNode*> observerCopy(mAllBookmarksObservers); \
     for (PRUint32 _obs_i = 0; _obs_i < observerCopy.Length(); _obs_i ++) { \
-      if (observerCopy[_obs_i]) \
-      observerCopy[_obs_i]->_functionCall; \
+      if (observerCopy[_obs_i] && \
+          observerCopy[_obs_i]->mResult && \
+          observerCopy[_obs_i]->mResult == this && \
+          mRootNode) \
+        observerCopy[_obs_i]->_functionCall; \
+      else \
+        NS_NOTREACHED("Trying to notify a self destroyed node"); \
     } \
   }
 #define ENUMERATE_HISTORY_OBSERVERS(_functionCall) \
   { \
     nsTArray<nsNavHistoryQueryResultNode*> observerCopy(mHistoryObservers); \
     for (PRUint32 _obs_i = 0; _obs_i < observerCopy.Length(); _obs_i ++) { \
-      if (observerCopy[_obs_i]) \
-      observerCopy[_obs_i]->_functionCall; \
+      if (observerCopy[_obs_i] && \
+          observerCopy[_obs_i]->mResult && \
+          observerCopy[_obs_i]->mResult == this && \
+          mRootNode) \
+        observerCopy[_obs_i]->_functionCall; \
+      else \
+        NS_NOTREACHED("Trying to notify a self destroyed node"); \
     } \
   }
 
