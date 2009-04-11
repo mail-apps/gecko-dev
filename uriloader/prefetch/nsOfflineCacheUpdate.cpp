@@ -1121,6 +1121,7 @@ NS_IMPL_ISUPPORTS1(nsOfflineCacheUpdate,
 
 nsOfflineCacheUpdate::nsOfflineCacheUpdate()
     : mState(STATE_UNINITIALIZED)
+    , mOwner(nsnull)
     , mAddedItems(PR_FALSE)
     , mPartialUpdate(PR_FALSE)
     , mSucceeded(PR_TRUE)
@@ -1368,9 +1369,19 @@ nsOfflineCacheUpdate::LoadCompleted()
 
         if (!doUpdate) {
             mSucceeded = PR_FALSE;
-            NotifyNoUpdate();
-            Finish();
+
+            for (PRInt32 i = 0; i < mDocuments.Count(); i++) {
+                AssociateDocument(mDocuments[i]);
+            }
+
             ScheduleImplicit();
+
+            // If we didn't need an implicit update, we can
+            // send noupdate and end the update now.
+            if (!mImplicitUpdate) {
+                NotifyNoUpdate();
+                Finish();
+            }
             return;
         }
 
@@ -1772,6 +1783,24 @@ nsOfflineCacheUpdate::AddDocument(nsIDOMDocument *aDocument)
     mDocuments.AppendObject(aDocument);
 }
 
+void
+nsOfflineCacheUpdate::SetOwner(nsOfflineCacheUpdateOwner *aOwner)
+{
+    NS_ASSERTION(!mOwner, "Tried to set cache update owner twice.");
+    mOwner = aOwner;
+}
+
+nsresult
+nsOfflineCacheUpdate::UpdateFinished(nsOfflineCacheUpdate *aUpdate)
+{
+    mImplicitUpdate = nsnull;
+
+    NotifyNoUpdate();
+    Finish();
+
+    return NS_OK;
+}
+
 nsresult
 nsOfflineCacheUpdate::ScheduleImplicit()
 {
@@ -1831,8 +1860,11 @@ nsOfflineCacheUpdate::ScheduleImplicit()
     if (!added)
       return NS_OK;
 
-    rv = update->Schedule();
+    update->SetOwner(this);
+    rv = update->Begin();
     NS_ENSURE_SUCCESS(rv, rv);
+
+    mImplicitUpdate = update;
 
     return NS_OK;
 }
@@ -1867,7 +1899,7 @@ nsOfflineCacheUpdate::Finish()
 {
     LOG(("nsOfflineCacheUpdate::Finish [%p]", this));
 
-    // Because call to service->UpdateFinished(this) at the end of this method
+    // Because the call to UpdateFinished(this) at the end of this method
     // may relese the last reference to this object but we still want to work
     // with it after Finish() call ended, make sure to release this instance in
     // the next thread loop round.
@@ -1875,12 +1907,6 @@ nsOfflineCacheUpdate::Finish()
     NS_ProxyRelease(NS_GetCurrentThread(), this, PR_TRUE);
 
     mState = STATE_FINISHED;
-
-    nsOfflineCacheUpdateService* service =
-        nsOfflineCacheUpdateService::EnsureService();
-
-    if (!service)
-        return NS_ERROR_FAILURE;
 
     if (!mPartialUpdate) {
         if (mSucceeded) {
@@ -1922,7 +1948,14 @@ nsOfflineCacheUpdate::Finish()
         }
     }
 
-    return service->UpdateFinished(this);
+    nsresult rv = NS_OK;
+
+    if (mOwner) {
+        rv = mOwner->UpdateFinished(this);
+        mOwner = nsnull;
+    }
+
+    return rv;
 }
 
 //-----------------------------------------------------------------------------
@@ -2353,6 +2386,8 @@ nsOfflineCacheUpdateService::Schedule(nsOfflineCacheUpdate *aUpdate)
 {
     LOG(("nsOfflineCacheUpdateService::Schedule [%p, update=%p]",
          this, aUpdate));
+
+    aUpdate->SetOwner(this);
 
     nsresult rv;
     nsCOMPtr<nsIObserverService> observerService =
