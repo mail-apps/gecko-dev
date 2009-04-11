@@ -2298,7 +2298,7 @@ _setvalue(NPP npp, NPPVariable variable, void *result)
 #endif
 
     default:
-      return NPERR_NO_ERROR;
+      return NPERR_GENERIC_ERROR;
   }
 }
 
