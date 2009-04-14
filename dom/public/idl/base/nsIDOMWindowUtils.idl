@@ -48,7 +48,7 @@
 interface nsIDOMElement;
 interface nsIDOMHTMLCanvasElement;
 
-[scriptable, uuid(6e3510b9-806d-4a2a-be79-73d2a495b4b8)]
+[scriptable, uuid(e3833da2-8fad-4662-9b61-908cf58a7e03)]
 interface nsIDOMWindowUtils : nsISupports {
 
   /**
@@ -255,11 +255,15 @@ interface nsIDOMWindowUtils : nsISupports {
    * without UniversalXPConnect privileges.
    *
    * @param aType event type
+   * @param aX x offset in CSS pixels
+   * @param aY y offset in CSS pixels
    * @param aDirection direction, using constants defined in nsIDOMSimpleGestureEvent
    * @param aDelta  amount of magnification or rotation for magnify and rotation events
    * @param aModifiers modifiers pressed, using constants defined in nsIDOMNSEvent
    */
   void sendSimpleGestureEvent(in AString aType,
+                              in float aX,
+                              in float aY,
                               in unsigned long aDirection,
                               in double aDelta,
                               in long aModifiers);
