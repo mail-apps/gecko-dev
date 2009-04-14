@@ -378,6 +378,7 @@ enum nsDOMClassInfoID {
 
   // WhatWG WebApps Objects
   eDOMClassInfo_Storage_id,
+  eDOMClassInfo_Storage2_id,
   eDOMClassInfo_StorageList_id,
   eDOMClassInfo_StorageItem_id,
   eDOMClassInfo_StorageEvent_id,

@@ -1663,6 +1663,7 @@ nsGlobalWindow::SetNewDocument(nsIDocument* aDocument,
 
   mDocument = do_QueryInterface(aDocument);
   mDoc = aDocument;
+  mLocalStorage = nsnull;
 
 #ifdef DEBUG
   mLastOpenedURI = aDocument->GetDocumentURI();
@@ -6833,6 +6834,45 @@ nsGlobalWindow::GetGlobalStorage(nsIDOMStorageList ** aGlobalStorage)
 #endif
 }
 
+NS_IMETHODIMP
+nsGlobalWindow::GetLocalStorage(nsIDOMStorage2 ** aLocalStorage)
+{
+  FORWARD_TO_INNER(GetLocalStorage, (aLocalStorage), NS_ERROR_UNEXPECTED);
+
+  NS_ENSURE_ARG(aLocalStorage);
+
+  if (nsDOMStorageManager::gStorageManager &&
+      nsDOMStorageManager::gStorageManager->InPrivateBrowsingMode())
+    return NS_ERROR_DOM_SECURITY_ERR;
+
+  if (!mLocalStorage) {
+    *aLocalStorage = nsnull;
+
+    nsresult rv;
+
+    nsIPrincipal *principal = GetPrincipal();
+    if (!principal)
+      return NS_OK;
+
+    PRPackedBool sessionOnly;
+    if (!nsDOMStorage::CanUseStorage(&sessionOnly))
+      return NS_ERROR_DOM_SECURITY_ERR;
+
+    if (sessionOnly)
+      return NS_ERROR_DOM_SECURITY_ERR;
+
+    nsCOMPtr<nsIDOMStorageManager> storageManager =
+      do_GetService("@mozilla.org/dom/storagemanager;1", &rv);
+    NS_ENSURE_SUCCESS(rv, rv);
+
+    rv = storageManager->GetLocalStorageForPrincipal(principal, getter_AddRefs(mLocalStorage));
+    NS_ENSURE_SUCCESS(rv, rv);
+  }
+
+  NS_ADDREF(*aLocalStorage = mLocalStorage);
+  return NS_OK;
+}
+
 //*****************************************************************************
 // nsGlobalWindow::nsIInterfaceRequestor
 //*****************************************************************************
@@ -6977,7 +7017,7 @@ nsGlobalWindow::Observe(nsISupports* aSubject, const char* aTopic,
                                                 PR_FALSE,
                                                 getter_AddRefs(storage));
 
-        if (storage != aSubject) {
+        if (!SameCOMIdentity(storage, aSubject)) {
           // A sessionStorage object changed, but not our session storage
           // object.
           return NS_OK;
@@ -7000,8 +7040,8 @@ nsGlobalWindow::Observe(nsISupports* aSubject, const char* aTopic,
         return NS_OK;
       }
 
-      if (!nsDOMStorageList::CanAccessDomain(nsDependentString(aData),
-                                             NS_ConvertASCIItoUTF16(currentDomain))) {
+      if (!nsDOMStorageList::CanAccessDomain(NS_ConvertUTF16toUTF8(aData),
+                                             currentDomain)) {
         // This window can't reach the global storage object for the
         // domain for which the change happened, so don't fire any
         // events in this window.
