@@ -2714,7 +2714,8 @@ js_FreezeLocalNames(JSContext *cx, JSFunction *fun)
             fun->u.i.names.array = array;
     }
 #ifdef DEBUG
-    if (n > MAX_ARRAY_LOCALS)
-        JS_DHashMarkTableImmutable(&fun->u.i.names.map->names);
+// XXX no JS_DHashMarkTableImmutable on 1.9.1
+//    if (n > MAX_ARRAY_LOCALS)
+//        JS_DHashMarkTableImmutable(&fun->u.i.names.map->names);
 #endif
 }
