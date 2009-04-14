@@ -702,9 +702,14 @@ nsThebesDeviceContext::ComputeFullAreaUsingScreen(nsRect* outRect)
 void
 nsThebesDeviceContext::FindScreen(nsIScreen** outScreen)
 {
-    if (mWidget)
-        mScreenManager->ScreenForNativeWidget(mWidget, outScreen);
-    else
+    if (mWidget) {
+        nsCOMPtr<nsIScreenManager_MOZILLA_1_9_1_BRANCH> sm191(do_QueryInterface(mScreenManager));
+        if (sm191) {
+            sm191->ScreenForNativeWindow(mWidget, outScreen);
+        } else {
+            mScreenManager->ScreenForNativeWidget(mWidget, outScreen);
+        }
+    } else
         mScreenManager->GetPrimaryScreen(outScreen);
 }
 
