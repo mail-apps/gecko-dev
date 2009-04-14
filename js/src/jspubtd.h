@@ -139,7 +139,6 @@ typedef struct JSFunction        JSFunction;
 typedef struct JSFunctionSpec    JSFunctionSpec;
 typedef struct JSTracer          JSTracer;
 typedef struct JSIdArray         JSIdArray;
-typedef struct JSProperty        JSProperty;
 typedef struct JSPropertySpec    JSPropertySpec;
 typedef struct JSObject          JSObject;
 typedef struct JSObjectMap       JSObjectMap;
