@@ -87,14 +87,6 @@ function test_gestureListener(evt)
      "evt.direction (" + evt.direction + ") does not match expected value");
   is(evt.delta, test_expectedDelta,
      "evt.delta (" + evt.delta + ") does not match expected value");
-  is(evt.clientX, 20,
-     "evt.clientX (" + evt.clientX + ") does not match expected value");
-  is(evt.clientY, 20,
-     "evt.clientY (" + evt.clientY + ") does not match expected value");
-  isnot(evt.screenX, 0,
-        "evt.screenX (" + evt.screenX + ") does not match expected value");
-  isnot(evt.screenY, 0,
-        "evt.screenY (" + evt.screenY + ") does not match expected value");
 
   is(evt.shiftKey, (test_expectedModifiers & Components.interfaces.nsIDOMNSEvent.SHIFT_MASK) != 0,
      "evt.shiftKey did not match expected value");
@@ -193,11 +185,8 @@ function test_helper2(type, direction, delta, altKey, ctrlKey, shiftKey, metaKey
   ok(successful, "Unable to create SimpleGestureEvent");
 
   try {
-    event.initSimpleGestureEvent(type, true, true, window, 1,
-                                 10, 10, 10, 10,
-                                 ctrlKey, altKey, shiftKey, metaKey,
-                                 1, window,
-                                 direction, delta);
+    event.initSimpleGestureEvent(type, true, true, null, 0, direction,
+                                 delta, altKey, ctrlKey, shiftKey, metaKey);
     successful = true;
   }
   catch (ex) {
@@ -213,14 +202,6 @@ function test_helper2(type, direction, delta, altKey, ctrlKey, shiftKey, metaKey
   is(event.ctrlKey, ctrlKey, "Mismatch on evt.ctrlKey");
   is(event.shiftKey, shiftKey, "Mismatch on evt.shiftKey");
   is(event.metaKey, metaKey, "Mismatch on evt.metaKey");
-  is(event.view, window, "Mismatch on evt.view");
-  is(event.detail, 1, "Mismatch on evt.detail");
-  is(event.clientX, 10, "Mismatch on evt.clientX");
-  is(event.clientY, 10, "Mismatch on evt.clientY");
-  is(event.screenX, 10, "Mismatch on evt.screenX");
-  is(event.screenY, 10, "Mismatch on evt.screenY");
-  is(event.button, 1, "Mismatch on evt.button");
-  is(event.relatedTarget, window, "Mismatch on evt.relatedTarget");
 
   // Test event dispatch
   let expectedEventCount = test_eventCount + 1;

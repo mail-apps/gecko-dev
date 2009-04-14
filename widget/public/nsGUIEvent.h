@@ -1150,12 +1150,12 @@ public:
 /**
  * Simple gesture event
  */
-class nsSimpleGestureEvent : public nsMouseEvent_base
+class nsSimpleGestureEvent : public nsInputEvent
 {
 public:
   nsSimpleGestureEvent(PRBool isTrusted, PRUint32 msg, nsIWidget* w,
                          PRUint32 directionArg, PRFloat64 deltaArg)
-    : nsMouseEvent_base(isTrusted, msg, w, NS_SIMPLE_GESTURE_EVENT),
+    : nsInputEvent(isTrusted, msg, w, NS_SIMPLE_GESTURE_EVENT),
       direction(directionArg), delta(deltaArg)
   {
   }
