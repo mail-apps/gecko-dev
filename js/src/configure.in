@@ -1823,10 +1823,8 @@ case "$target" in
     AR_EXTRACT="$AR -extract"
     AR_DELETE="$AR d"
     AR_FLAGS='-OUT:"$@"'
+    AS="$AS_BIN"
 
-    if test -z "$AS_BIN"; then
-        AS="$AS_BIN"
-    fi
     DSO_CFLAGS=
     DSO_PIC_CFLAGS=
     DLL_SUFFIX=.dll
