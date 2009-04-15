@@ -241,7 +241,7 @@ gTests.push({
     PlacesUtils.bookmarks.removeItem(this._itemId);
   }
 });
-/* 1.9.1 Temporarly disabled waiting for bugs approvals
+
 //------------------------------------------------------------------------------
 // Bug 475529 -  Add button in new folder dialog not default anymore
 
@@ -296,7 +296,7 @@ gTests.push({
     PlacesUtils.bookmarks.removeItem(this._itemId);
   }
 });
-*/
+
 //------------------------------------------------------------------------------
 // Bug 476020 - Pressing Esc while having the tag autocomplete open closes the bookmarks panel
 
