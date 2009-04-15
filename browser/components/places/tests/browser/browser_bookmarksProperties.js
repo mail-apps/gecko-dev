@@ -296,7 +296,7 @@ gTests.push({
     PlacesUtils.bookmarks.removeItem(this._itemId);
   }
 });
-
+*/
 //------------------------------------------------------------------------------
 // Bug 476020 - Pressing Esc while having the tag autocomplete open closes the bookmarks panel
 
@@ -360,7 +360,7 @@ gTests.push({
     PlacesUtils.bookmarks.removeItem(this._itemId);
   }
 });
-*/
+
 //------------------------------------------------------------------------------
 
 function test() {
