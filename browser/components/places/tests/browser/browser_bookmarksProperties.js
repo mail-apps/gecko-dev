@@ -178,7 +178,7 @@ gTests.push({
     // Nothing to do.
   }
 });
-/* 1.9.1 Temporarly disabled waiting for bugs approvals
+
 //------------------------------------------------------------------------------
 // Bug 462662 - Pressing Enter to select tag from autocomplete closes bookmarks properties dialog
 
@@ -241,7 +241,7 @@ gTests.push({
     PlacesUtils.bookmarks.removeItem(this._itemId);
   }
 });
-
+/* 1.9.1 Temporarly disabled waiting for bugs approvals
 //------------------------------------------------------------------------------
 // Bug 475529 -  Add button in new folder dialog not default anymore
 
