@@ -597,7 +597,7 @@ PlacesController.prototype = {
     for (var i = 0; i < aPopup.childNodes.length; ++i) {
       var item = aPopup.childNodes[i];
       if (item.localName != "menuseparator") {
-        var hideIfNoIP = item.getAttribute("hideifnoinsertionpoint") == "true" &&
+        var hideIfNoIP = item.getAttribute("hideifnoinsetionpoint") == "true" &&
                          noIp && !(ip && ip.isTag && item.id == "placesContext_paste");
         var hideIfPB = item.getAttribute("hideifprivatebrowsing") == "true" &&
                        PlacesUIUtils.privateBrowsing.privateBrowsingEnabled;
