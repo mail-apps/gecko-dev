@@ -73,6 +73,8 @@ struct nsFakeCharMessage;
 
 #include "gfxWindowsSurface.h"
 
+#include "nsWinGesture.h"
+
 #define IME_MAX_CHAR_POS       64
 
 #define NSRGB_2_COLOREF(color) \
@@ -294,7 +296,8 @@ protected:
 
   void                    DispatchPendingEvents();
   virtual PRBool          ProcessMessage(UINT msg, WPARAM wParam, LPARAM lParam, LRESULT *aRetValue);
-
+  virtual PRBool          ProcessGestureMessage(WPARAM wParam, LPARAM lParam);
+  
   /**
    * The result means whether this method processed the native event for
    * plugin. If false, the native event should be processed by the caller self.
@@ -530,6 +533,9 @@ protected:
 
   // Drag & Drop
   nsNativeDragTarget * mNativeDragTarget;
+
+  // Win7 Gesture processing and management
+  nsWinGesture mGesture;
 
   // Enumeration of the methods which are accessible on the "main GUI thread"
   // via the CallMethod(...) mechanism...

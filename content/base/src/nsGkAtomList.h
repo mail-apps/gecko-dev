@@ -1468,6 +1468,8 @@ GK_ATOM(onMozMagnifyGesture, "onMozMagnifyGesture")
 GK_ATOM(onMozRotateGestureStart, "onMozRotateGestureStart")
 GK_ATOM(onMozRotateGestureUpdate, "onMozRotateGestureUpdate")
 GK_ATOM(onMozRotateGesture, "onMozRotateGesture")
+GK_ATOM(onMozTapGesture, "onMozTapGesture")
+GK_ATOM(onMozPressTapGesture, "onMozPressTapGesture")
 
 
 //---------------------------------------------------------------------------

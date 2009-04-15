@@ -73,6 +73,7 @@
 #include "nsUnicharUtils.h"
 #include "prlog.h"
 #include "nsISupportsPrimitives.h"
+#include "nsIDOMNSUIEvent.h"
 
 #ifdef WINCE
 #include "aygshell.h"
@@ -1424,6 +1425,18 @@ nsWindow::StandardWindowCreate(nsIWidget *aParent,
   if (mWindowType == eWindowType_dialog || mWindowType == eWindowType_toplevel )
      CreateSoftKeyMenuBar(mWnd);
 #endif
+
+  // Enable gesture support for this window.
+  if (mWindowType != eWindowType_invisible &&
+      mWindowType != eWindowType_plugin &&
+      mWindowType != eWindowType_java &&
+      mWindowType != eWindowType_toplevel) {
+    // eWindowType_toplevel is the top level main frame window. Gesture support
+    // there prevents the user from interacting with the title bar or nc
+    // areas using a single finger. Java and plugin windows can make their
+    // own calls.
+    mGesture.InitWinGestureSupport(mWnd);
+  }
 
   return NS_OK;
 }
@@ -5393,6 +5406,19 @@ PRBool nsWindow::ProcessMessage(UINT msg, WPARAM wParam, LPARAM lParam, LRESULT 
     Invalidate(PR_FALSE);
     break;
 #endif
+
+    /* Gesture support events */
+
+    case WM_TABLET_QUERYSYSTEMGESTURESTATUS:
+      // According to MS samples, this must be handled to enable
+      // rotational support in multi-touch drivers.
+      result = PR_TRUE;
+      *aRetValue = TABLET_ROTATE_GESTURE_ENABLE;
+      break;
+    
+    case WM_GESTURE:
+      result = ProcessGestureMessage(wParam, lParam);
+      break;
   }
 
 
@@ -5405,6 +5431,62 @@ PRBool nsWindow::ProcessMessage(UINT msg, WPARAM wParam, LPARAM lParam, LRESULT 
     //will crash during the Windows default processing.
     return PR_TRUE;
   }
+}
+
+PRBool nsWindow::ProcessGestureMessage(WPARAM wParam, LPARAM lParam)
+{
+  // Treatment for pan events which translate into scroll events:
+  if (mGesture.IsPanEvent(lParam)) {
+    nsMouseScrollEvent event(PR_TRUE, NS_MOUSE_PIXEL_SCROLL, this);
+
+    if ( !mGesture.ProcessPanMessage(mWnd, wParam, lParam) )
+      return PR_FALSE; // ignore
+
+    nsEventStatus status;
+
+    event.isShift   = IS_VK_DOWN(NS_VK_SHIFT);
+    event.isControl = IS_VK_DOWN(NS_VK_CONTROL);
+    event.isMeta    = PR_FALSE;
+    event.isAlt     = IS_VK_DOWN(NS_VK_ALT);
+    event.button    = 0;
+    event.time      = ::GetMessageTime();
+
+    if (mGesture.PanDeltaToPixelScrollX(event)) {
+      DispatchEvent(&event, status);
+    }
+    if (mGesture.PanDeltaToPixelScrollY(event)) {
+      DispatchEvent(&event, status);
+    }
+
+    mGesture.CloseGestureInfoHandle((HGESTUREINFO)lParam);
+
+    return PR_TRUE;
+  }
+
+  // Other gestures translate into simple gesture events:
+  nsSimpleGestureEvent event(PR_TRUE, 0, this, 0, 0.0);
+  if ( !mGesture.ProcessGestureMessage(mWnd, wParam, lParam, event) ) {
+    return PR_FALSE; // fall through to DefWndProc
+  }
+  
+  // Polish up and send off the new event
+  event.isShift   = IS_VK_DOWN(NS_VK_SHIFT);
+  event.isControl = IS_VK_DOWN(NS_VK_CONTROL);
+  event.isMeta    = PR_FALSE;
+  event.isAlt     = IS_VK_DOWN(NS_VK_ALT);
+  event.button    = 0;
+  event.time      = ::GetMessageTime();
+
+  nsEventStatus status;
+  DispatchEvent(&event, status);
+  if (status == nsEventStatus_eIgnore) {
+    return PR_FALSE; // Ignored, fall through
+  }
+
+  // Only close this if we process and return true.
+  mGesture.CloseGestureInfoHandle((HGESTUREINFO)lParam);
+
+  return PR_TRUE; // Handled
 }
 
 LRESULT nsWindow::ProcessCharMessage(const MSG &aMsg, PRBool *aEventDispatched)
