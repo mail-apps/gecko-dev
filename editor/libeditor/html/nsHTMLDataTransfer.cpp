@@ -1145,6 +1145,7 @@ NS_IMETHODIMP nsHTMLEditor::PrepareHTMLTransferable(nsITransferable **aTransfera
       }
     }
     (*aTransferable)->AddDataFlavor(kUnicodeMime);
+    (*aTransferable)->AddDataFlavor(kMozTextInternal);
   }
   
   return NS_OK;
@@ -1335,7 +1336,8 @@ NS_IMETHODIMP nsHTMLEditor::InsertFromTransferable(nsITransferable *transferable
                                    aDoDeleteSelection);
       }
     }
-    else if (0 == nsCRT::strcmp(bestFlavor, kUnicodeMime))
+    else if (0 == nsCRT::strcmp(bestFlavor, kUnicodeMime) ||
+             0 == nsCRT::strcmp(bestFlavor, kMozTextInternal))
     {
       nsCOMPtr<nsISupportsString> textDataObj(do_QueryInterface(genericDataObj));
       if (textDataObj && len > 0)
