@@ -823,3 +823,7 @@ pref("browser.privatebrowsing.autostart", false);
 
 // Whether we should skip prompting before starting the private browsing mode
 pref("browser.privatebrowsing.dont_prompt_on_enter", false);
+
+// base url for the wifi geolocation network provider
+pref("geo.wifi.uri", "https://www.google.com/loc/json");
+
