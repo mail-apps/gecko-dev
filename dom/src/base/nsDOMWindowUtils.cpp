@@ -47,6 +47,8 @@
 #include "nsIFocusController.h"
 #include "nsIEventStateManager.h"
 
+#include "nsIScrollableView.h"
+
 #include "nsContentUtils.h"
 
 #include "nsIFrame.h"
@@ -704,6 +706,37 @@ nsDOMWindowUtils::SuppressEventHandling(PRBool aSuppress)
   } else {
     doc->UnsuppressEventHandling();
   }
+
   return NS_OK;
 }
 
+NS_IMETHODIMP
+nsDOMWindowUtils::GetScrollXY(PRBool aFlushLayout, PRInt32* aScrollX, PRInt32* aScrollY)
+{
+  nsCOMPtr<nsIDocument> doc(do_QueryInterface(mWindow->GetExtantDocument()));
+  NS_ENSURE_STATE(doc);
+
+  if (aFlushLayout) {
+    doc->FlushPendingNotifications(Flush_Layout);
+  }
+
+  nscoord xPos = 0, yPos = 0;
+
+  nsIPresShell *presShell = doc->GetPrimaryShell();
+  if (presShell) {
+    nsIViewManager *viewManager = presShell->GetViewManager();
+    if (viewManager) {
+      nsIScrollableView *view = nsnull;
+      viewManager->GetRootScrollableView(&view);
+      if (view) {
+        nsresult rv = view->GetScrollPosition(xPos, yPos);
+        NS_ENSURE_SUCCESS(rv, rv);
+      }
+    }
+  }
+
+  *aScrollX = nsPresContext::AppUnitsToIntCSSPixels(xPos);
+  *aScrollY = nsPresContext::AppUnitsToIntCSSPixels(yPos);
+
+  return NS_OK;
+}
