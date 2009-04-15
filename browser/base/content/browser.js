@@ -1218,7 +1218,7 @@ function delayedStartup(isLoadingBlank, mustLoadSidebar) {
     focusElement(content);
 
   if (gURLBar)
-    gURLBar.setAttribute("emptytext", gURLBar.getAttribute("delayedemptytext"));
+    gURLBar.setAttribute("emptytext", gURLBarEmptyText.value);
 
   gNavToolbox.customizeDone = BrowserToolboxCustomizeDone;
   gNavToolbox.customizeChange = BrowserToolboxCustomizeChange;
@@ -1232,6 +1232,8 @@ function delayedStartup(isLoadingBlank, mustLoadSidebar) {
                            gAutoHideTabbarPrefListener, false);
 
   gPrefService.addObserver(gHomeButton.prefDomain, gHomeButton, false);
+
+  gPrefService.addObserver(gURLBarEmptyText.domain, gURLBarEmptyText, false);
 
   var homeButton = document.getElementById("home-button");
   gHomeButton.updateTooltip(homeButton);
@@ -1404,6 +1406,7 @@ function BrowserShutdown()
     gPrefService.removeObserver(gAutoHideTabbarPrefListener.domain,
                                 gAutoHideTabbarPrefListener);
     gPrefService.removeObserver(gHomeButton.prefDomain, gHomeButton);
+    gPrefService.removeObserver(gURLBarEmptyText.domain, gURLBarEmptyText);
   } catch (ex) {
     Components.utils.reportError(ex);
   }
@@ -3302,7 +3305,7 @@ function BrowserToolboxCustomizeDone(aToolboxChanged) {
   if (aToolboxChanged) {
     gURLBar = document.getElementById("urlbar");
     if (gURLBar)
-      gURLBar.emptyText = gURLBar.getAttribute("delayedemptytext");
+      gURLBar.emptyText = gURLBarEmptyText.value;
 
     gProxyFavIcon = document.getElementById("page-proxy-favicon");
     gHomeButton.updateTooltip();
@@ -6990,9 +6993,8 @@ let gPrivateBrowsingUI = {
 
     if (this._privateBrowsingAutoStarted) {
       // Disable the menu item in auto-start mode
-      let pbMenuItem = document.getElementById("privateBrowsingItem");
-      if (pbMenuItem)
-        pbMenuItem.setAttribute("disabled", "true");
+      document.getElementById("privateBrowsingItem")
+              .setAttribute("disabled", "true");
       document.getElementById("Tools:PrivateBrowsing")
               .setAttribute("disabled", "true");
     }
@@ -7032,15 +7034,19 @@ let gPrivateBrowsingUI = {
       docElement.setAttribute("browsingmode", "normal");
     }
 
+    // Enable the menu item in after exiting the auto-start mode
+    document.getElementById("privateBrowsingItem")
+            .removeAttribute("disabled");
+    document.getElementById("Tools:PrivateBrowsing")
+            .removeAttribute("disabled");
+
     this._privateBrowsingAutoStarted = false;
   },
 
   _setPBMenuTitle: function PBUI__setPBMenuTitle(aMode) {
     let pbMenuItem = document.getElementById("privateBrowsingItem");
-    if (pbMenuItem) {
-      pbMenuItem.setAttribute("label", pbMenuItem.getAttribute(aMode + "label"));
-      pbMenuItem.setAttribute("accesskey", pbMenuItem.getAttribute(aMode + "accesskey"));
-    }
+    pbMenuItem.setAttribute("label", pbMenuItem.getAttribute(aMode + "label"));
+    pbMenuItem.setAttribute("accesskey", pbMenuItem.getAttribute(aMode + "accesskey"));
   },
 
   toggleMode: function PBUI_toggleMode() {
@@ -7055,5 +7061,39 @@ let gPrivateBrowsingUI = {
 
   get privateBrowsingEnabled PBUI_get_privateBrowsingEnabled() {
     return this._privateBrowsingService.privateBrowsingEnabled;
+  }
+};
+
+let gURLBarEmptyText = {
+  domain: "browser.urlbar.",
+
+  observe: function UBET_observe(aSubject, aTopic, aPrefName) {
+    if (aTopic == "nsPref:changed") {
+      switch (aPrefName) {
+      case "browser.urlbar.autocomplete.enabled":
+      case "browser.urlbar.default.behavior":
+        gURLBar.emptyText = this.value;
+        break;
+      }
+    }
+  },
+
+  get value UBET_get_value() {
+    let type = "none";
+    if (gPrefService.getBoolPref("browser.urlbar.autocomplete.enabled")) {
+      // Bottom 2 bits of default.behavior specify history/bookmark
+      switch (gPrefService.getIntPref("browser.urlbar.default.behavior") & 3) {
+      case 0:
+        type = "bookmarkhistory";
+        break;
+      case 1:
+        type = "history";
+        break;
+      case 2:
+        type = "bookmark";
+        break;
+      }
+    }
+    return gURLBar.getAttribute(type + "emptytext");
   }
 };
