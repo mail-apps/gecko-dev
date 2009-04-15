@@ -414,7 +414,7 @@ PlacesTreeView.prototype = {
     var timeZoneOffsetInMs = dateObj.getTimezoneOffset() * 60000;
     var now = dateObj.getTime() - timeZoneOffsetInMs;
     var midnight = now - (now % (86400000));
- 
+
     var dateFormat = timeInMilliseconds - timeZoneOffsetInMs >= midnight ?
                       Ci.nsIScriptableDateFormat.dateFormatNone :
                       Ci.nsIScriptableDateFormat.dateFormatShort;
