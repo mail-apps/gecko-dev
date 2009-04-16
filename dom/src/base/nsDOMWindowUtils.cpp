@@ -692,6 +692,23 @@ nsDOMWindowUtils::CompareCanvases(nsIDOMHTMLCanvasElement *aCanvas1,
 }
 
 NS_IMETHODIMP
+nsDOMWindowUtils::ClearMozAfterPaintEvents()
+{
+  if (mWindow) {
+    nsIDocShell *docShell = mWindow->GetDocShell();
+    if (docShell) {
+      nsCOMPtr<nsPresContext> presContext;
+      docShell->GetPresContext(getter_AddRefs(presContext));
+      if (presContext) {
+        presContext->ClearMozAfterPaintEvents();
+      }
+    }
+  }
+
+  return NS_OK;
+}
+
+NS_IMETHODIMP
 nsDOMWindowUtils::SuppressEventHandling(PRBool aSuppress)
 {
   PRBool hasCap = PR_FALSE;

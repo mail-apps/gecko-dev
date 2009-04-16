@@ -48,7 +48,7 @@
 interface nsIDOMElement;
 interface nsIDOMHTMLCanvasElement;
 
-[scriptable, uuid(53ebdf76-0edf-4756-8e3b-04757d38ef0b)]
+[scriptable, uuid(a2d8d4f8-6082-4653-b91d-f958518b6ada)]
 interface nsIDOMWindowUtils : nsISupports {
 
   /**
@@ -291,6 +291,8 @@ interface nsIDOMWindowUtils : nsISupports {
   PRUint32 compareCanvases(in nsIDOMHTMLCanvasElement aCanvas1,
                            in nsIDOMHTMLCanvasElement aCanvas2,
                            out unsigned long aMaxDifference);
+
+  void clearMozAfterPaintEvents();
 
   /**
    * Suppresses/unsuppresses user initiated event handling in window's document
