@@ -118,12 +118,6 @@ Are you executing $objdir/_tests/reftest/runreftest.py?""" \
     # allow relative paths
     options.xrePath = getFullPath(options.xrePath)
 
-  # Force leak threshold. (1.9.1 Core bug 458844)
-  if options.leakThreshold == 0:
-    options.leakThreshold = 738120
-    automation.log.info("INFO | runreftest.py | setting leak threshold to %d",
-                        options.leakThreshold)
-
   profileDir = None
   try:
     profileDir = mkdtemp()
