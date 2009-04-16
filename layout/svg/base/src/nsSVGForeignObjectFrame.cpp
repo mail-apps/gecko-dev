@@ -688,7 +688,6 @@ nsSVGForeignObjectFrame::InvalidateDirtyRect(nsSVGOuterSVGFrame* aOuter,
     return;
 
   nsPresContext* presContext = PresContext();
-  nsCOMPtr<nsIDOMSVGMatrix> tm = GetTMIncludingOffset();
   nsCOMPtr<nsIDOMSVGMatrix> ctm = GetCanvasTM();
 
   nsSVGForeignObjectElement *fO =
