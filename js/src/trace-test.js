@@ -1624,11 +1624,6 @@ function testNestedExitStackOuter() {
   return counter;
 }
 testNestedExitStackOuter.expected = 81;
-testNestedExitStackOuter.jitstats = {
-    recorderStarted: 5,
-    recorderAborted: 1,
-    traceTriggered: 10
-};
 test(testNestedExitStackOuter);
 
 function testHOTLOOPSize() {
