@@ -74,8 +74,9 @@ NS_DEFINE_CID(kInlineFrameCID, NS_INLINE_FRAME_CID);
 // nsISupports
 // =============================================================================
 
-NS_IMPL_ADDREF_INHERITED(nsMathMLContainerFrame, nsMathMLFrame)
-NS_IMPL_RELEASE_INHERITED(nsMathMLContainerFrame, nsMathMLFrame)
+// Frames are not refcounted objects, so use the non-logging addref/release macros.
+NS_IMPL_NONLOGGING_ADDREF_INHERITED(nsMathMLContainerFrame, nsMathMLFrame)
+NS_IMPL_NONLOGGING_RELEASE_INHERITED(nsMathMLContainerFrame, nsMathMLFrame)
 NS_IMPL_QUERY_INTERFACE_INHERITED1(nsMathMLContainerFrame, nsHTMLContainerFrame, nsMathMLFrame)
 
 // =============================================================================
