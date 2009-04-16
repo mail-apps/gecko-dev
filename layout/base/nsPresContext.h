@@ -793,6 +793,11 @@ public:
   void NotifyInvalidation(const nsRect& aRect, PRBool aIsCrossDoc);
   void FireDOMPaintEvent();
 
+  void ClearMozAfterPaintEvents() {
+    mSameDocDirtyRegion.SetEmpty();
+    mCrossDocDirtyRegion.SetEmpty();
+  }
+
 protected:
   friend class nsRunnableMethod<nsPresContext>;
   NS_HIDDEN_(void) ThemeChangedInternal();

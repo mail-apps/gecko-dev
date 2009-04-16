@@ -48,7 +48,7 @@
 interface nsIDOMElement;
 interface nsIDOMHTMLCanvasElement;
 
-[scriptable, uuid(e3833da2-8fad-4662-9b61-908cf58a7e03)]
+[scriptable, uuid(a2d8d4f8-6082-4653-b91d-f958518b6ada)]
 interface nsIDOMWindowUtils : nsISupports {
 
   /**
@@ -292,7 +292,9 @@ interface nsIDOMWindowUtils : nsISupports {
                            in nsIDOMHTMLCanvasElement aCanvas2,
                            out unsigned long aMaxDifference);
 
-  /*
+  void clearMozAfterPaintEvents();
+
+  /**
    * Suppresses/unsuppresses user initiated event handling in window's document
    * and subdocuments.
    *
@@ -300,4 +302,12 @@ interface nsIDOMWindowUtils : nsISupports {
    *        privileges and NS_ERROR_FAILURE if window doesn't have a document.
    */
   void suppressEventHandling(in boolean aSuppress);
+
+  /**
+   * Returns the scroll position of the window's currently loaded document.
+   *
+   * @param aFlushLayout flushes layout if true. Otherwise, no flush occurs.
+   * @see nsIDOMWindow::scrollX/Y
+   */
+  void getScrollXY(in boolean aFlushLayout, out long aScrollX, out long aScrollY);
 };
