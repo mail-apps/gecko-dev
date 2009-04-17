@@ -1061,7 +1061,7 @@ GeolocationPrompt.prototype = {
               label: browserBundle.GetStringFromName("geolocation.tellThem"),
               accessKey: browserBundle.GetStringFromName("geolocation.tellThemKey"),
               callback: function(notification) {                  
-                  if (notification.ownerDocument.getElementById("rememberChoice").checked)
+                  if (notification.getElementsByClassName("rememberChoice")[0].checked)
                       setPagePermission(request.requestingURI, true);
                   request.allow(); 
               },
@@ -1070,9 +1070,9 @@ GeolocationPrompt.prototype = {
               label: browserBundle.GetStringFromName("geolocation.dontTellThem"),
               accessKey: browserBundle.GetStringFromName("geolocation.dontTellThemKey"),
               callback: function(notification) {
-                  if (notification.ownerDocument.getElementById("rememberChoice").checked)
+                  if (notification.getElementsByClassName("rememberChoice")[0].checked)
                       setPagePermission(request.requestingURI, false);
-                  request.cancel()
+                  request.cancel();
               },
           }];
       
@@ -1092,7 +1092,7 @@ GeolocationPrompt.prototype = {
       function geolocation_hacks_to_notification () {
 
         var checkbox = newBar.ownerDocument.createElementNS(XULNS, "checkbox");
-        checkbox.setAttribute("id", "rememberChoice");
+        checkbox.className = "rememberChoice";
         checkbox.setAttribute("label", "Remember for this site"); /* xxx hardcoded english us */
         newBar.appendChild(checkbox);
 
