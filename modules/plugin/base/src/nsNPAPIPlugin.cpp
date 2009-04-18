@@ -1839,7 +1839,7 @@ _construct(NPP npp, NPObject* npobj, const NPVariant *args,
   return npobj->_class->construct(npobj, args, argCount, result);
 }
 
-#ifdef MOZ_MEMORY_WINDOWS
+#if defined(MOZ_MEMORY_WINDOWS) && !defined(MOZ_MEMORY_WINCE)
 extern "C" size_t malloc_usable_size(const void *ptr);
 
 BOOL
@@ -1877,7 +1877,7 @@ _releasevariantvalue(NPVariant* variant)
       const NPString *s = &NPVARIANT_TO_STRING(*variant);
 
       if (s->utf8characters) {
-#ifdef MOZ_MEMORY_WINDOWS
+#if defined(MOZ_MEMORY_WINDOWS) && !defined(MOZ_MEMORY_WINCE)
         if (malloc_usable_size((void *)s->utf8characters) != 0) {
           PR_Free((void *)s->utf8characters);
         } else {
