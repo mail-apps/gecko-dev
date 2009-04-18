@@ -3969,29 +3969,13 @@ nsNavHistory::ConstructQueryString(
         nsINavHistoryQueryOptions::SORT_BY_DATE_DESCENDING)) {
 
     nsCString sqlFragment = NS_LITERAL_CSTRING(
-      "SELECT * FROM ( "
-        "SELECT DISTINCT place_id "
-        "FROM moz_historyvisits "
-        "WHERE visit_type NOT IN ") +
-          nsPrintfCString("(0,%d) ", nsINavHistoryService::TRANSITION_EMBED) +
-          NS_LITERAL_CSTRING("AND NOT EXISTS "
-            "(SELECT id FROM moz_places h WHERE h.id = place_id AND hidden = 1) "
-          "AND NOT EXISTS (SELECT id FROM moz_places_temp h WHERE h.id = place_id AND hidden = 1) "
-        "ORDER by visit_date DESC LIMIT ") +
-        nsPrintfCString("%d ", aOptions->MaxResults()) +
-      NS_LITERAL_CSTRING(") "
-      "UNION ALL "
-      "SELECT * FROM ( "
-        "SELECT DISTINCT place_id "
-        "FROM moz_historyvisits_temp "
-        "WHERE visit_type NOT IN ") +
-          nsPrintfCString("(0,%d) ", nsINavHistoryService::TRANSITION_EMBED) +
-          NS_LITERAL_CSTRING("AND NOT EXISTS "
-            "(SELECT id FROM moz_places h WHERE h.id = place_id AND hidden = 1) "
-          "AND NOT EXISTS (SELECT id FROM moz_places_temp h WHERE h.id = place_id AND hidden = 1) "
-        "ORDER by visit_date DESC LIMIT ") +
-        nsPrintfCString("%d ", aOptions->MaxResults()) +
-      NS_LITERAL_CSTRING(")");
+      "SELECT DISTINCT place_id FROM %s "
+      "WHERE visit_type NOT IN ") +
+        nsPrintfCString("(0,%d) ", nsINavHistoryService::TRANSITION_EMBED) +
+      NS_LITERAL_CSTRING("AND place_id %s (SELECT id FROM moz_places_temp) "
+      "ORDER BY visit_date DESC "
+      "LIMIT ");
+    sqlFragment.AppendInt(aOptions->MaxResults());
 
     queryString = NS_LITERAL_CSTRING(
       "SELECT h.id, h.url, h.title, h.rev_host, h.visit_count, "
@@ -3999,15 +3983,36 @@ nsNavHistory::ConstructQueryString(
           ", f.url, null, null "
         "FROM moz_places_temp h "
         "LEFT OUTER JOIN moz_favicons f ON h.favicon_id = f.id "
-        "WHERE h.id IN ( ") + sqlFragment + NS_LITERAL_CSTRING(") "
-      "UNION ALL "
+        "JOIN ( ") +
+          nsPrintfCString(256, sqlFragment.get(), "moz_historyvisits_temp", "IN") +
+         NS_LITERAL_CSTRING(") v ON v.place_id = h.id "
+      "UNION "
       "SELECT h.id, h.url, h.title, h.rev_host, h.visit_count, "
           SQL_STR_FRAGMENT_MAX_VISIT_DATE( "h.id" )
           ", f.url, null, null "
         "FROM moz_places h "
         "LEFT OUTER JOIN moz_favicons f ON h.favicon_id = f.id "
-        "WHERE h.id IN ( ") + sqlFragment + NS_LITERAL_CSTRING(") "
-        "AND h.id NOT IN (SELECT id FROM moz_places_temp) "
+        "JOIN ( ") +
+          nsPrintfCString(256, sqlFragment.get(), "moz_historyvisits_temp", "NOT IN") +
+         NS_LITERAL_CSTRING(") v ON v.place_id = h.id "
+      "UNION "
+      "SELECT h.id, h.url, h.title, h.rev_host, h.visit_count, "
+          SQL_STR_FRAGMENT_MAX_VISIT_DATE( "h.id" )
+          ", f.url, null, null "
+        "FROM moz_places_temp h "
+        "LEFT OUTER JOIN moz_favicons f ON h.favicon_id = f.id "
+        "JOIN ( ") +
+          nsPrintfCString(256, sqlFragment.get(), "moz_historyvisits", "IN") +
+         NS_LITERAL_CSTRING(") v ON v.place_id = h.id "
+      "UNION "
+      "SELECT h.id, h.url, h.title, h.rev_host, h.visit_count, "
+          SQL_STR_FRAGMENT_MAX_VISIT_DATE( "h.id" )
+          ", f.url, null, null "
+        "FROM moz_places h "
+        "LEFT OUTER JOIN moz_favicons f ON h.favicon_id = f.id "
+        "JOIN ( ") +
+          nsPrintfCString(256, sqlFragment.get(), "moz_historyvisits", "NOT IN") +
+         NS_LITERAL_CSTRING(") v ON v.place_id = h.id "
         "ORDER BY 6 DESC " // last visit date
         "LIMIT ");
     queryString.AppendInt(aOptions->MaxResults());
