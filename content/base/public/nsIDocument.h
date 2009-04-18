@@ -98,8 +98,8 @@ class nsFrameLoader;
 
 // IID for the nsIDocument interface
 #define NS_IDOCUMENT_IID      \
-{0x05fc4e18, 0x3a98, 0x4d98, \
- {0xba, 0xc3, 0x61, 0x85, 0xa6, 0xdf, 0x06, 0x9d}}
+ { 0x98a4006e, 0x53c4, 0x4390, \
+   { 0xb4, 0x2d, 0x33, 0x68, 0x4a, 0xa9, 0x24, 0x04 } }
 
 // Flag for AddStyleSheet().
 #define NS_STYLESHEET_FROM_CATALOG                (1 << 0)
@@ -1122,12 +1122,12 @@ public:
    */
   virtual void SuppressEventHandling(PRUint32 aIncrease = 1) = 0;
 
+  /**
+   * Unsuppress event handling.
+   * @param aFireEvents If PR_TRUE, delayed events (focus/blur) will be fired
+   *                    asynchronously.
+   */
   virtual void UnsuppressEventHandlingAndFireEvents(PRBool aFireEvents) = 0;
-
-  void UnsuppressEventHandling()
-  {
-    UnsuppressEventHandlingAndFireEvents(PR_TRUE);
-  }
 
   PRUint32 EventHandlingSuppressed() { return mEventsSuppressed; }
 
