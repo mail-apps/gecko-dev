@@ -9,6 +9,10 @@ function url(spec) {
 var gPageA = null;
 var gPageB = null;
 
+// cached data from events
+var gTabOpenPageA = null;
+var gTabOpenPageB = null;
+
 var gTabOpenCount = 0;
 var gTabCloseCount = 0;
 var gTabMoveCount = 0;
@@ -34,6 +38,8 @@ function test() {
   function onPageAFirstLoad(event) {
     gPageA.events.removeListener("load", onPageAFirstLoad);
 
+    is(gPageA.uri.spec, event.data.uri.spec, "Checking event browser tab is equal to page A");
+
     gPageB = activeWin.open(url("chrome://mochikit/content/browser/browser/fuel/test/ContentB.html"));
     gPageB.events.addListener("load", function() {
       executeSoon(afterOpen);
@@ -48,8 +54,13 @@ function test() {
   function afterOpen(event) {
     gPageB.events.removeListener("load", afterOpen);
 
+    // check actuals
     is(gPageA.uri.spec, "chrome://mochikit/content/browser/browser/fuel/test/ContentA.html", "Checking 'BrowserTab.uri' after opening");
     is(gPageB.uri.spec, "chrome://mochikit/content/browser/browser/fuel/test/ContentB.html", "Checking 'BrowserTab.uri' after opening");
+
+    // check cached values from TabOpen event
+    is(gPageA.uri.spec, gTabOpenPageA.uri.spec, "Checking first browser tab open is equal to page A");
+    is(gPageB.uri.spec, gTabOpenPageB.uri.spec, "Checking second browser tab open is equal to page B");
 
     // check event
     is(gTabOpenCount, 2, "Checking event handler for tab open");
@@ -77,6 +88,11 @@ function test() {
           onPageBLoadComplete();
         }
       },
+
+      onLocationChange: function() { return 0; },
+      onProgressChange: function() { return 0; },
+      onStatusChange: function() { return 0; },
+      onSecurityChange: function() { return 0; },
 
       QueryInterface: function(iid) {
         if (iid.equals(Ci.nsISupportsWeakReference) ||
@@ -128,6 +144,13 @@ function test() {
 
 function onTabOpen(event) {
   gTabOpenCount++;
+
+  // cache these values so we can check them later (after loading completes)
+  if (gTabOpenCount == 1)
+    gTabOpenPageA = event.data;
+
+  if (gTabOpenCount == 2)
+    gTabOpenPageB = event.data;
 }
 
 function onTabClose(event) {
