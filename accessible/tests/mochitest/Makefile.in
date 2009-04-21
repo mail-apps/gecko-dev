@@ -51,6 +51,7 @@ _TEST_FILES =\
 		attributes.js \
 		common.js \
 		events.js \
+		layout.js \
 		nsIAccessible_actions.js \
 		nsIAccessible_name.css \
 		nsIAccessible_name.js \
@@ -64,6 +65,7 @@ _TEST_FILES =\
  		test_aria_token_attrs.html \
 		$(warning test_bug368835.xul temporarily disabled) \
 		test_bug420863.html \
+		$(warning	test_childAtPoint.xul temporarily disabled) \
 		test_cssattrs.html \
 		test_events_caretmove.html \
 		test_events_mutation.html \
