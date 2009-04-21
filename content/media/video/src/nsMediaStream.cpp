@@ -241,7 +241,6 @@ nsMediaChannelStream::OnStopRequest(nsIRequest* aRequest, nsresult aStatus)
   }
   NS_ASSERTION(mSuspendCount == 0,
                "How can OnStopRequest fire while we're suspended?");
-  mChannel = nsnull;
   return NS_OK;
 }
 
