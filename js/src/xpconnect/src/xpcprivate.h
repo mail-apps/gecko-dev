@@ -2413,11 +2413,11 @@ protected:
     XPCWrappedNative(); // not implemented
 
     // This ctor is used if this object will have a proto.
-    XPCWrappedNative(already_AddRefed<nsISupports> aIdentity,
+    XPCWrappedNative(nsISupports* aIdentity,
                      XPCWrappedNativeProto* aProto);
 
     // This ctor is used if this object will NOT have a proto.
-    XPCWrappedNative(already_AddRefed<nsISupports> aIdentity,
+    XPCWrappedNative(nsISupports* aIdentity,
                      XPCWrappedNativeScope* aScope,
                      XPCNativeSet* aSet);
 
