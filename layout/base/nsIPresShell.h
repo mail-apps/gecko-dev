@@ -103,10 +103,10 @@ class nsPIDOMEventTarget;
 typedef short SelectionType;
 typedef PRUint32 nsFrameState;
 
-// fa7f090d-b19a-4ef8-9552-82992a3b4a83
+// b8ace28a-d3fa-46d8-a5a0-d7c35c12fd41
 #define NS_IPRESSHELL_IID \
-{ 0xfa7f090d, 0xb19a, 0x4ef8, \
-  { 0x95, 0x52, 0x82, 0x99, 0x2a, 0x3b, 0x4a, 0x83 } }
+{ 0xb8ace28a, 0xd3fa, 0x46d8, \
+  { 0xa5, 0xa0, 0xd7, 0xc3, 0x5c, 0x12, 0xfd, 0x41 } }
 
 // Constants for ScrollContentIntoView() function
 #define NS_PRESSHELL_SCROLL_TOP      0
@@ -772,6 +772,15 @@ public:
   nsIFrame* GetDrawEventTargetFrame() { return mDrawEventTargetFrame; }
 #endif
 
+  void ObserveNativeAnonMutationsForPrint(PRBool aObserve)
+  {
+    mObservesMutationsForPrint = aObserve;
+  }
+  PRBool ObservesNativeAnonMutationsForPrint()
+  {
+    return mObservesMutationsForPrint;
+  }
+
 protected:
   // IMPORTANT: The ownership implicit in the following member variables
   // has been explicitly checked.  If you add any members to this class,
@@ -807,6 +816,8 @@ protected:
   // Set to true when the accessibility service is being used to mirror
   // the dom/layout trees
   PRPackedBool              mIsAccessibilityActive;
+
+  PRPackedBool              mObservesMutationsForPrint;
 
   // A list of weak frames. This is a pointer to the last item in the list.
   nsWeakFrame*              mWeakFrames;

@@ -1412,12 +1412,16 @@ nsTextControlFrame::CalcIntrinsicSize(nsIRenderingContext* aRenderingContext,
 void
 nsTextControlFrame::PostCreateFrames()
 {
+  nsCOMPtr<nsIPresShell> shell = PresContext()->GetPresShell();
+  PRBool observes = shell->ObservesNativeAnonMutationsForPrint();
+  shell->ObserveNativeAnonMutationsForPrint(PR_TRUE);
   InitEditor();
   // Notify the text listener we have focus and setup the caret etc (bug 446663).
   if (IsFocusedContent(PresContext(), GetContent())) {
     mTextListener->Focus(nsnull);
     SetFocus(PR_TRUE, PR_FALSE);
   }
+  shell->ObserveNativeAnonMutationsForPrint(observes);
 }
 
 nsIFrame*
