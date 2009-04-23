@@ -622,23 +622,25 @@ js_GetCallObject(JSContext *cx, JSStackFrame *fp)
      * expression Call's parent points to an environment object holding
      * function's name.
      */
-    JSObject *parent = fp->scopeChain;
-    JSAtom *lambdaName = (fp->fun->flags & JSFUN_LAMBDA) ? fp->fun->atom : NULL;
-    if (lambdaName) {
-        parent = js_NewObjectWithGivenProto(cx, &js_DeclEnvClass, NULL,
-                                            parent, 0);
-        if (!parent)
-            return NULL;
-    }
-    callobj = js_NewObject(cx, &js_CallClass, NULL, parent, 0);
-    if (!callobj)
-        return NULL;
+     JSAtom *lambdaName = (fp->fun->flags & JSFUN_LAMBDA) ? fp->fun->atom : NULL;
+     if (lambdaName) {
+         JSObject *env = js_NewObjectWithGivenProto(cx, &js_DeclEnvClass, NULL,
+                                                    fp->scopeChain, 0);
+         if (!env)
+             return JS_FALSE;
+
+         /* Root env. */
+         fp->scopeChain = env;
+     }
+     callobj = js_NewObject(cx, &js_CallClass, NULL, fp->scopeChain, 0);
+     if (!callobj)
+         return NULL;
 
     JS_SetPrivate(cx, callobj, fp);
     JS_ASSERT(fp->fun == GET_FUNCTION_PRIVATE(cx, fp->callee));
     STOBJ_SET_SLOT(callobj, JSSLOT_CALLEE, OBJECT_TO_JSVAL(fp->callee));
     if (lambdaName &&
-        !js_DefineNativeProperty(cx, parent, ATOM_TO_JSID(lambdaName),
+        !js_DefineNativeProperty(cx, fp->scopeChain, ATOM_TO_JSID(lambdaName),
                                  OBJECT_TO_JSVAL(fp->callee), NULL, NULL,
                                  JSPROP_PERMANENT | JSPROP_READONLY,
                                  0, 0, NULL)) {
