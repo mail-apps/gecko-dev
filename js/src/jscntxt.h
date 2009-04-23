@@ -1497,7 +1497,7 @@ js_IsPropertyCacheDisabled(JSContext *cx)
 static JS_INLINE uint32
 js_RegenerateShapeForGC(JSContext *cx)
 {
-    jsuint shape;
+    uint32 shape;
 
     JS_ASSERT(cx->runtime->gcRunning);
 
