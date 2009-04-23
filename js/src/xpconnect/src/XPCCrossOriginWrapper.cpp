@@ -164,21 +164,7 @@ static inline
 JSObject *
 GetWrappedObject(JSContext *cx, JSObject *wrapper)
 {
-  if (STOBJ_GET_CLASS(wrapper) != &sXPC_XOW_JSClass.base) {
-    return nsnull;
-  }
-
-  jsval v;
-  if (!JS_GetReservedSlot(cx, wrapper, XPCWrapper::sWrappedObjSlot, &v)) {
-    JS_ClearPendingException(cx);
-    return nsnull;
-  }
-
-  if (!JSVAL_IS_OBJECT(v)) {
-    return nsnull;
-  }
-
-  return JSVAL_TO_OBJECT(v);
+  return XPCWrapper::UnwrapGeneric(cx, &sXPC_XOW_JSClass, wrapper);
 }
 
 JSBool
@@ -343,7 +329,8 @@ XPC_XOW_FunctionWrapper(JSContext *cx, JSObject *obj, uintN argc, jsval *argv,
 
   JSObject *funObj = JSVAL_TO_OBJECT(argv[-2]);
   jsval funToCall;
-  if (!JS_GetReservedSlot(cx, funObj, 0, &funToCall)) {
+  if (!JS_GetReservedSlot(cx, funObj, XPCWrapper::eWrappedFunctionSlot,
+                          &funToCall)) {
     return JS_FALSE;
   }
 
@@ -431,7 +418,8 @@ XPC_XOW_WrapFunction(JSContext *cx, JSObject *outerObj, JSObject *funobj,
   }
 
   JSObject *funWrapperObj = JS_GetFunctionObject(funWrapper);
-  if (!JS_SetReservedSlot(cx, funWrapperObj, 0, funobjVal)) {
+  if (!JS_SetReservedSlot(cx, funWrapperObj, XPCWrapper::eWrappedFunctionSlot,
+                          funobjVal)) {
     return JS_FALSE;
   }
 
@@ -533,8 +521,8 @@ XPC_XOW_WrapObject(JSContext *cx, JSObject *parent, jsval *vp,
   }
 
   if (!JS_SetReservedSlot(cx, outerObj, XPCWrapper::sWrappedObjSlot, *vp) ||
-      !JS_SetReservedSlot(cx, outerObj, XPCWrapper::sResolvingSlot,
-                          JSVAL_FALSE) ||
+      !JS_SetReservedSlot(cx, outerObj, XPCWrapper::sFlagsSlot,
+                          JSVAL_ZERO) ||
       !JS_SetReservedSlot(cx, outerObj, XPC_XOW_ScopeSlot,
                           PRIVATE_TO_JSVAL(parentScope))) {
     return JS_FALSE;
@@ -555,11 +543,11 @@ XPC_XOW_AddProperty(JSContext *cx, JSObject *obj, jsval id, jsval *vp)
 
   obj = GetWrapper(obj);
   jsval resolving;
-  if (!JS_GetReservedSlot(cx, obj, XPCWrapper::sResolvingSlot, &resolving)) {
+  if (!JS_GetReservedSlot(cx, obj, XPCWrapper::sFlagsSlot, &resolving)) {
     return JS_FALSE;
   }
 
-  if (JSVAL_TO_BOOLEAN(resolving)) {
+  if (HAS_FLAGS(resolving, FLAG_RESOLVING)) {
     // Allow us to define a property on ourselves.
     return JS_TRUE;
   }
@@ -584,7 +572,7 @@ XPC_XOW_AddProperty(JSContext *cx, JSObject *obj, jsval id, jsval *vp)
   }
 
   // Same origin, pass this request along.
-  return XPCWrapper::AddProperty(cx, obj, wrappedObj, id, vp);
+  return XPCWrapper::AddProperty(cx, obj, JS_TRUE, wrappedObj, id, vp);
 }
 
 static JSBool
@@ -839,23 +827,26 @@ XPC_XOW_NewResolve(JSContext *cx, JSObject *obj, jsval id, uintN flags,
 
   if (id == GetRTStringByIndex(cx, XPCJSRuntime::IDX_TO_STRING)) {
     jsval oldSlotVal;
-    if (!::JS_GetReservedSlot(cx, obj, XPCWrapper::sResolvingSlot, &oldSlotVal) ||
-        !::JS_SetReservedSlot(cx, obj, XPCWrapper::sResolvingSlot, JSVAL_TRUE)) {
+    if (!JS_GetReservedSlot(cx, obj, XPCWrapper::sFlagsSlot, &oldSlotVal) ||
+        !JS_SetReservedSlot(cx, obj, XPCWrapper::sFlagsSlot,
+                            INT_TO_JSVAL(JSVAL_TO_INT(oldSlotVal) |
+                                         FLAG_RESOLVING))) {
       return JS_FALSE;
     }
 
     JSBool ok = JS_DefineFunction(cx, obj, "toString",
                                   XPC_XOW_toString, 0, 0) != nsnull;
 
-    if (ok && (ok = ::JS_SetReservedSlot(cx, obj, XPCWrapper::sResolvingSlot,
-                                         oldSlotVal))) {
+    JS_SetReservedSlot(cx, obj, XPCWrapper::sFlagsSlot, oldSlotVal);
+
+    if (ok) {
       *objp = obj;
     }
 
     return ok;
   }
 
-  return XPCWrapper::NewResolve(cx, obj, wrappedObj, id, flags, objp);
+  return XPCWrapper::NewResolve(cx, obj, JS_TRUE, wrappedObj, id, flags, objp);
 }
 
 static JSBool
@@ -1132,8 +1123,8 @@ XPC_XOW_Iterator(JSContext *cx, JSObject *obj, JSBool keysonly)
   // Initialize our XOW.
   jsval v = OBJECT_TO_JSVAL(wrappedObj);
   if (!JS_SetReservedSlot(cx, wrapperIter, XPCWrapper::sWrappedObjSlot, v) ||
-      !JS_SetReservedSlot(cx, wrapperIter, XPCWrapper::sResolvingSlot,
-                          JSVAL_FALSE) ||
+      !JS_SetReservedSlot(cx, wrapperIter, XPCWrapper::sFlagsSlot,
+                          JSVAL_ZERO) ||
       !JS_SetReservedSlot(cx, wrapperIter, XPC_XOW_ScopeSlot,
                           PRIVATE_TO_JSVAL(nsnull))) {
     return nsnull;
