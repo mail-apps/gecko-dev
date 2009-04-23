@@ -1497,6 +1497,8 @@ js_IsPropertyCacheDisabled(JSContext *cx)
 static JS_INLINE uint32
 js_RegenerateShapeForGC(JSContext *cx)
 {
+    jsuint shape;
+
     JS_ASSERT(cx->runtime->gcRunning);
 
     /*
@@ -1504,7 +1506,7 @@ js_RegenerateShapeForGC(JSContext *cx)
      * atomic increments but we still must make sure that after an overflow
      * the shape stays such.
      */
-    jsuint shape = cx->runtime->shapeGen;
+    shape = cx->runtime->shapeGen;
     shape = (shape + 1) | (shape & SHAPE_OVERFLOW_BIT);
     cx->runtime->shapeGen = shape;
     return shape;
