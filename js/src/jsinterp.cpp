@@ -2760,7 +2760,6 @@ js_Interpret(JSContext *cx)
     /* If a recorder is pending and we try to re-enter the interpreter, flag
        the recorder to be destroyed when we return. */
     if (tr) {
-        SET_TRACE_RECORDER(cx, NULL);
         if (tr->wasDeepAborted())
             tr->removeFragmentoReferences();
         else
