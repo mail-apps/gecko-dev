@@ -91,8 +91,9 @@ function test() {
   let newWin = openDialog(location, "_blank", "chrome,all,dialog=no", testURL_A);
   newWin.addEventListener("load", function(aEvent) {
     newWin.gBrowser.addEventListener("load", function(aEvent) {
+      newWin.gBrowser.removeEventListener("load", arguments.callee, true);
+
       executeSoon(function() {
-        newWin.gBrowser.removeEventListener("load", arguments.callee, true);
         newWin.gBrowser.addTab();
 
         // mark the window with some unique data to be restored later on
@@ -123,11 +124,11 @@ function test() {
         let pbWin = openDialog(location, "_blank", "chrome,all,dialog=no", testURL_B);
         pbWin.addEventListener("load", function(aEvent) {
           pbWin.gBrowser.addEventListener("load", function(aEvent) {
-            executeSoon(function() {
-              gBrowser.removeEventListener("load", arguments.callee, true);
+            pbWin.gBrowser.removeEventListener("load", arguments.callee, true);
 
+            executeSoon(function() {
               // Add another tab, though it's not strictly needed
-              gBrowser.addTab();
+              pbWin.gBrowser.addTab();
 
               // mark the window with some unique data to be restored later on
               ss.setWindowValue(pbWin, uniqueKey_B, uniqueValue_B);
