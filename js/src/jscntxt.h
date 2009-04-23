@@ -1504,7 +1504,7 @@ js_RegenerateShapeForGC(JSContext *cx)
      * atomic increments but we still must make sure that after an overflow
      * the shape stays such.
      */
-    uint32 shape = cx->runtime->shapeGen;
+    jsuint shape = cx->runtime->shapeGen;
     shape = (shape + 1) | (shape & SHAPE_OVERFLOW_BIT);
     cx->runtime->shapeGen = shape;
     return shape;
