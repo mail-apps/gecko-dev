@@ -469,9 +469,10 @@ extern const uint16 js_PrimitiveTestFlags[];
 static JS_INLINE JSObject *
 js_ComputeThisForFrame(JSContext *cx, JSStackFrame *fp)
 {
+    JSObject* obj;
     if (fp->flags & JSFRAME_COMPUTED_THIS)
         return fp->thisp;
-    JSObject* obj = js_ComputeThis(cx, JS_TRUE, fp->argv);
+    obj = js_ComputeThis(cx, JS_TRUE, fp->argv);
     if (!obj)
         return NULL;
     fp->thisp = obj;
