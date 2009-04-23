@@ -589,6 +589,12 @@ var PlacesCommandHook = {
 
 // Functions for the history menu.
 var HistoryMenu = {
+  get _ss() {
+    delete this._ss;
+    return this._ss = Components.classes["@mozilla.org/browser/sessionstore;1"].
+                      getService(Components.interfaces.nsISessionStore);
+  },
+
   /**
    * popupshowing handler for the history menu.
    * @param aMenuPopup
@@ -604,8 +610,10 @@ var HistoryMenu = {
     if (!wasOpen)
       resultNode.containerOpen = false;
 
-    // HistoryMenu.toggleRecentlyClosedTabs is defined in browser.js
+    // HistoryMenu.toggleRecentlyClosedTabs, HistoryMenu.toggleRecentlyClosedWindows
+    // are defined in browser.js
     this.toggleRecentlyClosedTabs();
+    this.toggleRecentlyClosedWindows();
   }
 };
 
