@@ -414,6 +414,12 @@
                 <menu id="historyUndoMenu" label="&historyUndoMenu.label;" disabled="true">
                   <menupopup id="historyUndoPopup" onpopupshowing="HistoryMenu.populateUndoSubmenu();"/>
                 </menu>
+                <menu id="historyUndoWindowMenu"
+                      label="&historyUndoWindowMenu.label;"
+                      disabled="true">
+                  <menupopup id="historyUndoWindowPopup"
+                             onpopupshowing="HistoryMenu.populateUndoWindowSubmenu();"/>
+                </menu>
               </menupopup>
             </menu>
 
