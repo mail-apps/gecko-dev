@@ -628,7 +628,7 @@ js_GetCallObject(JSContext *cx, JSStackFrame *fp)
         parent = js_NewObjectWithGivenProto(cx, &js_DeclEnvClass, NULL,
                                             parent, 0);
         if (!parent)
-            return JS_FALSE;
+            return NULL;
     }
     callobj = js_NewObject(cx, &js_CallClass, NULL, parent, 0);
     if (!callobj)
@@ -642,7 +642,7 @@ js_GetCallObject(JSContext *cx, JSStackFrame *fp)
                                  OBJECT_TO_JSVAL(fp->callee), NULL, NULL,
                                  JSPROP_PERMANENT | JSPROP_READONLY,
                                  0, 0, NULL)) {
-        return JS_FALSE;
+        return NULL;
     }
 
     fp->callobj = callobj;
