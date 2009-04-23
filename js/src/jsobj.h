@@ -242,7 +242,7 @@ struct JSObject {
  */
 #define JSSLOT_CLASS_MASK_BITS 3
 
-JS_ALWAYS_INLINE JSClass*
+static JS_ALWAYS_INLINE JSClass*
 STOBJ_GET_CLASS(const JSObject* obj)
 {
     return (JSClass *) (obj->classword & ~JSSLOT_CLASS_MASK_BITS);
