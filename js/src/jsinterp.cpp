@@ -230,7 +230,7 @@ js_FillPropertyCache(JSContext *cx, JSObject *obj, jsuword kshape,
                                                  JSVAL_TO_OBJECT(v))),
                             kshape);
 #endif
-                        SCOPE_MAKE_UNIQUE_SHAPE(cx, scope);
+                        js_MakeScopeShapeUnique(cx, scope);
                         if (js_IsPropertyCacheDisabled(cx)) {
                             /*
                              * js_GenerateShape could not recover from
@@ -4683,7 +4683,7 @@ js_Interpret(JSContext *cx)
                                     }
                                     sprop = sprop2;
                                 } else {
-                                    SCOPE_EXTEND_SHAPE(cx, scope, sprop);
+                                    js_ExtendScopeShape(cx, scope, sprop);
                                     ++scope->entryCount;
                                     scope->lastProp = sprop;
                                 }
@@ -6355,6 +6355,7 @@ js_Interpret(JSContext *cx)
                         }
                         JS_ASSERT(sprop2 == sprop);
                     } else {
+                        js_LeaveTraceIfGlobalObject(cx, scope->object);
                         scope->shape = sprop->shape;
                         ++scope->entryCount;
                         scope->lastProp = sprop;
