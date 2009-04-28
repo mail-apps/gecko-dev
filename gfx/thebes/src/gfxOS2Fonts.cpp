@@ -117,6 +117,11 @@ const gfxFont::Metrics& gfxOS2Font::GetMetrics()
         return *mMetrics;
     }
 
+    // whatever happens below, we can always create the metrics
+    mMetrics = new gfxFont::Metrics;
+    mMetrics->emHeight = GetStyle()->size;
+    mSpaceGlyph = 0;
+
     FT_Face face = cairo_ft_scaled_font_lock_face(CairoScaledFont());
     if (!face) {
         // Abort here already, otherwise we crash in the following
@@ -131,9 +136,6 @@ const gfxFont::Metrics& gfxOS2Font::GetMetrics()
         cairo_ft_scaled_font_unlock_face(CairoScaledFont());
         return *mMetrics;
     }
-
-    mMetrics = new gfxFont::Metrics;
-    mMetrics->emHeight = GetStyle()->size;
 
     double emUnit = 1.0 * face->units_per_EM;
     double xScale = face->size->metrics.x_ppem / emUnit;
@@ -363,7 +365,7 @@ cairo_font_face_t *gfxOS2Font::CairoFontFace()
         } else {
 #ifdef DEBUG
             printf("Could not match font for:\n"
-                   "  family=%s, weight=%d, slant=%d, size=%d\n",
+                   "  family=%s, weight=%d, slant=%d, size=%f\n",
                    NS_LossyConvertUTF16toASCII(GetName()).get(),
                    GetStyle()->weight, GetStyle()->style, GetStyle()->size);
 #endif
