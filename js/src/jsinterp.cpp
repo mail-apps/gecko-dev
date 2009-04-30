@@ -3570,8 +3570,9 @@ js_Interpret(JSContext *cx)
         }                                                                     \
     JS_END_MACRO
 
-#define NATIVE_SET(cx,obj,sprop,vp)                                           \
+#define NATIVE_SET(cx,obj,sprop,entry,vp)                                     \
     JS_BEGIN_MACRO                                                            \
+        TRACE_2(SetPropHit, entry, sprop);                                    \
         if (SPROP_HAS_STUB_SETTER(sprop) &&                                   \
             (sprop)->slot != SPROP_INVALID_SLOT) {                            \
             /* Fast path for, e.g., Object instance properties. */            \
@@ -4634,9 +4635,8 @@ js_Interpret(JSContext *cx)
                                     SCOPE_HAS_PROPERTY(scope, sprop)) {
                                     PCMETER(cache->pchits++);
                                     PCMETER(cache->setpchits++);
-                                    NATIVE_SET(cx, obj, sprop, &rval);
+                                    NATIVE_SET(cx, obj, sprop, entry, &rval);
                                     JS_UNLOCK_SCOPE(cx, scope);
-                                    TRACE_2(SetPropHit, entry, sprop);
                                     break;
                                 }
                             } else {
@@ -4726,6 +4726,7 @@ js_Interpret(JSContext *cx)
                                 GC_WRITE_BARRIER(cx, scope,
                                                  LOCKED_OBJ_GET_SLOT(obj, slot),
                                                  rval);
+                                TRACE_2(SetPropHit, entry, sprop);
                                 LOCKED_OBJ_SET_SLOT(obj, slot, rval);
                                 JS_UNLOCK_SCOPE(cx, scope);
 
@@ -4736,8 +4737,6 @@ js_Interpret(JSContext *cx)
                                  * scope to avoid lock nesting.
                                  */
                                 js_PurgeScopeChain(cx, obj, sprop->id);
-
-                                TRACE_2(SetPropHit, entry, sprop);
                                 break;
                             }
 
@@ -4761,13 +4760,11 @@ js_Interpret(JSContext *cx)
                             sprop = PCVAL_TO_SPROP(entry->vword);
                             JS_ASSERT(!(sprop->attrs & JSPROP_READONLY));
                             JS_ASSERT(!SCOPE_IS_SEALED(OBJ_SCOPE(obj2)));
-                            NATIVE_SET(cx, obj, sprop, &rval);
+                            NATIVE_SET(cx, obj, sprop, entry, &rval);
                         }
                         JS_UNLOCK_OBJ(cx, obj2);
-                        if (sprop) {
-                            TRACE_2(SetPropHit, entry, sprop);
+                        if (sprop)
                             break;
-                        }
                     }
                 }
 
@@ -4775,10 +4772,8 @@ js_Interpret(JSContext *cx)
                     LOAD_ATOM(0);
                 id = ATOM_TO_JSID(atom);
                 if (entry) {
-                    entry = js_SetPropertyHelper(cx, obj, id, true, &rval);
-                    if (!entry)
+                    if (!js_SetPropertyHelper(cx, obj, id, true, &rval))
                         goto error;
-                    TRACE_1(SetPropMiss, entry);
                 } else {
                     if (!OBJ_SET_PROPERTY(cx, obj, id, &rval))
                         goto error;
@@ -6400,10 +6395,9 @@ js_Interpret(JSContext *cx)
                     GC_WRITE_BARRIER(cx, scope,
                                      LOCKED_OBJ_GET_SLOT(obj, slot),
                                      rval);
+                    TRACE_2(SetPropHit, entry, sprop);
                     LOCKED_OBJ_SET_SLOT(obj, slot, rval);
                     JS_UNLOCK_SCOPE(cx, scope);
-
-                    TRACE_2(SetPropHit, entry, sprop);
                     break;
                 }
 
@@ -6421,14 +6415,12 @@ js_Interpret(JSContext *cx)
                     goto error;
                 }
 
-                entry = JS_UNLIKELY(atom == cx->runtime->atomState.protoAtom)
-                        ? js_SetPropertyHelper(cx, obj, id, true, &rval)
-                        : js_DefineNativeProperty(cx, obj, id, rval, NULL, NULL,
-                                                  JSPROP_ENUMERATE, 0, 0, NULL,
-                                                  true);
-                if (!entry)
+                if (!(JS_UNLIKELY(atom == cx->runtime->atomState.protoAtom)
+                      ? js_SetPropertyHelper(cx, obj, id, true, &rval)
+                      : js_DefineNativeProperty(cx, obj, id, rval, NULL, NULL,
+                                                JSPROP_ENUMERATE, 0, 0, NULL,
+                                                true)))
                     goto error;
-                TRACE_1(SetPropMiss, entry);
             } while (0);
 
             /* Common tail for property cache hit and miss cases. */
