@@ -213,7 +213,7 @@ nsSystemFontsGTK2::GetSystemFontInfo(GtkWidget *aWidget, nsString *aFontName,
 
     aFontStyle->weight = pango_font_description_get_weight(desc);
 
-    float size = float(pango_font_description_get_size(desc) / PANGO_SCALE);
+    float size = float(pango_font_description_get_size(desc)) / PANGO_SCALE;
 
     // |size| is now either pixels or pango-points (not Mozilla-points!)
 
