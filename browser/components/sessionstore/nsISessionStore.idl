@@ -184,7 +184,11 @@ interface nsISessionStore : nsISupports
    * @param aName is the name of the attribute to save/restore for all tabbrowser tabs.
    */
   void persistTabAttribute(in AString aName);
+};
 
+[scriptable, uuid(7f750b1a-35b7-11de-b025-b7deb5eac8bf)]
+interface nsISessionStore_MOZILLA_1_9_1 : nsISessionStore
+{
   /**
    * Get the number of restore-able windows
    */

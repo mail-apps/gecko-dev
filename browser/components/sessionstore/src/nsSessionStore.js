@@ -69,6 +69,10 @@ const PRIVACY_FULL = 2;
 
 const NOTIFY_WINDOWS_RESTORED = "sessionstore-windows-restored";
 
+const INTERFACES = [Ci.nsISessionStore, Ci.nsIDOMEventListener,
+                    Ci.nsIObserver, Ci.nsISupportsWeakReference,
+                    Ci.nsISessionStore_MOZILLA_1_9_1, Ci.nsIClassInfo];
+
 // global notifications observed
 const OBSERVING = [
   "domwindowopened", "domwindowclosed",
@@ -119,10 +123,16 @@ SessionStoreService.prototype = {
   classDescription: "Browser Session Store Service",
   contractID: "@mozilla.org/browser/sessionstore;1",
   classID: Components.ID("{5280606b-2510-4fe0-97ef-9b5a22eafe6b}"),
-  QueryInterface: XPCOMUtils.generateQI([Ci.nsISessionStore,
-                                         Ci.nsIDOMEventListener,
-                                         Ci.nsIObserver,
-                                         Ci.nsISupportsWeakReference]),
+  QueryInterface: XPCOMUtils.generateQI(INTERFACES),
+
+  // extra requirements for nsIClassInfo
+  getInterfaces: function sss_getInterfaces(aCountRef) {
+    aCountRef.value = INTERFACES.length;
+    return INTERFACES;
+  },
+  getHelperForLanguage: function sss_getHelperForLanguage (aLanguage) null,
+  implementationLanguage: Ci.nsIProgrammingLanguage.JAVASCRIPT,
+  flags: Ci.nsIClassInfo.SINGLETON,
 
   // xul:tab attributes to (re)store (extensions might want to hook in here);
   // the favicon is always saved for the about:sessionrestore page
