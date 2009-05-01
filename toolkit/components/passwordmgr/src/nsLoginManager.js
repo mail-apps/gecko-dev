@@ -51,7 +51,20 @@ LoginManager.prototype = {
     contractID: "@mozilla.org/login-manager;1",
     classID: Components.ID("{cb9e0de8-3598-4ed7-857b-827f011ad5d8}"),
     QueryInterface : XPCOMUtils.generateQI([Ci.nsILoginManager,
-                                            Ci.nsISupportsWeakReference]),
+                                            Ci.nsISupportsWeakReference,
+                                            Ci.nsILoginManager_MOZILLA_1_9_1,
+                                            Ci.nsIClassInfo]),
+
+    /* ---------- extra requirements for nsIClassInfo ---------- */
+    getInterfaces: function(countRef) {
+        let interfaces = [Ci.nsILoginManager, Ci.nsISupportsWeakReference,
+                          Ci.nsILoginManager_MOZILLA_1_9_1, Ci.nsIClassInfo];
+        countRef.value = interfaces.length;
+        return interfaces;
+    },
+    getHelperForLanguage: function (language) null,
+    implementationLanguage: Ci.nsIProgrammingLanguage.JAVASCRIPT,
+    flags: Ci.nsIClassInfo.SINGLETON,
 
 
     /* ---------- private memebers ---------- */

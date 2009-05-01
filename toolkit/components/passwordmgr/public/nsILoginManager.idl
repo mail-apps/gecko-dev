@@ -240,6 +240,10 @@ interface nsILoginManager : nsISupports {
      * @return Success of attempt fill form
      */
     boolean fillForm(in nsIDOMHTMLFormElement aForm);
+};
+
+[scriptable, uuid(44ec4942-3678-11de-b4e6-47765a06a143)]
+interface nsILoginManager_MOZILLA_1_9_1 : nsILoginManager {
 
     /**
      * Search for logins in the login manager. An array is always returned;
