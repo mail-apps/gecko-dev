@@ -116,13 +116,13 @@ _TEST_FILES += \
 		test_bug441782-5e.html \
 		bug441782-5.html \
 		bug441782-5-ref.html \
-		test_bug4670672-1a.html \
-		test_bug4670672-1b.html \
-		test_bug4670672-1c.html \
-		test_bug4670672-1d.html \
-		test_bug4670672-1e.html \
-		test_bug4670672-1f.html \
-		test_bug4670672-1g.html \
+		test_bug467672-1a.html \
+		test_bug467672-1b.html \
+		test_bug467672-1c.html \
+		test_bug467672-1d.html \
+		test_bug467672-1e.html \
+		test_bug467672-1f.html \
+		test_bug467672-1g.html \
 		bug467672-1.html \
 		bug467672-1-ref.html \
 		test_bug467672-2a.html \
