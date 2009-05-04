@@ -568,8 +568,14 @@ SessionStoreService.prototype = {
                               getService(Ci.nsIObserverService);
         observerService.notifyObservers(null, NOTIFY_WINDOWS_RESTORED, "");
         
+#ifndef XP_MACOSX
         // the next delayed save request should execute immediately
         this._lastSaveTime -= this._interval;
+#else
+# strangely this is faster on Mac (cf. bug 486236)
+        // mark ourselves as running
+        this.saveState(true);
+#endif
       }
     }
     // this window was opened by _openWindowWithState
