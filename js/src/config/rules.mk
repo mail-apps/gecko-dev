@@ -202,6 +202,8 @@ check::
 
 endif # CPP_UNIT_TESTS
 
+.PHONY: check xpcshell-tests check-interactive check-one
+
 endif # ENABLE_TESTS
 
 
@@ -2157,7 +2159,7 @@ endif
 # Fake targets.  Always run these rules, even if a file/directory with that
 # name already exists.
 #
-.PHONY: all all_platforms alltags boot checkout chrome realchrome clean clobber clobber_all export install libs makefiles realclean run_viewer run_apprunner tools $(DIRS) $(TOOL_DIRS) FORCE check check-interactive check-one
+.PHONY: all all_platforms alltags boot checkout chrome realchrome clean clobber clobber_all export install libs makefiles realclean run_viewer run_apprunner tools $(DIRS) $(TOOL_DIRS) FORCE
 
 # Used as a dependency to force targets to rebuild
 FORCE:
