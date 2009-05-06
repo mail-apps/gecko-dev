@@ -2700,3 +2700,6 @@ pref("image.cache.timeweight", 500);
 pref("network.tcp.sendbuffer", 131072);
 #endif
 #endif
+
+// Enable/Disable the geolocation API for content
+pref("geo.enabled", true);
