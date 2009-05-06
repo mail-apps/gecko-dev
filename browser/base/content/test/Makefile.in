@@ -110,6 +110,7 @@ _BROWSER_FILES = browser_sanitize-timespans.js \
                  browser_bug479408.js \
                  browser_bug479408_sample.html \
                  browser_sanitizeDialog.js \
+                 browser_tabs_owner.js \
     $(NULL)
 
 ifeq (,$(filter mac cocoa,$(MOZ_WIDGET_TOOLKIT)))
