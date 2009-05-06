@@ -1273,7 +1273,8 @@ private:
   nsTArray<nsRefPtr<nsFrameLoader> > mFinalizableFrameLoaders;
   nsRefPtr<nsRunnableMethod<nsDocument> > mFrameLoaderRunner;
 
-  nsRevocableEventPtr<nsRunnableMethod<nsDocument> > mPendingTitleChangeEvent;
+  nsRevocableEventPtr<nsNonOwningRunnableMethod<nsDocument> >
+    mPendingTitleChangeEvent;
 
   nsExternalResourceMap mExternalResourceMap;
 };
