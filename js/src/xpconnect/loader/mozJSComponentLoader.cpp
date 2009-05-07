@@ -1672,8 +1672,6 @@ mozJSComponentLoader::Observe(nsISupports *subject, const char *topic,
             mFastLoadTimer->Cancel();
         }
 
-        JS_GC(mContext);
-
         CloseFastLoad();
     }
     else if (!strcmp(topic, "xpcom-shutdown-loaders")) {
