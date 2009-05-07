@@ -55,8 +55,7 @@ function run_test() {
 }
 
 function end_test() {
-  stop_httpserver();
-  do_test_finished();
+  stop_httpserver(do_test_finished);
 }
 
 // Custom error httpd handler used to return error codes we can't simulate

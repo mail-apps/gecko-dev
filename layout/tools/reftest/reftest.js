@@ -444,9 +444,14 @@ function DoneTests()
 
     dump("REFTEST INFO | Total canvas count = " + gRecycledCanvases.length + "\n");
 
+    function onStopped() {
+        dump("REFTEST INFO | Quitting...\n");
+        goQuitApplication();
+    }
     if (gServer)
-        gServer.stop();
-    goQuitApplication();
+        gServer.stop(onStopped);
+    else
+        onStopped();
 }
 
 function setupZoom(contentRootElement) {

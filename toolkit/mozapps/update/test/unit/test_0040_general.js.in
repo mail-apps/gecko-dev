@@ -62,7 +62,7 @@ function run_test() {
 }
 
 function end_test() {
- do_test_finished();
+  do_test_finished();
 }
 
 // Callback function used by the custom XMLHttpRequest implemetation to
