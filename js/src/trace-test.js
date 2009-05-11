@@ -5042,6 +5042,14 @@ function testSlowNativeBail() {
 }
 test(testSlowNativeBail);
 
+function testStringConstructorWithExtraArg() {
+    for (let i = 0; i < 5; ++i)
+        new String(new String(), 2);
+    return "ok";
+}
+testStringConstructorWithExtraArg.expected = "ok";
+test(testStringConstructorWithExtraArg);
+
 /*****************************************************************************
  *                                                                           *
  *  _____ _   _  _____ ______ _____ _______                                  *
