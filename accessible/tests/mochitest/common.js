@@ -45,7 +45,6 @@ const nsIPropertyElement = Components.interfaces.nsIPropertyElement;
 ////////////////////////////////////////////////////////////////////////////////
 // Roles
 
-const ROLE_PUSHBUTTON = nsIAccessibleRole.ROLE_PUSHBUTTON;
 const ROLE_CELL = nsIAccessibleRole.ROLE_CELL;
 const ROLE_CHROME_WINDOW = nsIAccessibleRole.ROLE_CHROME_WINDOW;
 const ROLE_COMBOBOX = nsIAccessibleRole.ROLE_COMBOBOX;
@@ -57,6 +56,7 @@ const ROLE_FLAT_EQUATION = nsIAccessibleRole.ROLE_FLAT_EQUATION;
 const ROLE_FORM = nsIAccessibleRole.ROLE_FORM;
 const ROLE_GRAPHIC = nsIAccessibleRole.ROLE_GRAPHIC;
 const ROLE_GRID_CELL = nsIAccessibleRole.ROLE_GRID_CELL;
+const ROLE_GROUPING = nsIAccessibleRole.ROLE_GROUPING;
 const ROLE_HEADING = nsIAccessibleRole.ROLE_HEADING;
 const ROLE_LABEL = nsIAccessibleRole.ROLE_LABEL;
 const ROLE_LIST = nsIAccessibleRole.ROLE_LIST;
@@ -64,7 +64,10 @@ const ROLE_LISTBOX = nsIAccessibleRole.ROLE_LISTBOX;
 const ROLE_OPTION = nsIAccessibleRole.ROLE_OPTION;
 const ROLE_PARAGRAPH = nsIAccessibleRole.ROLE_PARAGRAPH;
 const ROLE_PASSWORD_TEXT = nsIAccessibleRole.ROLE_PASSWORD_TEXT;
+const ROLE_PROGRESSBAR = nsIAccessibleRole.ROLE_PROGRESSBAR;
+const ROLE_PUSHBUTTON = nsIAccessibleRole.ROLE_PUSHBUTTON;
 const ROLE_SECTION = nsIAccessibleRole.ROLE_SECTION;
+const ROLE_SLIDER = nsIAccessibleRole.ROLE_SLIDER;
 const ROLE_TEXT_CONTAINER = nsIAccessibleRole.ROLE_TEXT_CONTAINER;
 const ROLE_TEXT_LEAF = nsIAccessibleRole.ROLE_TEXT_LEAF;
 const ROLE_TOGGLE_BUTTON = nsIAccessibleRole.ROLE_TOGGLE_BUTTON;
@@ -244,6 +247,37 @@ function getAccessible(aAccOrElmOrID, aInterfaces, aElmObj, aDoNotFailIfNoAcc)
 function isAccessible(aAccOrElmOrID)
 {
   return getAccessible(aAccOrElmOrID, null, null, true) ? true : false;
+}
+
+/**
+ * Compare expected and actual accessibles trees.
+ */
+function testAccessibleTree(aAccOrElmOrID, aAccTree)
+{
+  var acc = getAccessible(aAccOrElmOrID);
+  if (!acc)
+    return;
+
+  for (var prop in aAccTree) {
+    var msg = "Wrong value of property '" + prop + "'.";
+    if (prop == "role")
+      is(roleToString(acc[prop]), roleToString(aAccTree[prop]), msg);
+    else if (prop != "children")
+      is(acc[prop], aAccTree[prop], msg);
+  }
+
+  if ("children" in aAccTree) {
+    var children = acc.children;
+    is(aAccTree.children.length, children.length,
+       "Different amount of expected children.");
+
+    if (aAccTree.children.length == children.length) { 
+      for (var i = 0; i < children.length; i++) {
+        var child = children.queryElementAt(i, nsIAccessible);
+        testAccessibleTree(child, aAccTree.children[i]);
+      }
+    }
+  }
 }
 
 /**

@@ -692,6 +692,28 @@ nsAccessibilityService::CreateHTMLListboxAccessible(nsIDOMNode* aDOMNode, nsIWea
   return NS_OK;
 }
 
+NS_IMETHODIMP
+nsAccessibilityService::CreateHTMLMediaAccessible(nsISupports *aFrame,
+                                                  nsIAccessible **aAccessible)
+{
+  NS_ENSURE_ARG_POINTER(aAccessible);
+  *aAccessible = nsnull;
+
+  nsIFrame* frame;
+  nsCOMPtr<nsIDOMNode> node;
+  nsCOMPtr<nsIWeakReference> weakShell;
+  nsresult rv = GetInfo(aFrame, &frame, getter_AddRefs(weakShell),
+                        getter_AddRefs(node));
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  *aAccessible = new nsEnumRoleAccessible(node, weakShell,
+                                          nsIAccessibleRole::ROLE_GROUPING);
+  NS_ENSURE_TRUE(*aAccessible, NS_ERROR_OUT_OF_MEMORY);
+
+  NS_ADDREF(*aAccessible);
+  return NS_OK;
+}
+
 /**
   * We can have several cases here. 
   *  1) a text or html embedded document where the contentDocument
