@@ -58,6 +58,8 @@
 #include "nsURILoader.h"
 #include "ImageErrors.h"
 
+using mozilla::TimeStamp;
+
 #define HTTP_OK_CODE 200
 #define HTTP_PARTIAL_RESPONSE_CODE 206
 
@@ -208,7 +210,7 @@ nsMediaChannelStream::OnStartRequest(nsIRequest* aRequest)
 
   {
     nsAutoLock lock(mLock);
-    mChannelStatistics.Start(PR_IntervalNow());
+    mChannelStatistics.Start(TimeStamp::Now());
   }
 
   if (mSuspendCount > 0) {
@@ -230,7 +232,7 @@ nsMediaChannelStream::OnStopRequest(nsIRequest* aRequest, nsresult aStatus)
 
   {
     nsAutoLock lock(mLock);
-    mChannelStatistics.Stop(PR_IntervalNow());
+    mChannelStatistics.Stop(TimeStamp::Now());
   }
 
   mCacheStream.NotifyDataEnded(aStatus);
@@ -377,7 +379,7 @@ void nsMediaChannelStream::CloseChannel()
 
   {
     nsAutoLock lock(mLock);
-    mChannelStatistics.Stop(PR_IntervalNow());
+    mChannelStatistics.Stop(TimeStamp::Now());
   }
 
   if (mListener) {
@@ -430,7 +432,7 @@ void nsMediaChannelStream::Suspend()
   if (mSuspendCount == 0 && mChannel) {
     {
       nsAutoLock lock(mLock);
-      mChannelStatistics.Stop(PR_IntervalNow());
+      mChannelStatistics.Stop(TimeStamp::Now());
     }
     mChannel->Suspend();
   }
@@ -445,7 +447,7 @@ void nsMediaChannelStream::Resume()
   if (mSuspendCount == 0 && mChannel) {
     {
       nsAutoLock lock(mLock);
-      mChannelStatistics.Start(PR_IntervalNow());
+      mChannelStatistics.Start(TimeStamp::Now());
     }
     mChannel->Resume();
     // XXX need to do something fancier here because we often won't
@@ -587,7 +589,7 @@ double
 nsMediaChannelStream::GetDownloadRate(PRPackedBool* aIsReliable)
 {
   nsAutoLock lock(mLock);
-  return mChannelStatistics.GetRate(PR_IntervalNow(), aIsReliable);
+  return mChannelStatistics.GetRate(TimeStamp::Now(), aIsReliable);
 }
 
 PRInt64
