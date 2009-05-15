@@ -1808,6 +1808,9 @@ PresShell::Init(nsIDocument* aDocument,
 NS_IMETHODIMP
 PresShell::Destroy()
 {
+  NS_ASSERTION(!nsContentUtils::IsSafeToRunScript(),
+    "destroy called on presshell while scripts not blocked");
+
 #ifdef MOZ_REFLOW_PERF
   DumpReflows();
   if (mReflowCountMgr) {
