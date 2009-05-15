@@ -1897,16 +1897,13 @@ static PRBool
 DoDelayedStop(nsPluginInstanceOwner *aInstanceOwner, PRBool aDelayedStop)
 {
   // Don't delay stopping QuickTime (bug 425157), Flip4Mac (bug 426524),
-  // XStandard (bug 430219), CMISS Zinc (bug 429604). ARM Flash (454756)
+  // XStandard (bug 430219), CMISS Zinc (bug 429604).
   if (aDelayedStop
-#ifndef XP_WIN
+#if !(defined XP_WIN || defined MOZ_X11)
       && !aInstanceOwner->MatchPluginName("QuickTime")
       && !aInstanceOwner->MatchPluginName("Flip4Mac")
       && !aInstanceOwner->MatchPluginName("XStandard plugin")
       && !aInstanceOwner->MatchPluginName("CMISS Zinc Plugin")
-#endif
-#if defined(XP_UNIX) && defined(__arm__)
-      && !aInstanceOwner->MatchPluginName("Shockwave Flash")
 #endif
       ) {
     nsCOMPtr<nsIRunnable> evt = new nsStopPluginRunnable(aInstanceOwner);
@@ -2067,7 +2064,7 @@ nsObjectFrame::StopPluginInternal(PRBool aDelayedStop)
 
   nsWeakFrame weakFrame(this);
 
-#ifdef XP_WIN
+#if defined(XP_WIN) || defined(MOZ_X11)
   if (aDelayedStop) {
     // If we're asked to do a delayed stop it means we're stopping the
     // plugin because we're destroying the frame. In that case, tell
@@ -4078,7 +4075,7 @@ nsPluginInstanceOwner::Destroy()
 void
 nsPluginInstanceOwner::PrepareToStop(PRBool aDelayedStop)
 {
-#ifdef XP_WIN
+#if defined(XP_WIN) || defined(MOZ_X11)
   if (aDelayedStop && mWidget) {
     // To delay stopping a plugin we need to reparent the plugin
     // so that we can safely tear down the
