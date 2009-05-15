@@ -1197,6 +1197,7 @@ void nsHTMLMediaElement::NetworkError()
   DispatchAsyncProgressEvent(NS_LITERAL_STRING("error"));
   mNetworkState = nsIDOMHTMLMediaElement::NETWORK_EMPTY;
   DispatchAsyncSimpleEvent(NS_LITERAL_STRING("emptied"));
+  ChangeDelayLoadStatus(PR_FALSE);
 }
 
 void nsHTMLMediaElement::PlaybackEnded()
