@@ -76,6 +76,7 @@ _TEST_FILES =\
 		test_elm_media.html \
 		test_elm_txtcntnr.html \
 		test_events_caretmove.html \
+		test_events_focus.xul \
 		test_events_mutation.html \
 		$(warning test_groupattrs.xul temporarily disabled) \
 	$(warning test_table_indexes.html temporarily disabled) \

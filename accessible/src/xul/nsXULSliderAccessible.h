@@ -58,9 +58,6 @@ public:
   // nsIAccessibleValue
   NS_DECL_NSIACCESSIBLEVALUE
 
-  // nsPIAccessible
-  NS_IMETHOD GetAllowsAnonChildAccessibles(PRBool *aAllowsAnonChildren);
-
 protected:
   already_AddRefed<nsIContent> GetSliderNode();
 
