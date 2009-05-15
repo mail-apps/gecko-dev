@@ -37,8 +37,12 @@ const nsIAccessibleValue = Components.interfaces.nsIAccessibleValue;
 const nsIObserverService = Components.interfaces.nsIObserverService;
 
 const nsIDOMDocument = Components.interfaces.nsIDOMDocument;
+const nsIDOMEvent = Components.interfaces.nsIDOMEvent;
+const nsIDOMHTMLDocument = Components.interfaces.nsIDOMHTMLDocument;
 const nsIDOMNode = Components.interfaces.nsIDOMNode;
+const nsIDOMNSHTMLElement = Components.interfaces.nsIDOMNSHTMLElement;
 const nsIDOMWindow = Components.interfaces.nsIDOMWindow;
+const nsIDOMXULElement = Components.interfaces.nsIDOMXULElement;
 
 const nsIPropertyElement = Components.interfaces.nsIPropertyElement;
 
@@ -83,15 +87,19 @@ const STATE_EXTSELECTABLE = nsIAccessibleStates.STATE_EXTSELECTABLE;
 const STATE_FOCUSABLE = nsIAccessibleStates.STATE_FOCUSABLE;
 const STATE_FOCUSED = nsIAccessibleStates.STATE_FOCUSED;
 const STATE_HASPOPUP = nsIAccessibleStates.STATE_HASPOPUP;
+const STATE_LINKED = nsIAccessibleStates.STATE_LINKED;
 const STATE_MIXED = nsIAccessibleStates.STATE_MIXED;
 const STATE_MULTISELECTABLE = nsIAccessibleStates.STATE_MULTISELECTABLE;
 const STATE_PRESSED = nsIAccessibleStates.STATE_PRESSED;
 const STATE_READONLY = nsIAccessibleStates.STATE_READONLY;
 const STATE_SELECTABLE = nsIAccessibleStates.STATE_SELECTABLE;
 const STATE_SELECTED = nsIAccessibleStates.STATE_SELECTED;
+const STATE_TRAVERSED = nsIAccessibleStates.STATE_TRAVERSED;
+const STATE_UNAVAILABLE = nsIAccessibleStates.STATE_UNAVAILABLE;
 
 const EXT_STATE_EDITABLE = nsIAccessibleStates.EXT_STATE_EDITABLE;
 const EXT_STATE_EXPANDABLE = nsIAccessibleStates.EXT_STATE_EXPANDABLE;
+const EXT_STATE_HORIZONTAL = nsIAccessibleStates.EXT_STATE_HORIZONTAL;
 const EXT_STATE_INVALID = nsIAccessibleStates.STATE_INVALID;
 const EXT_STATE_MULTI_LINE = nsIAccessibleStates.EXT_STATE_MULTI_LINE;
 const EXT_STATE_REQUIRED = nsIAccessibleStates.STATE_REQUIRED;
@@ -145,26 +153,40 @@ function addA11yLoadEvent(aFunc)
 // Get DOM node/accesible helpers
 
 /**
- * Return the DOM node.
+ * Return the DOM node by identifier (may be accessible, DOM node or ID).
  */
-function getNode(aNodeOrID)
+function getNode(aAccOrNodeOrID)
 {
-  if (!aNodeOrID)
+  if (!aAccOrNodeOrID)
     return null;
 
-  var node = aNodeOrID;
+  if (aAccOrNodeOrID instanceof nsIDOMNode)
+    return aAccOrNodeOrID;
 
-  if (!(aNodeOrID instanceof nsIDOMNode)) {
-    node = document.getElementById(aNodeOrID);
+  if (aAccOrNodeOrID instanceof nsIAccessible) {
+    aAccOrNodeOrID.QueryInterface(nsIAccessNode);
+    return aAccOrNodeOrID.DOMNode;
+  }
 
-    if (!node) {
-      ok(false, "Can't get DOM element for " + aNodeOrID);
-      return null;
-    }
+  node = document.getElementById(aAccOrNodeOrID);
+  if (!node) {
+    ok(false, "Can't get DOM element for " + aAccOrNodeOrID);
+    return null;
   }
 
   return node;
 }
+
+/**
+ * Constants indicates getAccessible doesn't fail if there is no accessible.
+ */
+const DONOTFAIL_IF_NO_ACC = 1;
+
+/**
+ * Constants indicates getAccessible won't fail if accessible doesn't implement
+ * the requested interfaces.
+ */
+const DONOTFAIL_IF_NO_INTERFACE = 2;
 
 /**
  * Return accessible for the given identifier (may be ID attribute or DOM
@@ -176,11 +198,14 @@ function getNode(aNodeOrID)
  *                           to query it/them from obtained accessible
  * @param aElmObj            [out, optional] object to store DOM element which
  *                           accessible is obtained for
- * @param aDoNotFailIfNoAcc  [in, optional] no error if the given identifier is
- *                           not accessible
+ * @param aDoNotFailIf       [in, optional] no error for special cases (see
+ *                            constants above)
  */
-function getAccessible(aAccOrElmOrID, aInterfaces, aElmObj, aDoNotFailIfNoAcc)
+function getAccessible(aAccOrElmOrID, aInterfaces, aElmObj, aDoNotFailIf)
 {
+  if (!aAccOrElmOrID)
+    return;
+
   var elm = null;
 
   if (aAccOrElmOrID instanceof nsIAccessible) {
@@ -209,7 +234,7 @@ function getAccessible(aAccOrElmOrID, aInterfaces, aElmObj, aDoNotFailIfNoAcc)
     }
 
     if (!acc) {
-      if (!aDoNotFailIfNoAcc)
+      if (!(aDoNotFailIf & DONOTFAIL_IF_NO_ACC))
         ok(false, "Can't get accessible for " + aAccOrElmOrID);
 
       return null;
@@ -224,7 +249,9 @@ function getAccessible(aAccOrElmOrID, aInterfaces, aElmObj, aDoNotFailIfNoAcc)
       try {
         acc.QueryInterface(aInterfaces[index]);
       } catch (e) {
-        ok(false, "Can't query " + aInterfaces[index] + " for " + aID);
+        if (!(aDoNotFailIf & DONOTFAIL_IF_NO_INTERFACE))
+          ok(false, "Can't query " + aInterfaces[index] + " for " + aAccOrElmOrID);
+
         return null;
       }
     }
@@ -234,7 +261,7 @@ function getAccessible(aAccOrElmOrID, aInterfaces, aElmObj, aDoNotFailIfNoAcc)
   try {
     acc.QueryInterface(aInterfaces);
   } catch (e) {
-    ok(false, "Can't query " + aInterfaces + " for " + aID);
+    ok(false, "Can't query " + aInterfaces + " for " + aAccOrElmOrID);
     return null;
   }
   
@@ -242,11 +269,35 @@ function getAccessible(aAccOrElmOrID, aInterfaces, aElmObj, aDoNotFailIfNoAcc)
 }
 
 /**
- * Return true if the given identifier has an accessible.
+ * Return true if the given identifier has an accessible, or exposes the wanted
+ * interfaces.
  */
-function isAccessible(aAccOrElmOrID)
+function isAccessible(aAccOrElmOrID, aInterfaces)
 {
-  return getAccessible(aAccOrElmOrID, null, null, true) ? true : false;
+  return getAccessible(aAccOrElmOrID, aInterfaces, null,
+                       DONOTFAIL_IF_NO_ACC | DONOTFAIL_IF_NO_INTERFACE) ?
+    true : false;
+}
+
+/**
+ * Run through accessible tree of the given identifier so that we ensure
+ * accessible tree is created.
+ */
+function ensureAccessibleTree(aAccOrElmOrID)
+{
+  var acc = getAccessible(aAccOrElmOrID);
+  if (!acc)
+    return;
+
+  var child = acc.firstChild;
+  while (child) {
+    ensureAccessibleTree(child);
+    try {
+      child = child.nextSibling;
+    } catch (e) {
+      child = null;
+    }
+  }
 }
 
 /**
@@ -280,36 +331,6 @@ function testAccessibleTree(aAccOrElmOrID, aAccTree)
   }
 }
 
-/**
- * Compare expected and actual accessibles trees.
- */
-function testAccessibleTree(aAccOrElmOrID, aAccTree)
-{
-  var acc = getAccessible(aAccOrElmOrID);
-  if (!acc)
-    return;
-
-  for (var prop in aAccTree) {
-    var msg = "Wrong value of property '" + prop + "'.";
-    if (prop == "role")
-      is(roleToString(acc[prop]), roleToString(aAccTree[prop]), msg);
-    else if (prop != "children")
-      is(acc[prop], aAccTree[prop], msg);
-  }
-
-  if ("children" in aAccTree) {
-    var children = acc.children;
-    is(aAccTree.children.length, children.length,
-       "Different amount of expected children.");
-
-    if (aAccTree.children.length == children.length) { 
-      for (var i = 0; i < children.length; i++) {
-        var child = children.queryElementAt(i, nsIAccessible);
-        testAccessibleTree(child, aAccTree.children[i]);
-      }
-    }
-  }
-}
 
 /**
  * Convert role to human readable string.
@@ -338,7 +359,7 @@ function statesToString(aStates, aExtraStates)
  */
 function eventTypeToString(aEventType)
 {
-  gAccRetrieval.getStringEventType(aEventType);
+  return gAccRetrieval.getStringEventType(aEventType);
 }
 
 /**
@@ -356,7 +377,14 @@ function prettyName(aIdentifier)
 {
   if (aIdentifier instanceof nsIAccessible) {
     var acc = getAccessible(aIdentifier, [nsIAccessNode]);
-    return getNodePrettyName(acc.DOMNode);
+    var msg = "[" + getNodePrettyName(acc.DOMNode) +
+      ", role: " + roleToString(acc.role);
+
+    if (acc.name)
+      msg += ", name: '" + acc.name + "'"
+    msg += "]";
+
+    return msg;
   }
 
   if (aIdentifier instanceof nsIDOMNode)
@@ -382,8 +410,12 @@ addLoadEvent(initialize);
 
 function getNodePrettyName(aNode)
 {
-  if (aNode.nodeType == nsIDOMNode.ELEMENT_NODE && aNode.hasAttribute("id"))
-    return " '" + aNode.getAttribute("id") + "' ";
+  try {
+    if (aNode.nodeType == nsIDOMNode.ELEMENT_NODE && aNode.hasAttribute("id"))
+      return " '" + aNode.getAttribute("id") + "' ";
 
-  return " '" + aNode.localName + " node' ";
+    return " '" + aNode.localName + " node' ";
+  } catch (e) {
+    return "no node info";
+  }
 }
