@@ -3652,6 +3652,10 @@
         }
       ]]>
       </handler>
+      <handler event="mousedown" button="1">
+        this.style.MozUserFocus = 'ignore';
+        this.clientTop;
+      </handler>
       <handler event="mousedown" button="2">
         this.style.MozUserFocus = 'ignore';
         this.clientTop;
