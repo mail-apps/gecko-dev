@@ -388,7 +388,7 @@ nsSubDocumentFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
       nscolor bg;
       vm->GetDefaultBackgroundColor(&bg);
       rv = aLists.Content()->AppendNewToBottom(
-             new (aBuilder) nsDisplaySolidColor(shellBounds, bg));
+             new (aBuilder) nsDisplaySolidColor(f ? f : this, shellBounds, bg));
     }
   }
 
