@@ -1865,7 +1865,7 @@ js_GetUpvarOnTrace(JSContext *cx, uint32 level, uint32 cookie, double* result)
      * then we simply get the value from the interpreter state.
      */
     if (skip > callDepth) {
-        jsval v = *js_GetUpvar(cx, level, cookie);
+        jsval v = js_GetUpvar(cx, level, cookie);
         uint8 type = getCoercedType(v);
         ValueToNative(cx, v, type, result);
         return type;
@@ -8295,8 +8295,8 @@ TraceRecorder::record_JSOP_GETUPVAR()
     /*
      * Try to find the upvar in the current trace's tracker.
      */
-    jsval* vp = js_GetUpvar(cx, script->staticLevel, uva->vector[index]);
-    LIns* upvar_ins = get(vp);
+    jsval& v = js_GetUpvar(cx, script->staticLevel, uva->vector[index]);
+    LIns* upvar_ins = get(&v);
     if (upvar_ins) {
         stack(0, upvar_ins);
         return JSRS_CONTINUE;
@@ -8315,7 +8315,7 @@ TraceRecorder::record_JSOP_GETUPVAR()
     };
     const CallInfo* ci = &js_GetUpvarOnTrace_ci;
     LIns* call_ins = lir->insCall(ci, args);
-    uint8 type = getCoercedType(*vp);
+    uint8 type = getCoercedType(v);
     guard(true,
           addName(lir->ins2(LIR_eq, call_ins, lir->insImm(type)),
                   "guard(type-stable upvar)"),
