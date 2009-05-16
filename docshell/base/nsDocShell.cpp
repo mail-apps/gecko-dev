@@ -289,6 +289,7 @@ nsDocShell::nsDocShell():
     mAllowJavascript(PR_TRUE),
     mAllowMetaRedirects(PR_TRUE),
     mAllowImages(PR_TRUE),
+    mAllowDNSPrefetch(PR_TRUE),
     mFocusDocFirst(PR_FALSE),
     mHasFocus(PR_FALSE),
     mCreatingDocument(PR_FALSE),
@@ -438,6 +439,7 @@ NS_INTERFACE_MAP_BEGIN(nsDocShell)
     NS_INTERFACE_MAP_ENTRY(nsIObserver)
     NS_INTERFACE_MAP_ENTRY(nsILoadContext)
     NS_INTERFACE_MAP_ENTRY(nsIDocShell_MOZILLA_1_9_1)
+    NS_INTERFACE_MAP_ENTRY(nsIDocShell_MOZILLA_1_9_1_dns)
 NS_INTERFACE_MAP_END_INHERITING(nsDocLoader)
 
 ///*****************************************************************************
@@ -1501,6 +1503,18 @@ NS_IMETHODIMP nsDocShell::SetAllowImages(PRBool aAllowImages)
     return NS_OK;
 }
 
+NS_IMETHODIMP nsDocShell::GetAllowDNSPrefetch(PRBool * aAllowDNSPrefetch)
+{
+    *aAllowDNSPrefetch = mAllowDNSPrefetch;
+    return NS_OK;
+}
+
+NS_IMETHODIMP nsDocShell::SetAllowDNSPrefetch(PRBool aAllowDNSPrefetch)
+{
+    mAllowDNSPrefetch = aAllowDNSPrefetch;
+    return NS_OK;
+}
+
 NS_IMETHODIMP
 nsDocShell::GetDocShellEnumerator(PRInt32 aItemType, PRInt32 aDirection, nsISimpleEnumerator **outEnum)
 {
@@ -1540,6 +1554,9 @@ NS_IMETHODIMP
 nsDocShell::SetAppType(PRUint32 aAppType)
 {
     mAppType = aAppType;
+    if (mAppType == APP_TYPE_MAIL || mAppType == APP_TYPE_EDITOR) {
+        SetAllowDNSPrefetch(PR_FALSE);
+    }
     return NS_OK;
 }
 
@@ -1961,6 +1978,13 @@ nsDocShell::SetDocLoaderParent(nsDocLoader * aParent)
         {
             SetAllowImages(value);
         }
+        nsCOMPtr<nsIDocShell_MOZILLA_1_9_1_dns> dnsShell =
+            do_QueryInterface(parent);
+        NS_ASSERTION(dnsShell, "How did that happen?");
+        if (NS_FAILED(dnsShell->GetAllowDNSPrefetch(&value))) {
+            value = PR_FALSE;
+        }
+        SetAllowDNSPrefetch(value);
     }
 
     nsCOMPtr<nsIURIContentListener> parentURIListener(do_GetInterface(parent));
@@ -6130,6 +6154,12 @@ nsDocShell::RestoreFromHistory()
 
         PRBool allowImages;
         childShell->GetAllowImages(&allowImages);
+
+        nsCOMPtr<nsIDocShell_MOZILLA_1_9_1_dns> dnsShell =
+            do_QueryInterface(childShell);
+        NS_ASSERTION(dnsShell, "How did that happen?");
+        PRBool allowDNSPrefetch;
+        dnsShell->GetAllowDNSPrefetch(&allowDNSPrefetch);
         
         AddChild(childItem);
 
@@ -6138,6 +6168,7 @@ nsDocShell::RestoreFromHistory()
         childShell->SetAllowMetaRedirects(allowRedirects);
         childShell->SetAllowSubframes(allowSubframes);
         childShell->SetAllowImages(allowImages);
+        dnsShell->SetAllowDNSPrefetch(allowDNSPrefetch);
 
         rv = childShell->BeginRestore(nsnull, PR_FALSE);
         NS_ENSURE_SUCCESS(rv, rv);

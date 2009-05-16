@@ -490,3 +490,14 @@ interface nsIDocShell_MOZILLA_1_9_1 : nsISupports
   nsIDOMStorage getSessionStorageForPrincipal(in nsIPrincipal principal,
                                               in boolean create);
 };
+
+[scriptable, uuid(6cf71a12-c7d6-404d-b0b5-15ceae321337)]
+interface nsIDocShell_MOZILLA_1_9_1_dns : nsISupports
+{
+  /**
+   * Attribute that determines whether DNS prefetch is allowed for this subtree
+   * of the docshell tree.  Defaults to true.  Setting this will make it take
+   * effect starting with the next document loaded in the docshell.
+   */
+  attribute boolean allowDNSPrefetch;
+};

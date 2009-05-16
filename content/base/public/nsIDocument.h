@@ -122,6 +122,11 @@ public:
       mCompatMode(eCompatibility_FullStandards),
       mIsInitialDocumentInWindow(PR_FALSE),
       mMayStartLayout(PR_TRUE),
+      // mAllowDNSPrefetch starts true, so that we can always reliably && it
+      // with various values that might disable it.  Since we never prefetch
+      // unless we get a window, and in that case the docshell value will get
+      // &&-ed in, this is safe.
+      mAllowDNSPrefetch(PR_TRUE),
       mPartID(0),
       mJSObject(nsnull)
   {
@@ -1129,7 +1134,9 @@ public:
    */
   virtual void UnsuppressEventHandlingAndFireEvents(PRBool aFireEvents) = 0;
 
-  PRUint32 EventHandlingSuppressed() { return mEventsSuppressed; }
+  PRUint32 EventHandlingSuppressed() const { return mEventsSuppressed; }
+
+  PRBool IsDNSPrefetchAllowed() const { return mAllowDNSPrefetch; }
 
 protected:
   ~nsIDocument()
@@ -1206,6 +1213,10 @@ protected:
 
   // True iff IsShowing() should be returning true
   PRPackedBool mIsShowing;
+
+  // True iff DNS prefetch is allowed for this document.  Note that if the
+  // document has no window, DNS prefetch won't be performed no matter what.
+  PRPackedBool mAllowDNSPrefetch;
   
   // The bidi options for this document.  What this bitfield means is
   // defined in nsBidiUtils.h
