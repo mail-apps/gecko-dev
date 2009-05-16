@@ -2731,6 +2731,33 @@ nsCxPusher::Push(nsPIDOMEventTarget *aCurrentTarget)
 }
 
 PRBool
+nsCxPusher::RePush(nsPIDOMEventTarget *aCurrentTarget)
+{
+  if (!mScx) {
+    return Push(aCurrentTarget);
+  }
+
+  if (aCurrentTarget) {
+    nsCOMPtr<nsIScriptContext> scx;
+    nsresult rv = aCurrentTarget->GetContextForEventHandlers(getter_AddRefs(scx));
+    if (NS_FAILED(rv)) {
+      Pop();
+      return PR_FALSE;
+    }
+
+    // If we have the same script context and native context is still
+    // alive, no need to Pop/Push.
+    if (scx && scx == mScx &&
+        scx->GetNativeContext()) {
+      return PR_TRUE;
+    }
+  }
+
+  Pop();
+  return Push(aCurrentTarget);
+}
+
+PRBool
 nsCxPusher::Push(JSContext *cx)
 {
   if (mScx) {
