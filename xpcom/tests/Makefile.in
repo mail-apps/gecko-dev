@@ -115,7 +115,6 @@ CPP_UNIT_TESTS += \
                   TestStrings.cpp \
                   TestStorageStream.cpp \
                   TestTArray.cpp \
-                  TestTimeStamp.cpp \
                   $(NULL)
 endif
 
