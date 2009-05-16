@@ -552,12 +552,17 @@ js_StrictlyEqual(JSContext *cx, jsval lval, jsval rval);
 extern JSBool
 js_InternNonIntElementId(JSContext *cx, JSObject *obj, jsval idval, jsid *idp);
 
+/* Work around liveconnect building this file as C on 1.9.1 branch */
+#ifdef __cplusplus 
+
 /*
  * Given an active context, a static scope level, and an upvar cookie, return
  * the value of the upvar.
  */
 extern jsval&
 js_GetUpvar(JSContext *cx, uintN level, uintN cookie);
+
+#endif
 
 /*
  * JS_LONE_INTERPRET indicates that the compiler should see just the code for
