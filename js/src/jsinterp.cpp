@@ -2043,7 +2043,7 @@ js_DoIncDec(JSContext *cx, const JSCodeSpec *cs, jsval *vp, jsval *vp2)
     return JS_TRUE;
 }
 
-jsval&
+jsval*
 js_GetUpvar(JSContext *cx, uintN level, uintN cookie)
 {
     level -= UPVAR_FRAME_SKIP(cookie);
@@ -2068,7 +2068,7 @@ js_GetUpvar(JSContext *cx, uintN level, uintN cookie)
         vp = fp->slots;
     }
 
-    return vp[slot];
+    return &vp[slot];
 }
 
 #ifdef DEBUG
@@ -5725,7 +5725,7 @@ js_Interpret(JSContext *cx)
             index = GET_UINT16(regs.pc);
             JS_ASSERT(index < uva->length);
 
-            rval = js_GetUpvar(cx, script->staticLevel, uva->vector[index]);
+            rval = *js_GetUpvar(cx, script->staticLevel, uva->vector[index]);
             PUSH_OPND(rval);
 
             if (op == JSOP_CALLUPVAR)
