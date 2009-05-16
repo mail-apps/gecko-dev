@@ -622,21 +622,21 @@ js_GetCallObject(JSContext *cx, JSStackFrame *fp)
      * expression Call's parent points to an environment object holding
      * function's name.
      */
-     JSAtom *lambdaName = (fp->fun->flags & JSFUN_LAMBDA) ? fp->fun->atom : NULL;
-     if (lambdaName) {
-         JSObject *env = js_NewObjectWithGivenProto(cx, &js_DeclEnvClass, NULL,
-                                                    fp->scopeChain, 0);
-         if (!env)
-             return NULL;
+    JSAtom *lambdaName = (fp->fun->flags & JSFUN_LAMBDA) ? fp->fun->atom : NULL;
+    if (lambdaName) {
+        JSObject *env = js_NewObjectWithGivenProto(cx, &js_DeclEnvClass, NULL,
+                                                   fp->scopeChain, 0);
+        if (!env)
+            return NULL;
 
-         /* Root env. */
-         fp->scopeChain = env;
-     }
+        /* Root env. */
+        fp->scopeChain = env;
+    }
 
-     callobj = js_NewObjectWithGivenProto(cx, &js_CallClass, NULL,
-                                          fp->scopeChain, 0);
-     if (!callobj)
-         return NULL;
+    callobj = js_NewObjectWithGivenProto(cx, &js_CallClass, NULL,
+                                         fp->scopeChain, 0);
+    if (!callobj)
+        return NULL;
 
     JS_SetPrivate(cx, callobj, fp);
     JS_ASSERT(fp->fun == GET_FUNCTION_PRIVATE(cx, fp->callee));
