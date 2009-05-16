@@ -1007,6 +1007,8 @@ public:
   static PRLogModuleInfo* gLog;
 #endif
 
+  virtual void UpdateCanvasBackground();
+
 protected:
   virtual ~PresShell();
 
@@ -5529,6 +5531,21 @@ PresShell::RenderSelection(nsISelection* aSelection,
 
   return PaintRangePaintInfo(&rangeItems, aSelection, nsnull, area, aPoint,
                              aScreenRect);
+}
+
+void PresShell::UpdateCanvasBackground()
+{
+  // If we have a frame tree and it has style information that
+  // specifies the background color of the canvas, update the view
+  // manager cache of that color.
+  nsIFrame* rootFrame = FrameConstructor()->GetRootElementStyleFrame();
+  if (rootFrame && mViewManager) {
+    const nsStyleBackground* bgStyle =
+      nsCSSRendering::FindRootFrameBackground(rootFrame);
+    mViewManager->SetDefaultBackgroundColor(
+      NS_ComposeColors(mPresContext->DefaultBackgroundColor(),
+                       bgStyle->mBackgroundColor));
+  }
 }
 
 NS_IMETHODIMP
