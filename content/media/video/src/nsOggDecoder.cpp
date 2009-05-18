@@ -1319,6 +1319,8 @@ nsresult nsOggDecodeStateMachine::Run()
           mStepDecodeThread = nsnull;
         }
 
+        StopPlayback();
+
         // Remove all frames decoded prior to seek from the queue
         while (!mDecodedFrames.IsEmpty()) {
           delete mDecodedFrames.Pop();
