@@ -236,7 +236,10 @@ public:
     uint32 depth;
 };
 
-static JSBool Str(JSContext *cx, jsid id, JSObject *holder, StringifyContext *scx, jsval *vp);
+static JSBool CallReplacerFunction(JSContext *cx, jsid id, JSObject *holder,
+                                   StringifyContext *scx, jsval *vp);
+static JSBool Str(JSContext *cx, jsid id, JSObject *holder,
+                  StringifyContext *scx, jsval *vp, bool callReplacer = true);
 
 static JSBool
 WriteIndent(JSContext *cx, StringifyContext *scx, uint32 limit)
@@ -341,6 +344,11 @@ JO(JSContext *cx, jsval *vp, StringifyContext *scx)
                 break;
         }
 
+        // call this here, so we don't write out keys if the replacer function
+        // wants to elide the value.
+        if (!CallReplacerFunction(cx, id, obj, scx, &outputValue))
+            return JS_FALSE;
+
         JSType type = JS_TypeOfValue(cx, outputValue);
 
         // elide undefined values and functions and XML
@@ -375,7 +383,7 @@ JO(JSContext *cx, jsval *vp, StringifyContext *scx)
         if (!ok)
             break;
 
-        ok = Str(cx, id, obj, scx, &outputValue);
+        ok = Str(cx, id, obj, scx, &outputValue, false);
         if (!ok)
             break;
 
@@ -448,7 +456,19 @@ JA(JSContext *cx, jsval *vp, StringifyContext *scx)
 }
 
 static JSBool
-Str(JSContext *cx, jsid id, JSObject *holder, StringifyContext *scx, jsval *vp)
+CallReplacerFunction(JSContext *cx, jsid id, JSObject *holder, StringifyContext *scx, jsval *vp)
+{
+    if (scx->replacer && js_IsCallable(scx->replacer, cx)) {
+        jsval vec[2] = {ID_TO_VALUE(id), *vp};
+        if (!JS_CallFunctionValue(cx, holder, OBJECT_TO_JSVAL(scx->replacer), 2, vec, vp))
+            return JS_FALSE;
+    }
+
+    return JS_TRUE;
+}
+
+static JSBool
+Str(JSContext *cx, jsid id, JSObject *holder, StringifyContext *scx, jsval *vp, bool callReplacer)
 {
     JS_CHECK_RECURSION(cx, return JS_FALSE);
 
@@ -458,11 +478,8 @@ Str(JSContext *cx, jsid id, JSObject *holder, StringifyContext *scx, jsval *vp)
     if (!JSVAL_IS_PRIMITIVE(*vp) && !js_TryJSON(cx, vp))
         return JS_FALSE;
 
-    if (scx->replacer && js_IsCallable(scx->replacer, cx)) {
-        jsval vec[2] = {ID_TO_VALUE(id), *vp};
-        if (!JS_CallFunctionValue(cx, holder, OBJECT_TO_JSVAL(scx->replacer), 2, vec, vp))
-            return JS_FALSE;
-    }
+    if (callReplacer && !CallReplacerFunction(cx, id, holder, scx, vp))
+        return JS_FALSE;
 
     // catches string and number objects with no toJSON
     if (!JSVAL_IS_PRIMITIVE(*vp)) {
