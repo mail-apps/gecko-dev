@@ -60,7 +60,7 @@ class nsAutoRollup;
  * class, but it gives them a head start.)
  */
 
-class nsBaseWidget : public nsIWidget
+class nsBaseWidget : public nsIWidget_1_9_1_BRANCH
 {
   friend class nsAutoRollup;
 
@@ -129,6 +129,7 @@ public:
   NS_IMETHOD              EnableDragDrop(PRBool aEnable);
   NS_IMETHOD              GetAttention(PRInt32 aCycleCount);
   NS_IMETHOD              GetLastInputEventTime(PRUint32& aTime);
+  virtual PRBool          HasPendingInputEvent();
   NS_IMETHOD              SetIcon(const nsAString &anIconSpec);
   NS_IMETHOD              BeginSecureKeyboardInput();
   NS_IMETHOD              EndSecureKeyboardInput();

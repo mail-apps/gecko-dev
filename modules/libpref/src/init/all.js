@@ -521,6 +521,12 @@ pref("dom.disable_open_click_delay", 1000);
 pref("dom.storage.enabled", true);
 pref("dom.storage.default_quota",      5120);
 
+// Parsing perf prefs. For now just mimic what the old code did.
+pref("content.sink.event_probe_rate", 3);
+#ifndef XP_WIN
+pref("content.sink.pending_event_mode", 0);
+#endif
+
 // Disable popups from plugins by default
 //   0 = openAllowed
 //   1 = openControlled

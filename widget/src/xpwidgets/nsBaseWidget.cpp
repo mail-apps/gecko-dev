@@ -66,7 +66,7 @@ static PRInt32 gNumWidgets;
 nsIContent* nsBaseWidget::mLastRollup = nsnull;
 
 // nsBaseWidget
-NS_IMPL_ISUPPORTS1(nsBaseWidget, nsIWidget)
+NS_IMPL_ISUPPORTS2(nsBaseWidget, nsIWidget, nsIWidget_1_9_1_BRANCH)
 
 
 nsAutoRollup::nsAutoRollup()
@@ -836,6 +836,12 @@ nsBaseWidget::GetAttention(PRInt32 aCycleCount) {
 NS_IMETHODIMP
 nsBaseWidget::GetLastInputEventTime(PRUint32& aTime) {
     return NS_ERROR_NOT_IMPLEMENTED;
+}
+
+PRBool
+nsBaseWidget::HasPendingInputEvent()
+{
+  return PR_FALSE;
 }
 
 NS_IMETHODIMP

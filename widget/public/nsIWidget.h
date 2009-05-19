@@ -1257,4 +1257,24 @@ protected:
 
 NS_DEFINE_STATIC_IID_ACCESSOR(nsIWidget, NS_IWIDGET_IID)
 
+
+// 004ff6e0-a62a-4100-9a12-f46a8c181f77
+#define NS_IWIDGET_1_9_1_BRANCH_IID     \
+{ 0x004ff6e0, 0xa62a, 0x4100, \
+  { 0x9a, 0x12, 0xf4, 0x6a, 0x8c, 0x18, 0x1f, 0x77 } }
+
+class nsIWidget_1_9_1_BRANCH : public nsIWidget
+{
+  public:
+    NS_DECLARE_STATIC_IID_ACCESSOR(NS_IWIDGET_1_9_1_BRANCH_IID)
+
+    /**
+     * Ask whether there user input events pending.  All input events are
+     * included, including those not targeted at this nsIwidget instance.
+     */
+    virtual PRBool HasPendingInputEvent() = 0;
+};
+
+NS_DEFINE_STATIC_IID_ACCESSOR(nsIWidget_1_9_1_BRANCH, NS_IWIDGET_1_9_1_BRANCH_IID)
+
 #endif // nsIWidget_h__
