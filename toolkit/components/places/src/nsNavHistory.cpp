@@ -213,6 +213,14 @@
 // character-set annotation
 #define CHARSET_ANNO NS_LITERAL_CSTRING("URIProperties/characterSet")
 
+// These macros are used when splitting history by date.
+// These are the day containers and catch-all final container.
+#define ADDITIONAL_DATE_CONT_NUM 3
+// We use a guess of the number of months considering all of them 30 days
+// long, but we split only the last 6 months.
+#define DATE_CONT_NUM(_expireDays) \
+  (ADDITIONAL_DATE_CONT_NUM + PR_MIN(6, (_expireDays/30)))
+
 NS_IMPL_THREADSAFE_ADDREF(nsNavHistory)
 NS_IMPL_THREADSAFE_RELEASE(nsNavHistory)
 
@@ -3460,13 +3468,7 @@ PlacesSQLQueryBuilder::SelectAsDay()
    nsNavHistory* history = nsNavHistory::GetHistoryService();
    NS_ENSURE_STATE(history);
 
-  // These are the day containers and catch-all final container.
-  PRInt32 additionalContainers = 3;
-  // We use a guess of the number of months considering all of them 30 days
-  // long, but we split only the last 6 months.
-  PRInt32 monthContainers = PR_MIN(6, (history->mExpireDaysMax/30));
-  PRInt32 numContainers = monthContainers + additionalContainers;
-  for (PRInt32 i = 0; i <= numContainers; i++) {
+  for (PRInt32 i = 0; i <= DATE_CONT_NUM(history->mExpireDaysMax); i++) {
     nsCAutoString dateName;
     // Timeframes are calculated as BeginTime <= container < EndTime.
     // Notice times can't be relative to now, since to recognize a query we
@@ -3539,7 +3541,7 @@ PlacesSQLQueryBuilder::SelectAsDay()
           "(strftime('%s','now','localtime','start of day','-7 days','utc')*1000000)");
          break;
        default:
-        if (i == additionalContainers + 6) {
+        if (i == ADDITIONAL_DATE_CONT_NUM + 6) {
           // Older than 6 months
           history->GetAgeInDaysString(6,
             NS_LITERAL_STRING("finduri-AgeInMonths-isgreater").get(), dateName);
@@ -3554,7 +3556,7 @@ PlacesSQLQueryBuilder::SelectAsDay()
           sqlFragmentSearchEndTime = sqlFragmentContainerEndTime;
           break;
         }
-        PRInt32 MonthIndex = i - additionalContainers;
+        PRInt32 MonthIndex = i - ADDITIONAL_DATE_CONT_NUM;
         // Previous months' titles are month's name if inside this year,
         // month's name and year for previous years.
         PRExplodedTime tm;
@@ -3586,9 +3588,12 @@ PlacesSQLQueryBuilder::SelectAsDay()
         sqlFragmentSearchEndTime = sqlFragmentContainerEndTime;
         break;
     }
- 
+
+    nsPrintfCString dateParam(":dayTitle%d", i);
+    mAddParams.Put(dateParam, dateName);
+
      nsPrintfCString dayRange(1024,
-        "SELECT '%s' AS dayTitle, "
+        "SELECT %s AS dayTitle, "
                "%s AS beginTime, "
                "%s AS endTime "
          "WHERE EXISTS ( "
@@ -3603,7 +3608,7 @@ PlacesSQLQueryBuilder::SelectAsDay()
              "AND visit_type NOT IN (0,%d) "
            "LIMIT 1 "
         ") ",
-      dateName.get(),
+      dateParam.get(),
       sqlFragmentContainerBeginTime.get(),
       sqlFragmentContainerEndTime.get(),
       sqlFragmentSearchBeginTime.get(),
@@ -3615,7 +3620,7 @@ PlacesSQLQueryBuilder::SelectAsDay()
 
     mQueryString.Append(dayRange);
 
-    if (i < numContainers)
+    if (i < DATE_CONT_NUM(history->mExpireDaysMax))
         mQueryString.Append(NS_LITERAL_CSTRING(" UNION ALL "));
   }
 
@@ -4116,7 +4121,7 @@ nsNavHistory::GetQueryResults(nsNavHistoryQueryResultNode *aResultNode,
   nsCString queryString;
   PRBool paramsPresent = PR_FALSE;
   nsNavHistory::StringHash addParams;
-  addParams.Init(1);
+  addParams.Init(DATE_CONT_NUM(mExpireDaysMax));
   nsresult rv = ConstructQueryString(aQueries, aOptions, queryString, 
                                      paramsPresent, addParams);
   NS_ENSURE_SUCCESS(rv,rv);
