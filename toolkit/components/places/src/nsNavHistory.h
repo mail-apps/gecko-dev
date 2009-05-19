@@ -499,6 +499,12 @@ protected:
    * preferences that are used are set.
    */
   nsresult InitDB();
+
+  /**
+   * Initializes additional database items like: views, temp tables, functions
+   * and statements.
+   */
+  nsresult InitAdditionalDBItems();
   nsresult InitTempTables();
   nsresult InitViews();
   nsresult InitFunctions();
