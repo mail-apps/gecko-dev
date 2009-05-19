@@ -292,7 +292,7 @@ protected:
 
   static nsWindow*        GetNSWindowPtr(HWND aWnd);
   static BOOL             SetNSWindowPtr(HWND aWnd, nsWindow * ptr);
-  nsWindow*               GetParentWindow();
+  nsWindow*               GetParentWindow(PRBool aIncludeOwner);
 
   void                    DispatchPendingEvents();
   virtual PRBool          ProcessMessage(UINT msg, WPARAM wParam, LPARAM lParam, LRESULT *aRetValue);
@@ -496,7 +496,6 @@ protected:
   PRPackedBool  mIsControlDown;
   PRPackedBool  mIsAltDown;
   PRPackedBool  mIsDestroying;
-  PRPackedBool  mOnDestroyCalled;
   PRPackedBool  mIsVisible;
   PRPackedBool  mIsInMouseCapture;
   PRPackedBool  mIsInMouseWheelProcessing;

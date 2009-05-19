@@ -184,10 +184,6 @@ protected:
   nsCursor          mCursor;
   nsWindowType      mWindowType;
   nsBorderStyle     mBorderStyle;
-  PRPackedBool      mIsShiftDown;
-  PRPackedBool      mIsControlDown;
-  PRPackedBool      mIsAltDown;
-  PRPackedBool      mIsDestroying;
   PRPackedBool      mOnDestroyCalled;
   nsRect            mBounds;
   nsRect*           mOriginalBounds;
