@@ -1156,7 +1156,8 @@ pref("gestures.enable_single_finger_input", true);
 pref("editor.resizing.preserve_ratio",       true);
 pref("editor.positioning.offset",            0);
 
-pref("dom.max_chrome_script_run_time", 20);
+// Disable slow script warnings for chrome by default - bug 492410
+pref("dom.max_chrome_script_run_time", 0);
 pref("dom.max_script_run_time", 10);
 
 pref("svg.enabled", true);
