@@ -68,6 +68,7 @@ _TEST_FILES = \
 		test_draggableprop.html \
 		test_dragstart.html \
 		test_bug457672.html \
+		test_bug493251.html \
 		$(NULL)
 
 _CHROME_FILES = \
