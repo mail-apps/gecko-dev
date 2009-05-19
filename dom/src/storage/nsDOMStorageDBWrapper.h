@@ -16,11 +16,11 @@
  *
  * The Initial Developer of the Original Code is
  * Mozilla Corporation.
- * Portions created by the Initial Developer are Copyright (C) 2006
+ * Portions created by the Initial Developer are Copyright (C) 2009
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- *   Neil Deakin <enndeakin@sympatico.ca>
+ *   Honza Bambas <honzab@firemni.cz>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -40,9 +40,12 @@
 #define nsDOMStorageDB_h___
 
 #include "nscore.h"
-#include "mozIStorageConnection.h"
-#include "mozIStorageStatement.h"
 #include "nsTHashtable.h"
+
+#include "nsDOMStoragePersistentDB.h"
+#include "nsDOMStorageMemoryDB.h"
+
+extern void ReverseString(const nsCSubstring& source, nsCSubstring& result);
 
 class nsDOMStorage;
 class nsSessionStorageEntry;
@@ -80,11 +83,11 @@ class nsSessionStorageEntry;
  * So we use a "quota key" during lookups to calculate the quota.  So the
  * quota key for localStorage at http://foo.bar.com is "moc.rab.". */
 
-class nsDOMStorageDB
+class nsDOMStorageDBWrapper
 {
 public:
-  nsDOMStorageDB() {}
-  ~nsDOMStorageDB() {}
+  nsDOMStorageDBWrapper() {}
+  ~nsDOMStorageDBWrapper() {}
 
   nsresult
   Init();
@@ -136,10 +139,22 @@ public:
             PRInt32 aKeyUsage);
 
   /**
-   * Remove all keys belonging to this storage.
-   */
+    * Remove all keys belonging to this storage.
+    */
   nsresult
   ClearStorage(nsDOMStorage* aStorage);
+
+  /**
+   * Drop session-only storage for a specific host and all it's subdomains
+   */
+  nsresult
+  DropSessionOnlyStoragesForHost(const nsACString& aHostName);
+
+  /**
+   * Drop everything we gathered to private browsing in-memory database
+   */
+  nsresult
+  DropPrivateBrowsingStorages();
 
   /**
    * Removes all keys added by a given domain.
@@ -152,7 +167,8 @@ public:
    * list.
    */
   nsresult
-  RemoveOwners(const nsStringArray& aOwners, PRBool aIncludeSubDomains, PRBool aMatch);
+  RemoveOwners(const nsStringArray& aOwners,
+               PRBool aIncludeSubDomains, PRBool aMatch);
 
   /**
    * Removes all keys from storage. Used when clearing storage.
@@ -161,59 +177,43 @@ public:
   RemoveAll();
 
   /**
-   * Returns usage for a storage using its GetQuotaDomainDBKey() as a key.
-   */
+    * Returns usage for a storage using its GetQuotaDomainDBKey() as a key.
+    */
   nsresult
   GetUsage(nsDOMStorage* aStorage, PRInt32 *aUsage);
 
   /**
-   * Returns usage of the domain and optionaly by any subdomain.
-   */
+    * Returns usage of the domain and optionaly by any subdomain.
+    */
   nsresult
   GetUsage(const nsACString& aDomain, PRBool aIncludeSubDomains, PRInt32 *aUsage);
 
   /**
-   * Turns "http://foo.bar.com:80" to "moc.rab.oof.:http:80",
-   * i.e. reverses the host, appends a dot, appends the schema
-   * and a port number.
-   */
+    * Turns "http://foo.bar.com:80" to "moc.rab.oof.:http:80",
+    * i.e. reverses the host, appends a dot, appends the schema
+    * and a port number.
+    */
   static nsresult CreateOriginScopeDBKey(nsIURI* aUri, nsACString& aKey);
 
   /**
-   * Turns "http://foo.bar.com" to "moc.rab.oof.",
-   * i.e. reverses the host and appends a dot.
-   */
+    * Turns "http://foo.bar.com" to "moc.rab.oof.",
+    * i.e. reverses the host and appends a dot.
+    */
   static nsresult CreateDomainScopeDBKey(nsIURI* aUri, nsACString& aKey);
   static nsresult CreateDomainScopeDBKey(const nsACString& aAsciiDomain, nsACString& aKey);
 
   /**
-   * Turns "foo.bar.com" to "moc.rab.",
-   * i.e. extracts eTLD+1 from the host, reverses the result
-   * and appends a dot.
-   */
+    * Turns "foo.bar.com" to "moc.rab.",
+    * i.e. extracts eTLD+1 from the host, reverses the result
+    * and appends a dot.
+    */
   static nsresult CreateQuotaDomainDBKey(const nsACString& aAsciiDomain,
                                          PRBool aIncludeSubDomains, nsACString& aKey);
 
 protected:
-
-  nsCOMPtr<mozIStorageConnection> mConnection;
-
-  nsCOMPtr<mozIStorageStatement> mGetAllKeysStatement;
-  nsCOMPtr<mozIStorageStatement> mGetKeyValueStatement;
-  nsCOMPtr<mozIStorageStatement> mInsertKeyStatement;
-  nsCOMPtr<mozIStorageStatement> mUpdateKeyStatement;
-  nsCOMPtr<mozIStorageStatement> mSetSecureStatement;
-  nsCOMPtr<mozIStorageStatement> mRemoveKeyStatement;
-  nsCOMPtr<mozIStorageStatement> mRemoveOwnerStatement;
-  nsCOMPtr<mozIStorageStatement> mRemoveStorageStatement;
-  nsCOMPtr<mozIStorageStatement> mRemoveAllStatement;
-  nsCOMPtr<mozIStorageStatement> mGetUsageStatement;
-
-  nsCString mCachedOwner;
-  PRInt32 mCachedUsage;
-
-  nsresult
-  GetUsageInternal(const nsACString& aQuotaDomainDBKey, PRInt32 *aUsage);
+  nsDOMStoragePersistentDB mPersistentDB;
+  nsDOMStorageMemoryDB mSessionOnlyDB;
+  nsDOMStorageMemoryDB mPrivateBrowsingDB;
 };
 
 #endif /* nsDOMStorageDB_h___ */

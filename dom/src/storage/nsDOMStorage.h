@@ -57,7 +57,7 @@
 #include "nsCycleCollectionParticipant.h"
 
 #ifdef MOZ_STORAGE
-#include "nsDOMStorageDB.h"
+#include "nsDOMStorageDBWrapper.h"
 #endif
 
 class nsDOMStorage;
@@ -153,8 +153,11 @@ public:
   // after a CacheStoragePermissions() call.  See the comments
   // for mSessionOnly below.
   PRBool UseDB() {
-    return mUseDB && !mSessionOnly &&
-           !nsDOMStorageManager::gStorageManager->InPrivateBrowsingMode();
+    return mUseDB;
+  }
+
+  PRBool SessionOnly() {
+    return mSessionOnly;
   }
 
   // Check whether storage may be used by the caller, and whether it
@@ -250,7 +253,7 @@ public:
   nsCString& GetQuotaDomainDBKey() {return mQuotaDomainDBKey;}
 
  #ifdef MOZ_STORAGE
-   static nsDOMStorageDB* gStorageDB;
+   static nsDOMStorageDBWrapper* gStorageDB;
  #endif
 };
 
