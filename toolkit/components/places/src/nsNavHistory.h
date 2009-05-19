@@ -139,6 +139,7 @@ class nsNavHistory : public nsSupportsWeakReference,
                      public nsINavHistoryService,
                      public nsIObserver,
                      public nsIBrowserHistory,
+                     public nsIBrowserHistory_MOZILLA_1_9_1_ADDITIONS,
                      public nsIGlobalHistory3,
                      public nsIDownloadHistory,
                      public nsICharsetResolver
@@ -162,6 +163,7 @@ public:
   NS_DECL_NSIGLOBALHISTORY3
   NS_DECL_NSIDOWNLOADHISTORY
   NS_DECL_NSIBROWSERHISTORY
+  NS_DECL_NSIBROWSERHISTORY_MOZILLA_1_9_1_ADDITIONS
   NS_DECL_NSIOBSERVER
   NS_DECL_NSPIPLACESDATABASE
 #ifdef MOZ_XUL
@@ -508,6 +510,8 @@ protected:
   nsresult MigrateV8Up(mozIStorageConnection *aDBConn);
 
   nsresult RemovePagesInternal(const nsCString& aPlaceIdsQueryString);
+  nsresult PreparePlacesForVisitsDelete(const nsCString& aPlaceIdsQueryString);
+  nsresult CleanupPlacesOnVisitsDelete(const nsCString& aPlaceIdsQueryString);
 
   nsresult AddURIInternal(nsIURI* aURI, PRTime aTime, PRBool aRedirect,
                           PRBool aToplevel, nsIURI* aReferrer);
