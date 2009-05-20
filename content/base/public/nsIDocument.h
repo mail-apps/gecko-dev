@@ -51,12 +51,9 @@
 #include "nsIAtom.h"
 #include "nsCompatibility.h"
 #include "nsTObserverArray.h"
-#include "nsTHashtable.h"
-#include "nsHashKeys.h"
 #include "nsNodeInfoManager.h"
 #include "nsIStreamListener.h"
 #include "nsIObserver.h"
-#include "nsAutoPtr.h"
 
 class nsIContent;
 class nsPresContext;
@@ -101,8 +98,8 @@ class nsFrameLoader;
 
 // IID for the nsIDocument interface
 #define NS_IDOCUMENT_IID      \
-  { 0x98a4006e, 0x53c4, 0x4390, \
-    { 0xb4, 0x2d, 0x33, 0x68, 0x4a, 0xa9, 0x24, 0x04 } }
+ { 0x98a4006e, 0x53c4, 0x4390, \
+   { 0xb4, 0x2d, 0x33, 0x68, 0x4a, 0xa9, 0x24, 0x04 } }
 
 // Flag for AddStyleSheet().
 #define NS_STYLESHEET_FROM_CATALOG                (1 << 0)
@@ -1124,12 +1121,6 @@ public:
    */
   PRBool IsShowing() { return mIsShowing; }
 
-  void RegisterFreezableElement(nsIContent* aContent);
-  PRBool UnregisterFreezableElement(nsIContent* aContent);
-  typedef void (* FreezableElementEnumerator)(nsIContent*, void*);
-  void EnumerateFreezableElements(FreezableElementEnumerator aEnumerator,
-                                  void* aData);
-
   /**
    * Prevents user initiated events from being dispatched to the document and
    * subdocuments.
@@ -1189,12 +1180,6 @@ protected:
   // The cleanup is handled by the nsDocument destructor.
   nsNodeInfoManager* mNodeInfoManager; // [STRONG]
   nsICSSLoader* mCSSLoader; // [STRONG]
-
-  // The set of all object, embed, applet, video and audio elements for
-  // which this is the owner document. (They might not be in the document.)
-  // These are non-owning pointers, the elements are responsible for removing
-  // themselves when they go away.
-  nsAutoPtr<nsTHashtable<nsPtrHashKey<nsIContent> > > mFreezableElements;
 
   // Table of element properties for this document.
   nsPropertyTable mPropertyTable;
