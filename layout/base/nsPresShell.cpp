@@ -6388,31 +6388,26 @@ PresShell::RemoveOverrideStyleSheet(nsIStyleSheet *aSheet)
 }
 
 static void
-StopPluginInstance(PresShell *aShell, nsIContent *aContent)
+FreezeElement(nsIContent *aContent, void *aShell)
 {
-  nsIFrame *frame = aShell->FrameManager()->GetPrimaryFrameFor(aContent, -1);
+#ifdef MOZ_MEDIA
+  nsCOMPtr<nsIDOMHTMLMediaElement> domMediaElem(do_QueryInterface(aContent));
+  if (domMediaElem) {
+    nsHTMLMediaElement* mediaElem = static_cast<nsHTMLMediaElement*>(aContent);
+    mediaElem->Freeze();
+    return;
+  }
+#endif
 
+  nsIPresShell* shell = static_cast<nsIPresShell*>(aShell);
+  nsIFrame *frame = shell->FrameManager()->GetPrimaryFrameFor(aContent, -1);
   nsIObjectFrame *objectFrame = nsnull;
-  if (frame)
-    CallQueryInterface(frame, &objectFrame);
+  CallQueryInterface(frame, &objectFrame);
   if (!objectFrame)
     return;
 
   objectFrame->StopPlugin();
 }
-
-#ifdef MOZ_MEDIA
-static void
-StopMediaInstance(PresShell *aShell, nsIContent *aContent)
-{
-  nsCOMPtr<nsIDOMHTMLMediaElement> domMediaElem(do_QueryInterface(aContent));
-  if (!domMediaElem)
-    return;
-
-  nsHTMLMediaElement* mediaElem = static_cast<nsHTMLMediaElement*>(aContent);
-  mediaElem->Freeze();
-}
-#endif
 
 static PRBool
 FreezeSubDocument(nsIDocument *aDocument, void *aData)
@@ -6427,16 +6422,7 @@ FreezeSubDocument(nsIDocument *aDocument, void *aData)
 void
 PresShell::Freeze()
 {
-  nsCOMPtr<nsIDOMDocument> domDoc = do_QueryInterface(mDocument);
-  if (domDoc) {
-    EnumeratePlugins(domDoc, NS_LITERAL_STRING("object"), StopPluginInstance);
-    EnumeratePlugins(domDoc, NS_LITERAL_STRING("applet"), StopPluginInstance);
-    EnumeratePlugins(domDoc, NS_LITERAL_STRING("embed"), StopPluginInstance);
-#ifdef MOZ_MEDIA
-    EnumeratePlugins(domDoc, NS_LITERAL_STRING("video"), StopMediaInstance);
-    EnumeratePlugins(domDoc, NS_LITERAL_STRING("audio"), StopMediaInstance);
-#endif
-  }
+  mDocument->EnumerateFreezableElements(FreezeElement, this);
 
   if (mCaret)
     mCaret->SetCaretVisible(PR_FALSE);
@@ -6488,28 +6474,23 @@ PresShell::NeedsFocusOrBlurAfterSuppression(nsPIDOMEventTarget* aTarget,
 }
 
 static void
-StartPluginInstance(PresShell *aShell, nsIContent *aContent)
+ThawElement(nsIContent *aContent, void *aShell)
 {
-  nsCOMPtr<nsIObjectLoadingContent> objlc(do_QueryInterface(aContent));
-  if (!objlc)
-    return;
-
-  nsCOMPtr<nsIPluginInstance> inst;
-  objlc->EnsureInstantiation(getter_AddRefs(inst));
-}
-
 #ifdef MOZ_MEDIA
-static void
-StartMediaInstance(PresShell *aShell, nsIContent *aContent)
-{
   nsCOMPtr<nsIDOMHTMLMediaElement> domMediaElem(do_QueryInterface(aContent));
-  if (!domMediaElem)
+  if (domMediaElem) {
+    nsHTMLMediaElement* mediaElem = static_cast<nsHTMLMediaElement*>(aContent);
+    mediaElem->Thaw();
     return;
-
-  nsHTMLMediaElement* mediaElem = static_cast<nsHTMLMediaElement*>(aContent);
-  mediaElem->Thaw();
-}
+  }
 #endif
+
+  nsCOMPtr<nsIObjectLoadingContent> objlc(do_QueryInterface(aContent));
+  if (objlc) {
+    nsCOMPtr<nsIPluginInstance> inst;
+    objlc->EnsureInstantiation(getter_AddRefs(inst));
+  }
+}
 
 static PRBool
 ThawSubDocument(nsIDocument *aDocument, void *aData)
@@ -6524,19 +6505,8 @@ ThawSubDocument(nsIDocument *aDocument, void *aData)
 void
 PresShell::Thaw()
 {
-  nsCOMPtr<nsIDOMDocument> domDoc = do_QueryInterface(mDocument);
-  if (domDoc) {
-    EnumeratePlugins(domDoc, NS_LITERAL_STRING("object"), StartPluginInstance);
-    EnumeratePlugins(domDoc, NS_LITERAL_STRING("applet"), StartPluginInstance);
-    EnumeratePlugins(domDoc, NS_LITERAL_STRING("embed"), StartPluginInstance);
-#ifdef MOZ_MEDIA
-    EnumeratePlugins(domDoc, NS_LITERAL_STRING("video"), StartMediaInstance);
-    EnumeratePlugins(domDoc, NS_LITERAL_STRING("audio"), StartMediaInstance);
-#endif
-  }
-
-  if (mDocument)
-    mDocument->EnumerateSubDocuments(ThawSubDocument, nsnull);
+  mDocument->EnumerateFreezableElements(ThawElement, this);
+  mDocument->EnumerateSubDocuments(ThawSubDocument, nsnull);
 
   UnsuppressPainting();
 }
