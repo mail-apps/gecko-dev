@@ -81,6 +81,8 @@ _TEST_FILES =	\
 ifeq (,$(filter windows,$(MOZ_WIDGET_TOOLKIT)))
 _TEST_FILES += \
 		bidi_numeral_test.js \
+		test_bug332655-1.html \
+		test_bug332655-2.html \
 		test_bug441782-1a.html \
 		test_bug441782-1b.html \
 		test_bug441782-1c.html \
