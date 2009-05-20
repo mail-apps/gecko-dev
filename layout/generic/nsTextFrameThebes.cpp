@@ -3481,6 +3481,11 @@ nsContinuingTextFrame::Destroy()
       !mPrevContinuation ||
       mPrevContinuation->GetStyleContext() != GetStyleContext()) {
     ClearTextRun();
+    // Clear the previous continuation's text run also, so that it can rebuild
+    // the text run to include our text.
+    if (mPrevContinuation) {
+      (static_cast<nsTextFrame*>(mPrevContinuation))->ClearTextRun();
+    }
   }
   nsSplittableFrame::RemoveFromFlow(this);
   // Let the base class destroy the frame
