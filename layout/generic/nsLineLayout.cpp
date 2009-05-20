@@ -2416,15 +2416,9 @@ nsLineLayout::HorizontalAlignFrames(nsRect& aLineBounds,
     printf(": availWidth=%d lineWidth=%d delta=%d\n",
            availWidth, aLineBounds.width, remainingWidth);
 #endif
-#ifdef IBMBIDI
   nscoord dx = 0;
-#endif
 
-  if (remainingWidth > 0)
-  {
-#ifndef IBMBIDI
-    nscoord dx = 0;
-#endif
+  if (remainingWidth > 0) {
     switch (mTextAlign) {
       case NS_STYLE_TEXT_ALIGN_JUSTIFY:
         // If this is not the last line then go ahead and justify the
@@ -2471,7 +2465,6 @@ nsLineLayout::HorizontalAlignFrames(nsRect& aLineBounds,
         dx = remainingWidth / 2;
         break;
     }
-#ifdef IBMBIDI
   }
   else if (remainingWidth < 0) {
     if (NS_STYLE_DIRECTION_RTL == psd->mDirection) {
@@ -2480,56 +2473,23 @@ nsLineLayout::HorizontalAlignFrames(nsRect& aLineBounds,
       psd->mLeftEdge += dx;
     }
   }
-  PRBool isRTL = ( (NS_STYLE_DIRECTION_RTL == psd->mDirection)
-                && (!psd->mChangedFrameDirection) );
-  if (dx || isRTL) {
-    nscoord maxX = aLineBounds.XMost() + dx;
-    PRBool isVisualRTL = PR_FALSE;
 
-    if (isRTL) {
-      if (psd->mLastFrame->GetFlag(PFD_ISBULLET) ) {
-        PerFrameData* bulletPfd = psd->mLastFrame;
-        bulletPfd->mBounds.x -= remainingWidth;
-        bulletPfd->mFrame->SetRect(bulletPfd->mBounds);
-      }
-  
-      psd->mChangedFrameDirection = PR_TRUE;
+  if (NS_STYLE_DIRECTION_RTL == psd->mDirection &&
+      !psd->mChangedFrameDirection) {
+    if (psd->mLastFrame->GetFlag(PFD_ISBULLET) ) {
+      PerFrameData* bulletPfd = psd->mLastFrame;
+      bulletPfd->mBounds.x -= remainingWidth;
+      bulletPfd->mFrame->SetRect(bulletPfd->mBounds);
+    }
+    psd->mChangedFrameDirection = PR_TRUE;
+  }
 
-      isVisualRTL = mPresContext->IsVisualMode();
+  if (dx) {
+    for (PerFrameData* pfd = psd->mFirstFrame; pfd; pfd = pfd->mNext) {
+      pfd->mBounds.x += dx;
+      pfd->mFrame->SetRect(pfd->mBounds);
     }
-    if (dx || isVisualRTL)
-#else
-    if (0 != dx)
-#endif
-    {
-      for (PerFrameData* pfd = psd->mFirstFrame; pfd; pfd = pfd->mNext) {
-#ifdef IBMBIDI
-        if (isVisualRTL) {
-          // XXXldb Ugh.  Could we handle this earlier so we don't get here?
-          maxX = pfd->mBounds.x = maxX - (pfd->mMargin.left + pfd->mBounds.width + pfd->mMargin.right);
-        }
-        else
-#endif // IBMBIDI
-          pfd->mBounds.x += dx;
-        pfd->mFrame->SetRect(pfd->mBounds);
-      }
-      aLineBounds.x += dx;
-    }
-#ifndef IBMBIDI
-    if ((NS_STYLE_DIRECTION_RTL == psd->mDirection) &&
-        !psd->mChangedFrameDirection) {
-      psd->mChangedFrameDirection = PR_TRUE;
-  
-      PerFrameData* pfd = psd->mFirstFrame;
-      PRUint32 maxX = psd->mRightEdge;
-      while (nsnull != pfd) {
-        pfd->mBounds.x = maxX - (pfd->mMargin.left + pfd->mBounds.width + pfd->mMargin.right);
-        pfd->mFrame->SetRect(pfd->mBounds);
-        maxX = pfd->mBounds.x;
-        pfd = pfd->mNext;
-      }
-    }
-#endif // ndef IBMBIDI
+    aLineBounds.x += dx;
   }
 }
 

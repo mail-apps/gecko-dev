@@ -4006,7 +4006,8 @@ nsBlockFrame::PlaceLine(nsBlockReflowState& aState,
 #ifdef IBMBIDI
   // XXXldb Why don't we do this earlier?
   if (aState.mPresContext->BidiEnabled()) {
-    if (!aState.mPresContext->IsVisualMode()) {
+    if (!aState.mPresContext->IsVisualMode() ||
+        GetStyleVisibility()->mDirection == NS_STYLE_DIRECTION_RTL) {
       nsBidiPresUtils* bidiUtils = aState.mPresContext->GetBidiUtils();
 
       if (bidiUtils && bidiUtils->IsSuccessful() ) {
