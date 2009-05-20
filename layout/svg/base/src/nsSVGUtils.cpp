@@ -63,6 +63,7 @@
 #include "nsSVGPoint.h"
 #include "nsDOMError.h"
 #include "nsSVGOuterSVGFrame.h"
+#include "nsSVGInnerSVGFrame.h"
 #include "nsIDOMSVGAnimPresAspRatio.h"
 #include "nsIDOMSVGPresAspectRatio.h"
 #include "nsSVGMatrix.h"
@@ -454,6 +455,24 @@ nsSVGUtils::GetNearestViewportElement(nsIContent *aContent,
   return NS_OK;
 }
 
+nsSVGDisplayContainerFrame*
+nsSVGUtils::GetNearestSVGViewport(nsIFrame *aFrame)
+{
+  NS_ASSERTION(aFrame->IsFrameOfType(nsIFrame::eSVG), "SVG frame expected");
+  if (aFrame->GetType() == nsGkAtoms::svgOuterSVGFrame) {
+    return nsnull;
+  }
+  while ((aFrame = aFrame->GetParent())) {
+    NS_ASSERTION(aFrame->IsFrameOfType(nsIFrame::eSVG), "SVG frame expected");
+    if (aFrame->GetType() == nsGkAtoms::svgInnerSVGFrame ||
+        aFrame->GetType() == nsGkAtoms::svgOuterSVGFrame) {
+      return static_cast<nsSVGDisplayContainerFrame*>(aFrame);
+    }
+  }
+  NS_NOTREACHED("This is not reached. It's only needed to compile.");
+  return nsnull;
+}
+
 nsresult
 nsSVGUtils::GetFarthestViewportElement(nsIContent *aContent,
                                        nsIDOMSVGElement * *aFarthestViewportElement)
@@ -577,7 +596,50 @@ nsSVGUtils::FindFilterInvalidation(nsIFrame *aFrame, const nsRect& aRect)
 
     nsSVGFilterFrame *filter = nsSVGEffects::GetFilterFrame(aFrame);
     if (filter) {
-      rect = filter->GetInvalidationBBox(aFrame, rect);
+      // When we are under AttributeChanged, we can no longer get the old bbox
+      // by calling GetBBox(), and we need that to set up the filter region
+      // with the correct position. :-(
+      //rect = filter->GetInvalidationBBox(aFrame, rect);
+
+      // XXX [perf] As a horrible workaround, for now we just invalidate the
+      // entire area of the nearest viewport establishing frame that doesnt
+      // have overflow:visible. See bug 463939.
+      nsSVGDisplayContainerFrame* viewportFrame = GetNearestSVGViewport(aFrame);
+      while (viewportFrame && !viewportFrame->GetStyleDisplay()->IsScrollableOverflow()) {
+        viewportFrame = GetNearestSVGViewport(viewportFrame);
+      }
+      if (!viewportFrame) {
+        viewportFrame = GetOuterSVGFrame(aFrame);
+      }
+      if (viewportFrame->GetType() == nsGkAtoms::svgOuterSVGFrame) {
+        nsRect r = viewportFrame->GetOverflowRect();
+        // GetOverflowRect is relative to our border box, but we need it
+        // relative to our content box.
+        nsMargin bp = viewportFrame->GetUsedBorderAndPadding();
+        viewportFrame->ApplySkipSides(bp);
+        r.MoveBy(-bp.left, -bp.top);
+        return r;
+      }
+      NS_ASSERTION(viewportFrame->GetType() == nsGkAtoms::svgInnerSVGFrame,
+                   "Wrong frame type");
+      if (viewportFrame->GetType() != nsGkAtoms::svgInnerSVGFrame) {
+		return nsRect(0,0,0,0);
+      }
+      nsSVGInnerSVGFrame* innerSvg = static_cast<nsSVGInnerSVGFrame*>(static_cast<nsIFrame*>(viewportFrame));
+      float x, y, width, height;
+      static_cast<nsSVGSVGElement*>(innerSvg->GetContent())->
+        GetAnimatedLengthValues(&x, &y, &width, &height, nsnull);
+      nsCOMPtr<nsIDOMSVGMatrix> domctm = nsSVGUtils::GetCanvasTM(viewportFrame->GetParent());
+      gfxMatrix ctm = nsSVGUtils::ConvertSVGMatrixToThebes(domctm);
+      gfxRect bounds = ctm.TransformBounds(gfxRect(x, y, width, height));
+      bounds.RoundOut();
+      nsIntRect r;
+      if (NS_SUCCEEDED(nsSVGUtils::GfxRectToIntRect(bounds, &r))) {
+        rect = r;
+      } else {
+        NS_NOTREACHED("Not going to invalidate the correct area");
+      }
+      aFrame = viewportFrame;
     }
     aFrame = aFrame->GetParent();
   }
