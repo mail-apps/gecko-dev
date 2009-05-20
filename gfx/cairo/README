@@ -48,6 +48,8 @@ win32-canvas-glyph-position.patch: bug 475092; horizontal positioning errors whe
 
 wince-fontconfig.patch: bug 462908; fixes required to compile for windows ce.  Also allows for building without fontconfig
 
+text-path-filling-threshold.patch: use path filling instead of platform glyph rasterization at a smaller size threshold of 256 device pixels, if the backend supports native filling (which we assume will be fast).
+
 ==== pixman patches ====
 
 endian.patch: include cairo-platform.h for endian macros
