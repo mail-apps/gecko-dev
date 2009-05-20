@@ -95,6 +95,7 @@
 #include "nsIDOMStorage.h"
 #include "nsIDOMStorageList.h"
 #include "nsIDOMStorageWindow.h"
+#include "nsIDOMStorageWindow_1_9_1.h"
 #include "nsIDOMOfflineResourceList.h"
 #include "nsPIDOMEventTarget.h"
 #include "nsIArray.h"
@@ -232,6 +233,7 @@ class nsGlobalWindow : public nsPIDOMWindow,
                        public nsIDOMNSEventTarget,
                        public nsIDOMViewCSS,
                        public nsIDOMStorageWindow,
+                       public nsIDOMStorageWindow_1_9_1,
                        public nsSupportsWeakReference,
                        public nsIInterfaceRequestor,
                        public PRCListStr
@@ -356,6 +358,7 @@ public:
 
   // nsIDOMStorageWindow
   NS_DECL_NSIDOMSTORAGEWINDOW
+  NS_DECL_NSIDOMSTORAGEWINDOW_1_9_1
 
   // nsIInterfaceRequestor
   NS_DECL_NSIINTERFACEREQUESTOR

@@ -469,7 +469,7 @@ members = [
     'nsIDOMStorage2.removeItem',
     'nsIDOMStorage2.clear',
     'nsIDOMStorageItem.value',
-    'nsIDOMStorageWindow.sessionStorage',
+    'nsIDOMStorageWindow_1_9_1.sessionStorage',
     'nsIDOMStorageWindow.globalStorage',
 
     # dom/public/idl/stylesheets - None.

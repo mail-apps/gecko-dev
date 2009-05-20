@@ -67,6 +67,7 @@ interface nsISHEntry;
 interface nsILayoutHistoryState;
 interface nsISecureBrowserUI;
 interface nsIDOMStorage;
+interface nsIDOMStorage2;
 interface nsIPrincipal;
 
 [scriptable, uuid(dc4daea1-b43d-406f-bd62-c2ee879192ad)]
@@ -425,16 +426,22 @@ interface nsIDocShell : nsISupports
    * If it doesn't already exist, a new one will be created.
    *
    * @param uri the uri of the storage object to retrieve
+   *
+   * @throws
+   *    NS_ERROR_NOT_IMPLEMENTED because it's currently unsupported
    */
-  nsIDOMStorage getSessionStorageForURI(in nsIURI uri);
+  [noscript]nsIDOMStorage getSessionStorageForURI(in nsIURI uri);
 
   /*
    * Add a WebApps session storage object to the docshell.
    *
    * @param domain the domain the storage object is associated with
    * @param storage the storage object to add
+   *
+   * @throws
+   *    NS_ERROR_NOT_IMPLEMENTED because it's currently unsupported
    */
-  void addSessionStorage(in ACString aDomain, in nsIDOMStorage storage);
+  [noscript]void addSessionStorage(in ACString aDomain, in nsIDOMStorage storage);
 
   /**
    * Gets the channel for the currently loaded document, if any. 
@@ -486,9 +493,42 @@ interface nsIDocShell_MOZILLA_1_9_1 : nsISupports
    * @param principal returns a storage for this principal
    * @param create If true and a session storage object doesn't
    *               already exist, a new one will be created.
+   *
+   * @throws
+   *    NS_ERROR_NOT_IMPLEMENTED because it's currently unsupported
    */
-  nsIDOMStorage getSessionStorageForPrincipal(in nsIPrincipal principal,
+  [noscript]nsIDOMStorage getSessionStorageForPrincipal(in nsIPrincipal principal,
                                               in boolean create);
+};
+
+[scriptable, uuid(B0534FDD-8A6C-4489-8C9E-471D7B2B2596)]
+interface nsIDocShell_MOZILLA_1_9_1_SessionStorage : nsISupports
+{
+  /*
+   * Retrieves the WebApps session storage object for the supplied domain.
+   * If it doesn't already exist, a new one will be created.
+   *
+   * @param uri the uri of the storage object to retrieve
+   */
+  nsIDOMStorage2 getSessionStorageForURI(in nsIURI uri);
+
+  /*
+   * Retrieves the WebApps session storage object for the supplied principal.
+   *
+   * @param principal returns a storage for this principal
+   * @param create If true and a session storage object doesn't
+   *               already exist, a new one will be created.
+   */
+  nsIDOMStorage2 getSessionStorageForPrincipal(in nsIPrincipal principal,
+                                              in boolean create);
+
+  /*
+   * Add a WebApps session storage object to the docshell.
+   *
+   * @param principal the principal the storage object is associated with
+   * @param storage the storage object to add
+   */
+  void addSessionStorage(in nsIPrincipal principal, in nsIDOMStorage2 storage);
 };
 
 [scriptable, uuid(6cf71a12-c7d6-404d-b0b5-15ceae321337)]

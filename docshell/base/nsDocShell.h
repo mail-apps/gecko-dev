@@ -194,6 +194,7 @@ class nsDocShell : public nsDocLoader,
                    public nsIObserver,
                    public nsILoadContext,
                    public nsIDocShell_MOZILLA_1_9_1,
+                   public nsIDocShell_MOZILLA_1_9_1_SessionStorage,
                    public nsIDocShell_MOZILLA_1_9_1_dns
 {
 friend class nsDSURIContentListener;
@@ -225,6 +226,7 @@ public:
     NS_DECL_NSIOBSERVER
     NS_DECL_NSILOADCONTEXT
     NS_DECL_NSIDOCSHELL_MOZILLA_1_9_1
+    NS_DECL_NSIDOCSHELL_MOZILLA_1_9_1_SESSIONSTORAGE
     NS_DECL_NSIDOCSHELL_MOZILLA_1_9_1_DNS
 
     NS_IMETHOD Stop() {
@@ -560,7 +562,7 @@ protected:
 
     nsresult GetSessionStorageForURI(nsIURI* aURI,
                                      PRBool create,
-                                     nsIDOMStorage** aStorage);
+                                     nsIDOMStorage2** aStorage);
 protected:
     // Override the parent setter from nsDocLoader
     virtual nsresult SetDocLoaderParent(nsDocLoader * aLoader);
@@ -673,7 +675,7 @@ protected:
     nsRevocableEventPtr<RestorePresentationEvent> mRestorePresentationEvent;
 
     // hash of session storages, keyed by domain
-    nsInterfaceHashtable<nsCStringHashKey, nsIDOMStorage> mStorages;
+    nsInterfaceHashtable<nsCStringHashKey, nsIDOMStorage2> mStorages;
 
     // Index into the SHTransaction list, indicating the previous and current
     // transaction at the time that this DocShell begins to load

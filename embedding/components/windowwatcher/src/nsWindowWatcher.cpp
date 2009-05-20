@@ -86,6 +86,7 @@
 #include "nsISupportsArray.h"
 #include "nsIDeviceContext.h"
 #include "nsIDOMStorage.h"
+#include "nsIDOMStorage2.h"
 #include "nsPIDOMStorage.h"
 
 #include "nsIPrefBranch.h"
@@ -930,20 +931,22 @@ nsWindowWatcher::OpenWindowJSInternal(nsIDOMWindow *aParent,
 
   // Copy the current session storage for the current domain.
   nsCOMPtr<nsPIDOMWindow> piWindow = do_QueryInterface(aParent);
-  nsCOMPtr<nsIDocShell_MOZILLA_1_9_1> parentDocShell;
+  nsCOMPtr<nsIDocShell_MOZILLA_1_9_1_SessionStorage> parentDocShell;
   if (piWindow)
     parentDocShell = do_QueryInterface(piWindow->GetDocShell());
 
   if (subjectPrincipal && parentDocShell) {
-    nsCOMPtr<nsIDOMStorage> storage;
+    nsCOMPtr<nsIDOMStorage2> storage;
     parentDocShell->GetSessionStorageForPrincipal(subjectPrincipal, PR_FALSE,
                                                   getter_AddRefs(storage));
     nsCOMPtr<nsPIDOMStorage> piStorage =
       do_QueryInterface(storage);
     if (piStorage){
       storage = piStorage->Clone();
-      newDocShell->AddSessionStorage(
-        piStorage->Domain(),
+      nsCOMPtr<nsIDocShell_MOZILLA_1_9_1_SessionStorage> newDocShell191 =
+        do_QueryInterface(newDocShell);
+      newDocShell191->AddSessionStorage(
+        piStorage->Principal(),
         storage);
     }
   }

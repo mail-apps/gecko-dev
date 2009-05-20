@@ -48,23 +48,23 @@ class nsIURI;
 class nsIPrincipal;
 
 #define NS_PIDOMSTORAGE_IID                                 \
-  { 0x2cbaea60, 0x69e7, 0x4b49,                             \
-      { 0xa2, 0xe2, 0x99, 0x53, 0xf4, 0x11, 0xd0, 0x8f } }
+  { 0x71b0ca60, 0x7c17, 0x4e2a,                             \
+      { 0xbc, 0x64, 0xbe, 0x8f, 0xfe, 0x3d, 0x34, 0xb7 } }
 
 class nsPIDOMStorage : public nsISupports
 {
 public:
   NS_DECLARE_STATIC_IID_ACCESSOR(NS_PIDOMSTORAGE_IID)
 
+  virtual nsresult InitAsSessionStorage(nsIPrincipal *aPrincipal) = 0;
   virtual nsresult InitAsLocalStorage(nsIPrincipal *aPrincipal) = 0;
   virtual nsresult InitAsGlobalStorage(const nsACString &aDomainDemanded) = 0;
-  virtual nsresult InitAsSessionStorage(nsIURI* aURI) = 0;
 
-  virtual already_AddRefed<nsIDOMStorage> Clone() = 0;
+  virtual already_AddRefed<nsIDOMStorage2> Clone() = 0;
 
   virtual nsTArray<nsString> *GetKeys() = 0;
 
-  virtual const nsCString &Domain() = 0;
+  virtual nsIPrincipal* Principal() = 0;
   virtual PRBool CanAccess(nsIPrincipal *aPrincipal) = 0;
 };
 

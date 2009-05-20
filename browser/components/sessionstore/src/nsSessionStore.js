@@ -1273,7 +1273,7 @@ SessionStoreService.prototype = {
 
     for (let i = 0; i < aHistory.count; i++) {
       let uri = aHistory.getEntryAtIndex(i, false).URI;
-      // sessionStorage is saved per domain (cf. nsDocShell::GetSessionStorageForURI)
+      // sessionStorage is saved per origin (cf. nsDocShell::GetSessionStorageForURI)
       let domain = uri.spec;
       try {
         if (uri.host)
@@ -1285,7 +1285,8 @@ SessionStoreService.prototype = {
 
       let storage, storageItemCount = 0;
       try {
-        storage = aDocShell.getSessionStorageForURI(uri);
+        let docShell_191 = aDocShell.QueryInterface(Ci.nsIDocShell_MOZILLA_1_9_1_SessionStorage);
+        storage = docShell_191.getSessionStorageForURI(uri);
         storageItemCount = storage.length;
       }
       catch (ex) { /* sessionStorage might throw if it's turned off, see bug 458954 */ }
@@ -1297,9 +1298,7 @@ SessionStoreService.prototype = {
         try {
           let key = storage.key(j);
           let item = storage.getItem(key);
-          data[key] = { value: item.value };
-          if (uri.schemeIs("https") && item.secure)
-            data[key].secure = true;
+          data[key] = item;
         }
         catch (ex) { /* XXXzeniko this currently throws for secured items (cf. bug 442048) */ }
       }
@@ -2106,12 +2105,11 @@ SessionStoreService.prototype = {
     let ioService = Cc["@mozilla.org/network/io-service;1"].getService(Ci.nsIIOService);
     for (let url in aStorageData) {
       let uri = ioService.newURI(url, null, null);
-      let storage = aDocShell.getSessionStorageForURI(uri);
+      let docShell_191 = aDocShell.QueryInterface(Ci.nsIDocShell_MOZILLA_1_9_1_SessionStorage);
+      let storage = docShell_191.getSessionStorageForURI(uri);
       for (let key in aStorageData[url]) {
         try {
-          storage.setItem(key, aStorageData[url][key].value);
-          if (uri.schemeIs("https"))
-            storage.getItem(key).secure = aStorageData[url][key].secure || false;
+          storage.setItem(key, aStorageData[url][key]);
         }
         catch (ex) { Cu.reportError(ex); } // throws e.g. for URIs that can't have sessionStorage
       }
