@@ -268,8 +268,7 @@ public:
   // requested. In particular we might unexpectedly start providing
   // data at offset 0. This need not be called if the offset is the
   // offset that the cache requested in
-  // nsMediaChannelStream::CacheClientSeek. This can be called at any
-  // time by the client, not just after a CacheClientSeek.
+  // nsMediaChannelStream::CacheClientSeek.
   void NotifyDataStarted(PRInt64 aOffset);
   // Notifies the cache that data has been received. The stream already
   // knows the offset because data is received in sequence and
@@ -310,8 +309,6 @@ public:
   // because it doesn't know when the decoder was paused, buffering, etc.
   // Do not pass zero.
   void SetPlaybackRate(PRUint32 aBytesPerSecond);
-  // Returns the last set value of SetSeekable.
-  PRBool IsSeekable();
 
   // These methods must be called on a different thread from the main
   // thread. They should always be called on the same thread for a given
