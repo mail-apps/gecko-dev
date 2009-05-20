@@ -774,12 +774,10 @@ nsHTMLMediaElement::nsHTMLMediaElement(nsINodeInfo *aNodeInfo, PRBool aFromParse
     mDelayingLoadEvent(PR_FALSE),
     mIsRunningSelectResource(PR_FALSE)
 {
-  RegisterFreezableElement();
 }
 
 nsHTMLMediaElement::~nsHTMLMediaElement()
 {
-  UnregisterFreezableElement();
   if (mDecoder) {
     mDecoder->Shutdown();
     mDecoder = nsnull;
