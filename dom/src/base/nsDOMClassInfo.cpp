@@ -6416,7 +6416,7 @@ nsWindowSH::NewResolve(nsIXPConnectWrappedNative *wrapper, JSContext *cx,
       PRBool ok =
         ::JS_DefineUCProperty(cx, obj, ::JS_GetStringChars(str),
                               ::JS_GetStringLength(str),
-                              winVal, nsnull, nsnull,
+                              winVal, JS_PropertyStub, JS_PropertyStub,
                               JSPROP_READONLY | JSPROP_ENUMERATE);
 
       sDoSecurityCheckInAddProperty = doSecurityCheckInAddProperty;
