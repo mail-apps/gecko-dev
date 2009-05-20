@@ -4,7 +4,7 @@ were those applied by update.sh, which applies patches described
 below, and the addition/upate of Makefile.in files for the
 Mozilla build system.
 
-The git commit id used was ef3b0e from git://git.xiph.org/liboggz.git
+The git commit id used was 7df1eb from git://git.xiph.org/liboggz.git
 
 endian.patch is applied to fix bug 452698.
 
