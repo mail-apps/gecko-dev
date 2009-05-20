@@ -164,6 +164,9 @@ public:
   virtual nsresult DropScriptObject(void *object);
   virtual nsresult HoldScriptObject(void *object);
 
+  // Report the pending exception on our mContext, if any.  This
+  // function will set aside the frame chain on mContext before
+  // reporting.
   virtual void ReportPendingException();
 
   NS_DECL_NSIXPCSCRIPTNOTIFY
