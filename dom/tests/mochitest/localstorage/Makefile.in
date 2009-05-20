@@ -80,6 +80,7 @@ _TEST_FILES	= \
     test_localStorageKeyOrder.html \
     test_removeOwnersAPI.html \
     test_removeOwnersAPISessionOnly.html \
+    test_storageConstructor.html \
     $(NULL)
 
 _CHROME_FILES = \
