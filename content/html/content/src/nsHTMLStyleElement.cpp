@@ -49,7 +49,7 @@
 #include "nsIDocument.h"
 #include "nsUnicharUtils.h"
 #include "nsParserUtils.h"
-
+#include "nsThreadUtils.h"
 
 class nsHTMLStyleElement : public nsGenericHTMLElement,
                            public nsIDOMHTMLStyleElement,
@@ -241,7 +241,9 @@ nsHTMLStyleElement::BindToTree(nsIDocument* aDocument, nsIContent* aParent,
                                                  aCompileEventHandlers);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  UpdateStyleSheetInternal(nsnull);
+  nsContentUtils::AddScriptRunner(
+    new nsRunnableMethod<nsHTMLStyleElement>(this,
+                                             &nsHTMLStyleElement::UpdateStyleSheetInternal));
 
   return rv;  
 }
