@@ -66,7 +66,7 @@ using mozilla::TimeStamp;
 nsMediaChannelStream::nsMediaChannelStream(nsMediaDecoder* aDecoder,
     nsIChannel* aChannel, nsIURI* aURI)
   : nsMediaStream(aDecoder, aChannel, aURI),
-    mSuspendCount(0), mSeeking(PR_FALSE),
+    mSuspendCount(0),
     mCacheStream(this),
     mLock(nsAutoLock::NewLock("media.channel.stream")),
     mCacheSuspendCount(0)
