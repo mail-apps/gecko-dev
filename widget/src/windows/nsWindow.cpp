@@ -1877,7 +1877,7 @@ NS_IMETHODIMP nsWindow::SetSizeMode(PRInt32 aMode) {
         if (!gTrimOnMinimize) {
           // Find the next window that is visible and not minimized.
           HWND hwndBelow = ::GetNextWindow(mWnd, GW_HWNDNEXT);
-          while (hwndBelow && (!::IsWindowVisible(hwndBelow) ||
+          while (hwndBelow  && !IsWindowEnabled(hwndBelow) && (!::IsWindowVisible(hwndBelow) ||
                                ::IsIconic(hwndBelow))) {
             hwndBelow = ::GetNextWindow(hwndBelow, GW_HWNDNEXT);
           }
