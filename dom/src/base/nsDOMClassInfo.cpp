@@ -8183,7 +8183,7 @@ nsDocumentSH::Finalize(nsIXPConnectWrappedNative *wrapper, JSContext *cx,
 
   doc->SetJSObject(nsnull);
 
-  return nsNodeSH::Finalize(wrapper, cx, obj);
+  return NS_OK;
 }
 
 // HTMLDocument helper
