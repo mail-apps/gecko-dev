@@ -1610,10 +1610,13 @@ _cairo_gstate_show_text_glyphs (cairo_gstate_t		   *gstate,
      * For now, if we're using cairo's rasterizer, use path filling only
      * for insanely-huge sizes, just to make sure we don't make anyone
      * unhappy.  When we get a really fast rasterizer in cairo, we may
-     * want to readjust this.
-    int path_fill_threshold = gstate->target->backend->fill ? 256 : 10240;
+     * want to readjust this.  The threshold calculation is
+     * encapsulated in _cairo_surface_get_text_path_fill_threshold.
+     *
+     * Needless to say, do this only if show_text_glyphs is not available. */
     if (cairo_surface_has_show_text_glyphs (gstate->target) ||
-	_cairo_scaled_font_get_max_scale (gstate->scaled_font) <= path_fill_threshold) {
+	_cairo_scaled_font_get_max_scale (gstate->scaled_font) <=
+	_cairo_surface_get_text_path_fill_threshold (gstate->target)) {
 	status = _cairo_surface_show_text_glyphs (gstate->target,
 						  gstate->op,
 						  &source_pattern.base,
