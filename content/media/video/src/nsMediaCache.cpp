@@ -989,11 +989,9 @@ nsMediaCache::Update()
     PRBool enableReading;
     if (stream->mStreamLength >= 0 &&
         desiredOffset >= stream->mStreamLength) {
-      // We're at the end of the stream. Nothing to read, but we don't
-      // need to suspend, we may as well just keep reading and hit EOF
-      // (or discover more data if the server lied to us).
+      // We're at the end of the stream. Nothing to read.
       LOG(PR_LOG_DEBUG, ("Stream %p at end of stream", stream));
-      enableReading = PR_TRUE;
+      enableReading = PR_FALSE;
     } else if (desiredOffset < stream->mStreamOffset) {
       // We're reading to try to catch up to where the current stream
       // reader wants to be. Better not stop.
