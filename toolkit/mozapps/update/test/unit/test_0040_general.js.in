@@ -154,7 +154,7 @@ function check_test_pt4() {
 }
 
 // url constructed with %LOCALE%
-// Bug 446527 added the locale to the updater.ini
+// Bug 488936 added the update.locale file that stores the update locale
 function run_test_pt5() {
   gCheckFunc = check_test_pt5;
   var url = URL_PREFIX + "%LOCALE%/";
@@ -165,7 +165,7 @@ function run_test_pt5() {
   }
   catch (e) {
     dump("***\n*** The following error is most likely due to a missing " +
-         "updater.ini file or the locale missing in the updater.ini\n***\n");
+         "update.locale file\n***\n");
     do_throw(e);
   }
 }
