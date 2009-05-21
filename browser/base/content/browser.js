@@ -2837,6 +2837,7 @@ var newWindowButtonObserver = {
       flavourSet.appendFlavour("text/unicode");
       flavourSet.appendFlavour("text/x-moz-url");
       flavourSet.appendFlavour("application/x-moz-file", "nsIFile");
+      flavourSet.appendFlavour("text/x-moz-text-internal");  // for tabs
       return flavourSet;
     }
 }
