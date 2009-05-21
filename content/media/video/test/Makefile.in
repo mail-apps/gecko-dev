@@ -67,7 +67,7 @@ _TEST_FILES += \
 		file_access_controls.html \
 		test_audio1.html \
 		test_audio2.html \
-		test_autobuffer2.html \
+		$(warning test_autobuffer2.html disabled due to random failure - see bug 493692) \
 		test_bug448534.html \
 		test_bug461281.html \
 		test_bug468190.html \
