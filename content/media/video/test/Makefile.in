@@ -65,6 +65,8 @@ _TEST_FILES += \
 		dynamic_redirect.sjs \
 		test_access_control.html \
 		file_access_controls.html \
+		test_audio1.html \
+		test_audio2.html \
 		test_autobuffer2.html \
 		test_bug448534.html \
 		test_bug461281.html \
@@ -109,11 +111,15 @@ _TEST_FILES += \
 		contentDuration5.sjs \
 		contentDuration6.sjs \
 		seek.ogv \
+		sound.ogg \
 		$(NULL)
 
 # This test disabled until we figure out random failures.
+
 # Bug 492821.
+
 # test_videoDocumentTitle.html
+
 
 ifneq ($(OS_ARCH),WINNT)
 # These tests are disabled on windows until we
