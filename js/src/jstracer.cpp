@@ -138,9 +138,6 @@ static const char tagChar[]  = "OIDISIBI";
 /* Max global object size. */
 #define MAX_GLOBAL_SLOTS 4096
 
-/* Max memory you can allocate in a LIR buffer via a single skip() call. */
-#define MAX_SKIP_BYTES (NJ_PAGE_SIZE - (LIR_FAR_SLOTS + 1) * sizeof(LIns))
-
 /* Max memory needed to rebuild the interpreter stack when falling off trace. */
 #define MAX_INTERP_STACK_BYTES                                                \
     (MAX_NATIVE_STACK_SLOTS * sizeof(jsval) +                                 \

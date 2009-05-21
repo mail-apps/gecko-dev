@@ -387,6 +387,14 @@ namespace nanojit
 	static const uint32_t LIR_CALL_SLOTS = sizeof(LirCallIns)/sizeof(LIns); 
 	static const uint32_t LIR_IMM32_SLOTS = sizeof(LirImm32Ins)/sizeof(LIns); 
 	static const uint32_t LIR_IMM64_SLOTS = sizeof(LirImm64Ins)/sizeof(LIns); 
+
+    // Current belief is that this only needs to reserve LIR_FAR_SLOTS + 1 past the header, but
+    // reserve 3 more words just in case, as we've got the pointer arithmetic wrong several times
+    // here already.
+    #define MAX_SKIP_BYTES (NJ_PAGE_SIZE \
+                            - sizeof(PageHeader) \
+                            - (LIR_FAR_SLOTS + 4) * sizeof(LIns))
+
 	
 	bool FASTCALL isCse(LOpcode v);
 	bool FASTCALL isCmp(LOpcode v);
