@@ -289,6 +289,10 @@ namespace nanojit
 	
 	LInsp LirBufWriter::insStorei(LInsp val, LInsp base, int32_t d)
 	{
+		if (!isS8(d)) {
+			return insStore(val, base, insImm(d));
+		}
+
 		LOpcode op = val->isQuad() ? LIR_stqi : LIR_sti;
 		NanoAssert(val && base && isS8(d));
 		LInsp u3=0;
