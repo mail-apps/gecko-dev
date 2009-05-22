@@ -54,12 +54,12 @@ _TEST_FILES =\
 		common.js \
 		events.js \
 		layout.js \
+		states.js \
 		value.js \
 		nsIAccessible_name.css \
 		nsIAccessible_name.js \
 		nsIAccessible_name.xbl \
  		nsIAccessible_selects.js \
-		nsIAccessible_states.js \
 		nsIAccessibleEditableText.js \
   $(warning test_actions.xul temporarily disabled) \
 		test_actions_aria.html \
