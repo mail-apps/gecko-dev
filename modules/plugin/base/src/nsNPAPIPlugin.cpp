@@ -230,6 +230,9 @@ void NS_NotifyPluginCall(PRIntervalTime startTime)
   PRIntervalTime endTime = PR_IntervalNow() - startTime;
   nsCOMPtr<nsIObserverService> notifyUIService =
     do_GetService("@mozilla.org/observer-service;1");
+  if (!notifyUIService)
+    return;
+
   float runTimeInSeconds = float(endTime) / PR_TicksPerSecond();
   nsAutoString runTimeString;
   runTimeString.AppendFloat(runTimeInSeconds);
