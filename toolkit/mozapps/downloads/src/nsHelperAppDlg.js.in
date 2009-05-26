@@ -58,6 +58,8 @@
 const PREF_BD_USEDOWNLOADDIR = "browser.download.useDownloadDir";
 const nsITimer = Components.interfaces.nsITimer;
 
+Components.utils.import("resource://gre/modules/DownloadLastDir.jsm");
+
 /* ctor
  */
 function nsUnknownContentTypeDialog() {
@@ -203,13 +205,26 @@ nsUnknownContentTypeDialog.prototype = {
 
       picker.appendFilters( nsIFilePicker.filterAll );
 
+      var inPrivateBrowsing = false;
+      try {
+        var pbs = Components.classes["@mozilla.org/privatebrowsing;1"]
+                            .getService(Components.interfaces.nsIPrivateBrowsingService);
+        inPrivateBrowsing = pbs.privateBrowsingEnabled;
+      }
+      catch (e) {
+      }
+
       // Default to lastDir if it's valid, use the user's default
       // downloads directory otherwise.
       var dnldMgr = Components.classes["@mozilla.org/download-manager;1"]
                               .getService(Components.interfaces.nsIDownloadManager);
       try {
-        var lastDir = prefs.getComplexValue("browser.download.lastDir",
-                            Components.interfaces.nsILocalFile);
+        var lastDir;
+        if (inPrivateBrowsing && gDownloadLastDir.file)
+          lastDir = gDownloadLastDir.file;
+        else
+          lastDir = prefs.getComplexValue("browser.download.lastDir",
+                          Components.interfaces.nsILocalFile);
         if (lastDir.exists())
           picker.displayDirectory = lastDir;
         else
@@ -237,18 +252,12 @@ nsUnknownContentTypeDialog.prototype = {
             result.remove(false);
         }
         catch (e) { }
-        var newDir = result.parent;
+        var newDir = result.parent.QueryInterface(Components.interfaces.nsILocalFile);
 
-        // Do not remember the last save directory inside the private browsing mode
-        var persistLastDir = true;
-        try {
-          var pbs = Components.classes["@mozilla.org/privatebrowsing;1"]
-                              .getService(Components.interfaces.nsIPrivateBrowsingService);
-          if (pbs.privateBrowsingEnabled)
-            persistLastDir = false;
-        }
-        catch (e) { }
-        if (persistLastDir)
+        // Do not store the last save directory as a pref inside the private browsing mode
+        if (inPrivateBrowsing)
+          gDownloadLastDir.file = newDir;
+        else
           prefs.setComplexValue("browser.download.lastDir", Components.interfaces.nsILocalFile, newDir);
 
         result = this.validateLeafName(newDir, result.leafName, null);
