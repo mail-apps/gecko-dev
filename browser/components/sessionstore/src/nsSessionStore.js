@@ -101,9 +101,13 @@ const WINDOW_HIDEABLE_FEATURES = [
 docShell capabilities to (re)store
 Restored in restoreHistory()
 eg: browser.docShell["allow" + aCapability] = false;
+
+XXX keep these in sync with all the attributes starting
+    with "allow" in /docshell/base/nsIDocShell.idl
 */
 const CAPABILITIES = [
-  "Subframes", "Plugins", "Javascript", "MetaRedirects", "Images"
+  "Subframes", "Plugins", "Javascript", "MetaRedirects", "Images",
+  "DNSPrefetch", "Auth"
 ];
 
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
@@ -1120,6 +1124,7 @@ SessionStoreService.prototype = {
     }
     
     var disallow = [];
+    browser.docShell.QueryInterface(Ci.nsIDocShell_MOZILLA_1_9_1_dns);
     for (var i = 0; i < CAPABILITIES.length; i++)
       if (!browser.docShell["allow" + CAPABILITIES[i]])
         disallow.push(CAPABILITIES[i]);
@@ -1969,6 +1974,7 @@ SessionStoreService.prototype = {
     
     // make sure to reset the capabilities and attributes, in case this tab gets reused
     var disallow = (tabData.disallow)?tabData.disallow.split(","):[];
+    browser.docShell.QueryInterface(Ci.nsIDocShell_MOZILLA_1_9_1_dns);
     CAPABILITIES.forEach(function(aCapability) {
       browser.docShell["allow" + aCapability] = disallow.indexOf(aCapability) == -1;
     });
