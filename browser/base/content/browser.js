@@ -2166,7 +2166,8 @@ function URLBarSetURI(aURI, aValid) {
     else
       value = losslessDecodeURI(uri);
 
-    valid = value && (!aURI || aValid);
+    let isBlank = (uri.spec == "about:blank");
+    valid = !isBlank && (!aURI || aValid);
   }
 
   gURLBar.value = value;
