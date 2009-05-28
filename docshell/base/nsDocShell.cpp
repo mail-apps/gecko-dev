@@ -1731,7 +1731,7 @@ nsDocShell::GetSessionStorageForPrincipal(nsIPrincipal* aPrincipal,
 
 static
 nsresult
-GetDomainURI(nsIPrincipal* aPrincipal, nsACString& aDomain)
+GetPrincipalDomain(nsIPrincipal* aPrincipal, nsACString& aDomain)
 {
   aDomain.Truncate();
 
@@ -1784,7 +1784,7 @@ nsDocShell::GetSessionStorageForPrincipal(nsIPrincipal* aPrincipal,
                                                           aStorage);
 
     nsCAutoString currentDomain;
-    rv = GetDomainURI(aPrincipal, currentDomain);
+    rv = GetPrincipalDomain(aPrincipal, currentDomain);
     if (NS_FAILED(rv))
         return rv;
 
@@ -1891,7 +1891,7 @@ nsDocShell::AddSessionStorage(nsIPrincipal* aPrincipal,
             do_QueryInterface(topItem);
         if (topDocShell == this) {
             nsCAutoString currentDomain;
-            rv = GetDomainURI(aPrincipal, currentDomain);
+            rv = GetPrincipalDomain(aPrincipal, currentDomain);
             if (NS_FAILED(rv))
                 return rv;
 
