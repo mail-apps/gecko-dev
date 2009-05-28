@@ -168,6 +168,6 @@ check-jar-mn::
 	$(MAKE) -C tests/src-simple check-jar
 	$(MAKE) -C tests/src-simple check-flat
 	$(MAKE) -C tests/src-simple check-flat USE_EXTENSION_MANIFEST=1
-ifneq ($(OS_ARCH), WINNT)
+ifneq (,$(filter-out WINNT OS2,$(OS_ARCH)))
 	$(MAKE) -C tests/src-simple check-symlink
 endif
