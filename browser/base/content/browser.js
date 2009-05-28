@@ -2156,7 +2156,7 @@ function URLBarSetURI(aURI, aValid) {
   var value = gBrowser.userTypedValue;
   var valid = false;
 
-  if (!value) {
+  if (value == null) {
     let uri = aURI || getWebNavigation().currentURI;
 
     // Replace initial page URIs with an empty string
