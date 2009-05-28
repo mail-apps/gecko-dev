@@ -364,7 +364,7 @@ nsTableCellFrame::PaintBackground(nsIRenderingContext& aRenderingContext,
 {
   nsRect rect(aPt, GetSize());
   nsCSSRendering::PaintBackground(PresContext(), aRenderingContext, this,
-                                  aDirtyRect, rect, PR_TRUE);
+                                  aDirtyRect, rect, 0);
 }
 
 // Called by nsTablePainter
@@ -1226,5 +1226,5 @@ nsBCTableCellFrame::PaintBackground(nsIRenderingContext& aRenderingContext,
   nsCSSRendering::PaintBackgroundWithSC(PresContext(), aRenderingContext, this,
                                         aDirtyRect, rect,
                                         *GetStyleBackground(), myBorder,
-                                        PR_TRUE, nsnull);
+                                        0, nsnull);
 }

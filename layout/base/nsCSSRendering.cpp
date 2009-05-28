@@ -1277,7 +1277,7 @@ nsCSSRendering::PaintBackground(nsPresContext* aPresContext,
                                 nsIFrame* aForFrame,
                                 const nsRect& aDirtyRect,
                                 const nsRect& aBorderArea,
-                                PRBool aUsePrintSettings,
+                                PRUint32 aFlags,
                                 nsRect* aBGClipRect)
 {
   NS_PRECONDITION(aForFrame,
@@ -1304,8 +1304,8 @@ nsCSSRendering::PaintBackground(nsPresContext* aPresContext,
 
   PaintBackgroundWithSC(aPresContext, aRenderingContext, aForFrame,
                         aDirtyRect, aBorderArea, *color,
-                        *aForFrame->GetStyleBorder(),
-                        aUsePrintSettings, aBGClipRect);
+                        *aForFrame->GetStyleBorder(), aFlags,
+                        aBGClipRect);
 }
 
 static PRBool
@@ -1358,7 +1358,7 @@ nsCSSRendering::PaintBackgroundWithSC(nsPresContext* aPresContext,
                                       const nsRect& aBorderArea,
                                       const nsStyleBackground& aColor,
                                       const nsStyleBorder& aBorder,
-                                      PRBool aUsePrintSettings,
+                                      PRUint32 aFlags,
                                       nsRect* aBGClipRect)
 {
   NS_PRECONDITION(aForFrame,
@@ -1385,7 +1385,8 @@ nsCSSRendering::PaintBackgroundWithSC(nsPresContext* aPresContext,
   PRBool drawBackgroundImage = PR_TRUE;
   PRBool drawBackgroundColor = PR_TRUE;
 
-  if (aUsePrintSettings) {
+  PRBool usePrintSettings = aForFrame->HonorPrintBackgroundSettings();
+  if (usePrintSettings) {
     drawBackgroundImage = aPresContext->GetBackgroundImageDraw();
     drawBackgroundColor = aPresContext->GetBackgroundColorDraw();
   }
@@ -1445,7 +1446,7 @@ nsCSSRendering::PaintBackgroundWithSC(nsPresContext* aPresContext,
   // radii as the border code will.
   bgArea = aBorderArea;
   if (aColor.mBackgroundClip != NS_STYLE_BG_CLIP_BORDER ||
-      IsSolidBorder(aBorder)) {
+      ((aFlags & PAINT_WILL_PAINT_BORDER) && IsSolidBorder(aBorder))) {
     nsMargin border = aForFrame->GetUsedBorder();
     aForFrame->ApplySkipSides(border);
     bgArea.Deflate(border);
