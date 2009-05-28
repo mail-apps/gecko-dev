@@ -192,6 +192,9 @@ public:
   // clear all values from the store
   void ClearAll();
 
+  nsresult
+  CloneFrom(nsDOMStorage* aThat);
+
   nsIDOMStorageItem* GetNamedItem(const nsAString& aKey, nsresult* aResult);
 
   static nsDOMStorage* FromSupports(nsISupports* aSupports)
@@ -242,6 +245,9 @@ protected:
   // see comments of the getters bellow.
   nsCString mScopeDBKey;
   nsCString mQuotaDomainDBKey;
+
+  friend class nsIDOMStorage2;
+  nsPIDOMStorage* mSecurityChecker;
 
 public:
   // e.g. "moc.rab.oof.:" or "moc.rab.oof.:http:80" depending

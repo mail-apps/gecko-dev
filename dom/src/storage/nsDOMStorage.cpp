@@ -535,23 +535,10 @@ nsDOMStorage::nsDOMStorage()
   , mLocalStorage(PR_FALSE)
   , mItemsCached(PR_FALSE)
 {
+  mSecurityChecker = this;
   mItems.Init(8);
   if (nsDOMStorageManager::gStorageManager)
     nsDOMStorageManager::gStorageManager->AddToStoragesHash(this);
-}
-
-static PLDHashOperator
-CopyStorageItems(nsSessionStorageEntry* aEntry, void* userArg)
-{
-  nsDOMStorage* newstorage = static_cast<nsDOMStorage*>(userArg);
-
-  newstorage->SetItem(aEntry->GetKey(), aEntry->mItem->GetValueInternal());
-
-  if (aEntry->mItem->IsSecure()) {
-    newstorage->SetSecure(aEntry->GetKey(), PR_TRUE);
-  }
-
-  return PL_DHASH_NEXT;
 }
 
 nsDOMStorage::nsDOMStorage(nsDOMStorage& aThat)
@@ -564,8 +551,8 @@ nsDOMStorage::nsDOMStorage(nsDOMStorage& aThat)
   , mScopeDBKey(aThat.mScopeDBKey)
 #endif
 {
+  mSecurityChecker = this;
   mItems.Init(8);
-  aThat.mItems.EnumerateEntries(CopyStorageItems, this);
 
   if (nsDOMStorageManager::gStorageManager)
     nsDOMStorageManager::gStorageManager->AddToStoragesHash(this);
@@ -579,11 +566,19 @@ nsDOMStorage::~nsDOMStorage()
 
 static
 nsresult
-GetDomainURI(nsIPrincipal *aPrincipal, nsIURI **_domain)
+GetDomainURI(nsIPrincipal *aPrincipal, PRBool aIncludeDomain, nsIURI **_domain)
 {
   nsCOMPtr<nsIURI> uri;
-  nsresult rv = aPrincipal->GetURI(getter_AddRefs(uri));
-  NS_ENSURE_SUCCESS(rv, rv);
+
+  if (aIncludeDomain) {
+    nsresult rv = aPrincipal->GetDomain(getter_AddRefs(uri));
+    NS_ENSURE_SUCCESS(rv, rv);
+  }
+
+  if (!uri) {
+    nsresult rv = aPrincipal->GetURI(getter_AddRefs(uri));
+    NS_ENSURE_SUCCESS(rv, rv);
+  }
 
   // Check if we really got any URI. System principal doesn't return a URI
   // instance and we would crash in NS_GetInnermostURI below.
@@ -602,7 +597,7 @@ nsresult
 nsDOMStorage::InitAsSessionStorage(nsIPrincipal *aPrincipal)
 {
   nsCOMPtr<nsIURI> domainURI;
-  nsresult rv = GetDomainURI(aPrincipal, getter_AddRefs(domainURI));
+  nsresult rv = GetDomainURI(aPrincipal, PR_TRUE, getter_AddRefs(domainURI));
   NS_ENSURE_SUCCESS(rv, rv);
 
   // No need to check for a return value. If this would fail we would not get
@@ -624,7 +619,7 @@ nsresult
 nsDOMStorage::InitAsLocalStorage(nsIPrincipal *aPrincipal)
 {
   nsCOMPtr<nsIURI> domainURI;
-  nsresult rv = GetDomainURI(aPrincipal, getter_AddRefs(domainURI));
+  nsresult rv = GetDomainURI(aPrincipal, PR_FALSE, getter_AddRefs(domainURI));
   NS_ENSURE_SUCCESS(rv, rv);
 
   // No need to check for a return value. If this would fail we would not get
@@ -667,6 +662,27 @@ nsDOMStorage::InitAsGlobalStorage(const nsACString &aDomainDemanded)
 
   nsDOMStorageDBWrapper::CreateQuotaDomainDBKey(aDomainDemanded, PR_TRUE, mQuotaDomainDBKey);
 #endif
+  return NS_OK;
+}
+
+static PLDHashOperator
+CopyStorageItems(nsSessionStorageEntry* aEntry, void* userArg)
+{
+  nsDOMStorage* newstorage = static_cast<nsDOMStorage*>(userArg);
+
+  newstorage->SetItem(aEntry->GetKey(), aEntry->mItem->GetValueInternal());
+
+  if (aEntry->mItem->IsSecure()) {
+    newstorage->SetSecure(aEntry->GetKey(), PR_TRUE);
+  }
+
+  return PL_DHASH_NEXT;
+}
+
+nsresult
+nsDOMStorage::CloneFrom(nsDOMStorage* aThat)
+{
+  aThat->mItems.EnumerateEntries(CopyStorageItems, this);
   return NS_OK;
 }
 
@@ -747,7 +763,8 @@ nsDOMStorage::CacheStoragePermissions()
   nsCOMPtr<nsIPrincipal> subjectPrincipal;
   ssm->GetSubjectPrincipal(getter_AddRefs(subjectPrincipal));
 
-  return CanAccess(subjectPrincipal);
+  NS_ASSERTION(mSecurityChecker, "Has non-null mSecurityChecker");
+  return mSecurityChecker->CanAccess(subjectPrincipal);
 }
 
 
@@ -1401,6 +1418,7 @@ nsDOMStorage2::nsDOMStorage2()
 nsDOMStorage2::nsDOMStorage2(nsDOMStorage2& aThat)
 {
   mStorage = new nsDOMStorage(*aThat.mStorage.get());
+  mStorage->mSecurityChecker = mStorage;
   mPrincipal = aThat.mPrincipal;
 }
 
@@ -1411,6 +1429,8 @@ nsDOMStorage2::InitAsSessionStorage(nsIPrincipal *aPrincipal)
   if (!mStorage)
     return NS_ERROR_OUT_OF_MEMORY;
 
+  // Leave security checks only for domain (nsDOMStorage implementation)
+  mStorage->mSecurityChecker = mStorage;
   mPrincipal = aPrincipal;
   return mStorage->InitAsSessionStorage(aPrincipal);
 }
@@ -1422,6 +1442,7 @@ nsDOMStorage2::InitAsLocalStorage(nsIPrincipal *aPrincipal)
   if (!mStorage)
     return NS_ERROR_OUT_OF_MEMORY;
 
+  mStorage->mSecurityChecker = this;
   mPrincipal = aPrincipal;
   return mStorage->InitAsLocalStorage(aPrincipal);
 }
@@ -1440,6 +1461,7 @@ nsDOMStorage2::Clone()
   if (!storage)
     return nsnull;
 
+  storage->mStorage->CloneFrom(mStorage);
   NS_ADDREF(storage);
 
   return storage;
@@ -1460,6 +1482,9 @@ nsDOMStorage2::Principal()
 PRBool
 nsDOMStorage2::CanAccess(nsIPrincipal *aPrincipal)
 {
+  if (mStorage->mSecurityChecker != this)
+    return mStorage->mSecurityChecker->CanAccess(aPrincipal);
+
   // Allow C++ callers to access the storage
   if (!aPrincipal)
     return PR_TRUE;
