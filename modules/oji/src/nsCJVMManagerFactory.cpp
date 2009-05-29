@@ -53,7 +53,7 @@
 #ifdef XP_UNIX
 NS_GENERIC_FACTORY_CONSTRUCTOR(nsJVMConfigManagerUnix)
 #endif
-NS_GENERIC_AGGREGATED_CONSTRUCTOR(nsJVMManager)
+NS_GENERIC_AGGREGATED_CONSTRUCTOR_INIT(nsJVMManager, Init)
 
 // The list of components we register
 static const nsModuleComponentInfo components[] = 
