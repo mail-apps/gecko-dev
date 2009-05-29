@@ -1046,3 +1046,4 @@ fails-if(MOZ_WIDGET_TOOLKIT=="gtk2") == 481948-3.html 481948-3-ref.html # differ
 == 488685-1.html 488685-1-ref.html
 == 491323-1.xul 491323-1-ref.xul
 == 493968-1.html 493968-1-ref.html
+== 495274-1.html 495274-1-ref.html
