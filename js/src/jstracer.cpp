@@ -6618,7 +6618,7 @@ TraceRecorder::getThis(LIns*& this_ins)
     /*
      * js_ComputeThisForFrame updates cx->fp->argv[-1], so sample it into 'original' first.
      */
-    jsval original = cx->fp->argv[-1];
+    jsval original = cx->fp->callee ? cx->fp->argv[-1] : JSVAL_NULL;
     JSObject* thisObj = js_ComputeThisForFrame(cx, cx->fp);
     if (!thisObj)
         ABORT_TRACE_ERROR("js_ComputeThisForName failed");
