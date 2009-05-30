@@ -5089,6 +5089,15 @@ function testGetCallObj() {
 testGetCallObj.expected = "ok";
 test(testGetCallObj);
 
+function testGetThis() {
+    for (var i = 0; i < 3; ++i) {
+        (function() { return this; })();
+    }
+    return "ok";
+}
+testGetThis.expected = "ok";
+test(testGetThis);
+
 /*****************************************************************************
  *                                                                           *
  *  _____ _   _  _____ ______ _____ _______                                  *
