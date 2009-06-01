@@ -8394,6 +8394,32 @@ GetAdjustedParentFrame(nsIFrame*       aParentFrame,
 static void
 InvalidateCanvasIfNeeded(nsIFrame* aFrame);
 
+#ifdef MOZ_XUL
+
+static
+nsListBoxBodyFrame*
+MaybeGetListBoxBodyFrame(nsIContent* aContainer, nsIContent* aChild)
+{
+  if (!aContainer)
+    return nsnull;
+
+  if (aContainer->IsNodeOfType(nsINode::eXUL) &&
+      aChild->IsNodeOfType(nsINode::eXUL) &&
+      aContainer->Tag() == nsGkAtoms::listbox &&
+      aChild->Tag() == nsGkAtoms::listitem) {
+    nsCOMPtr<nsIDOMXULElement> xulElement = do_QueryInterface(aContainer);
+    nsCOMPtr<nsIBoxObject> boxObject;
+    xulElement->GetBoxObject(getter_AddRefs(boxObject));
+    nsCOMPtr<nsPIListBoxObject> listBoxObject = do_QueryInterface(boxObject);
+    if (listBoxObject) {
+      return listBoxObject->GetListBoxBody(PR_FALSE);
+    }
+  }
+
+  return nsnull;
+}
+#endif
+
 static PRBool
 IsSpecialFramesetChild(nsIContent* aContent)
 {
@@ -8495,7 +8521,13 @@ nsCSSFrameConstructor::ContentAppended(nsIContent*     aContainer,
       PRUint32 containerCount = aContainer->GetChildCount();
       for (PRUint32 i = aNewIndexInContainer; i < containerCount; i++) {
         nsIContent *child = aContainer->GetChildAt(i);
-        if (mPresShell->GetPrimaryFrameFor(child)) {
+        if (mPresShell->GetPrimaryFrameFor(child)
+#ifdef MOZ_XUL
+            //  Except listboxes suck, so do NOT skip anything here if
+            //  we plan to notify a listbox.
+            && !MaybeGetListBoxBodyFrame(aContainer, child)
+#endif
+            ) {
           // Already have a frame for this content; a previous ContentInserted
           // in this loop must have reconstructed its insertion parent.  Skip
           // it.
@@ -8728,33 +8760,20 @@ PRBool NotifyListBoxBody(nsPresContext*    aPresContext,
                          PRBool             aUseXBLForms,
                          content_operation  aOperation)
 {
-  if (!aContainer)
-    return PR_FALSE;
-
-  if (aContainer->IsNodeOfType(nsINode::eXUL) &&
-      aChild->IsNodeOfType(nsINode::eXUL) &&
-      aContainer->Tag() == nsGkAtoms::listbox &&
-      aChild->Tag() == nsGkAtoms::listitem) {
-    nsCOMPtr<nsIDOMXULElement> xulElement = do_QueryInterface(aContainer);
-    nsCOMPtr<nsIBoxObject> boxObject;
-    xulElement->GetBoxObject(getter_AddRefs(boxObject));
-    nsCOMPtr<nsPIListBoxObject> listBoxObject = do_QueryInterface(boxObject);
-    if (listBoxObject) {
-      nsListBoxBodyFrame* listBoxBodyFrame = listBoxObject->GetListBoxBody(PR_FALSE);
-      if (listBoxBodyFrame) {
-        if (aOperation == CONTENT_REMOVED) {
-          // Except if we have an aChildFrame and its parent is not the right
-          // thing, then we don't do this.  Pseudo frames are so much fun....
-          if (!aChildFrame || aChildFrame->GetParent() == listBoxBodyFrame) {
-            listBoxBodyFrame->OnContentRemoved(aPresContext, aChildFrame,
-                                               aIndexInContainer);
-            return PR_TRUE;
-          }
-        } else {
-          listBoxBodyFrame->OnContentInserted(aPresContext, aChild);
-          return PR_TRUE;
-        }
+  nsListBoxBodyFrame* listBoxBodyFrame =
+    MaybeGetListBoxBodyFrame(aContainer, aChild);
+  if (listBoxBodyFrame) {
+    if (aOperation == CONTENT_REMOVED) {
+      // Except if we have an aChildFrame and its parent is not the right
+      // thing, then we don't do this.  Pseudo frames are so much fun....
+      if (!aChildFrame || aChildFrame->GetParent() == listBoxBodyFrame) {
+        listBoxBodyFrame->OnContentRemoved(aPresContext, aChildFrame,
+                                           aIndexInContainer);
+        return PR_TRUE;
       }
+    } else {
+      listBoxBodyFrame->OnContentInserted(aPresContext, aChild);
+      return PR_TRUE;
     }
   }
 
