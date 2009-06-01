@@ -8400,9 +8400,7 @@ static
 nsListBoxBodyFrame*
 MaybeGetListBoxBodyFrame(nsIContent* aContainer, nsIContent* aChild)
 {
-  if (!aContainer)
-    return nsnull;
-
+  NS_PRECONDITION(aContainer, "Must have container here");
   if (aContainer->IsNodeOfType(nsINode::eXUL) &&
       aChild->IsNodeOfType(nsINode::eXUL) &&
       aContainer->Tag() == nsGkAtoms::listbox &&
@@ -8760,6 +8758,10 @@ PRBool NotifyListBoxBody(nsPresContext*    aPresContext,
                          PRBool             aUseXBLForms,
                          content_operation  aOperation)
 {
+  if (!aContainer) {
+    return PR_FALSE;
+  }
+
   nsListBoxBodyFrame* listBoxBodyFrame =
     MaybeGetListBoxBodyFrame(aContainer, aChild);
   if (listBoxBodyFrame) {
