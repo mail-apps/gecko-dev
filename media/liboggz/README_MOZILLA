@@ -15,4 +15,6 @@ The wince.patch addresses the lack of posix file IO suppor on windows ce see bug
 
 bounded_seek.patch is applied to fix bug 469408.
 
-key_frame_seek.patch fixes buf 463358.
+key_frame_seek.patch fixes bug 463358.
+
+offset_next.patch fixes bug 495366.
