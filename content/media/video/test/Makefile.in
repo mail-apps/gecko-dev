@@ -169,7 +169,6 @@ _TEST_FILES += \
 		test_wav_seek_then_play.html \
 		test_wav_timeupdate1.html \
 		test_wav_timeupdate2.html \
-		test_wav_trunc.html \
 		test_wav_trunc_seek.html \
 		r11025_s16_c1.wav \
 		r11025_s16_c1_trailing.wav \
@@ -184,6 +183,7 @@ _TEST_FILES += \
 		test_wav_ended1.html \
 		test_wav_ended2.html \
 		test_wav_trailing.html \
+		test_wav_trunc.html \
  		$(NULL)
 else
 ifeq (,$(filter mac cocoa,$(MOZ_WIDGET_TOOLKIT)))
@@ -191,6 +191,7 @@ _TEST_FILES += \
 		test_wav_ended1.html \
 		test_wav_ended2.html \
 		test_wav_trailing.html \
+		test_wav_trunc.html \
 		$(NULL)
 endif
 endif # MOZ_SUITE
