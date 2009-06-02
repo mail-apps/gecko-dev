@@ -786,7 +786,7 @@ namespace nanojit
 			LInsp	insFar(LOpcode op, LInsp target);
 			void	ensureRoom(uint32_t count);
 			bool	can8bReach(LInsp from, LInsp to) { return isU8(from-to-1); }
-			bool	can24bReach(LInsp from, LInsp to){ return isS24(from-to); }
+			bool	can24bReach(LInsp from, LInsp to){ return isS24(to-from); }
 			void	prepFor(LInsp& i1, LInsp& i2, LInsp& i3);
 			void	makeReachable(LInsp& o, LInsp from);
 			
