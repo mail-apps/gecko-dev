@@ -20,6 +20,7 @@
 # the Initial Developer. All Rights Reserved.
 #
 # Contributor(s):
+#  Serge Gautherie <sgautherie.bz@free.fr>
 #  Ted Mielczarek <ted.mielczarek@gmail.com>
 #
 # Alternatively, the contents of this file may be used under the terms of
@@ -36,7 +37,7 @@
 #
 # ***** END LICENSE BLOCK ***** */
 
-import sys, os, os.path
+import re, sys, os, os.path
 import tempfile
 from glob import glob
 from optparse import OptionParser
@@ -202,14 +203,14 @@ def runTests(xpcshell, testdirs=[], xrePath=None, testPath=None,
         # not sure what else to do here...
         return True
 
-      if proc.returncode != 0 or (stdout is not None and stdout.find("*** PASS") == -1):
+      if proc.returncode != 0 or (stdout is not None and re.search("^TEST-UNEXPECTED-FAIL", stdout, re.MULTILINE)):
         print """TEST-UNEXPECTED-FAIL | %s | test failed (with xpcshell return code: %d), see following log:
   >>>>>>>
   %s
   <<<<<<<""" % (test, proc.returncode, stdout)
         success = False
       else:
-        print "TEST-PASS | %s | all tests passed" % test
+        print "TEST-PASS | %s | test passed" % test
 
       leakReport = processLeakLog(leakLogFile)
 
