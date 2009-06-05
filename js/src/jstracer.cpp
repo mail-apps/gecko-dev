@@ -5294,7 +5294,7 @@ js_PurgeScriptFragments(JSContext* cx, JSScript* script)
 {
     if (!TRACING_ENABLED(cx))
         return;
-    debug_only_v(nj_dprintf("Purging fragments for JSScript %p.\n", (void*)script);)
+    debug_only_v(printf("Purging fragments for JSScript %p.\n", (void*)script);)
     /*
      * js_TrashTree trashes dependent trees recursively, so we must do all the trashing
      * before clearing in order to avoid calling js_TrashTree with a deleted fragment.
