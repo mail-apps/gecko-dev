@@ -5118,6 +5118,48 @@ function testUndemoteLateGlobalSlots() {
 testUndemoteLateGlobalSlots.expected = "ok";
 test(testUndemoteLateGlobalSlots);
 
+function testSetProtoRegeneratesObjectShape()
+{
+  var f = function() {};
+  var g = function() {};
+  g.prototype.__proto__ = {};
+
+  function iq(obj)
+  {
+    for (var i = 0; i < 10; ++i)
+      "" + obj.prototype;
+  }
+
+  iq(f);
+  iq(f);
+  iq(f);
+  iq(f);
+  iq(g);
+
+  if (shapeOf(f.prototype) === shapeOf(g.prototype))
+    return "object shapes same after proto of one is changed";
+
+  return true;
+}
+testSetProtoRegeneratesObjectShape.expected = true;
+test(testSetProtoRegeneratesObjectShape);
+
+function testFewerGlobalsInInnerTree() {
+    for each (a in [new Number(1), new Number(1), {}, {}, new Number(1)]) {
+        for each (b in [2, "", 2, "", "", ""]) {
+		    for each (c in [{}, {}, 3, 3, 3, 3, {}, {}]) {
+                4 + a;
+			}
+		}
+	}
+    delete a;
+    delete b;
+    delete c;
+    return "ok";
+}
+testFewerGlobalsInInnerTree.expected = "ok";
+test(testFewerGlobalsInInnerTree);
+
 /*****************************************************************************
  *                                                                           *
  *  _____ _   _  _____ ______ _____ _______                                  *
