@@ -61,7 +61,7 @@ PRE_RELEASE_SUFFIX := $(shell $(PYTHON) $(topsrcdir)/config/printprereleasesuffi
 DEFINES += \
 	-DMOZ_APP_VERSION=$(MOZ_APP_VERSION) \
 	-DAPP_LICENSE_BLOCK=$(abs_srcdir)/content/overrides/app-license.html \
-	-DPRE_RELEASE_SUFFIX="$(PRE_RELEASE_SUFFIX)" \
+	-DPRE_RELEASE_SUFFIX=" 3.5 Preview" \
 	$(NULL)
 
 ifndef MOZ_BRANDING_DIRECTORY
