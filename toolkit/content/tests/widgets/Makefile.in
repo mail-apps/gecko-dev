@@ -107,6 +107,9 @@ _TEST_FILES = 	test_bug360220.xul \
  		test_mousescroll.xul \
 		test_scrollbar.xul \
 		test_sorttemplate.xul \
+ 		test_videocontrols.html \
+		test_videocontrols_audio_direction.html \
+		test_videocontrols_video_direction.html \
 		videocontrols_direction-1-ref.html \
 		videocontrols_direction-1a.html \
 		videocontrols_direction-1b.html \
@@ -126,23 +129,6 @@ _TEST_FILES = 	test_bug360220.xul \
 		video.ogg \
 		videomask.css \
 		$(NULL)
-
-# Video test(s) disabled on MacOSX SeaMonkey (on 1.9.1). (Bug 471085)
-ifndef MOZ_SUITE
-_TEST_FILES += \
- 		test_videocontrols.html \
-		test_videocontrols_video_direction.html \
-		test_videocontrols_audio_direction.html \
- 		$(NULL)
-else
-ifeq (,$(filter mac cocoa,$(MOZ_WIDGET_TOOLKIT)))
-_TEST_FILES += \
-		test_videocontrols.html \
-		test_videocontrols_video_direction.html \
-		test_videocontrols_audio_direction.html \
-		$(NULL)
-endif
-endif # MOZ_SUITE
 
 ifeq (,$(filter mac cocoa,$(MOZ_WIDGET_TOOLKIT)))
 _TEST_FILES += test_menubar.xul \
