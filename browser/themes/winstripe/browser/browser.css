@@ -1546,7 +1546,7 @@ tabpanels {
 }
 
 %ifndef USE_TAB_PREVIEWS
-.tabs-alltabs-button > .toolbarbutton-icon,
+.tabs-alltabs-button > .toolbarbutton-menu-dropmarker,
 %endif
 .tabs-alltabs-button > .toolbarbutton-text  {
   display: none;
@@ -1559,8 +1559,14 @@ tabpanels {
   -moz-image-region: auto;
 }
 %else
-.tabs-alltabs-button > .toolbarbutton-menu-dropmarker {
-  margin: 2px 1px 2px 0px;
+.tabs-alltabs-button > .toolbarbutton-icon {
+  list-style-image: url("chrome://browser/skin/mainwindow-dropdown-arrow.png");
+  margin: 5px 0 4px;
+  -moz-image-region: rect(0, 13px, 11px, 0);
+}
+
+.tabs-alltabs-button[open="true"] > .toolbarbutton-icon {
+  -moz-image-region: rect(0, 26px, 11px, 13px);
 }
 %endif
 
