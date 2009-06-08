@@ -2452,6 +2452,7 @@ TraceRecorder::snapshot(ExitType exitType)
         for (unsigned n = 0; n < nexits; ++n) {
             VMSideExit* e = exits[n];
             if (e->pc == pc && e->imacpc == fp->imacpc &&
+                ngslots == e->numGlobalSlots &&
                 !memcmp(getFullTypeMap(exits[n]), typemap, typemap_size)) {
                 AUDIT(mergedLoopExits);
                 return e;
