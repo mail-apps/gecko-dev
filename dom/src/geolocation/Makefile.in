@@ -85,10 +85,6 @@ ifdef WINCE
 CPPSRCS         += WinMobileLocationProvider.cpp
 endif
 
-ifdef ENABLE_TESTS
-DIRS += test
-endif
-
 EXTRA_COMPONENTS = \
                  NetworkGeolocationProvider.js \
                  $(NULL)
