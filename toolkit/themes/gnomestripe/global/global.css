@@ -300,6 +300,11 @@ label[disabled="true"] {
   color: purple;
 }
 
+notification > button {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
 /* :::::: autoscroll popup ::::: */
 
 #autoscroller {
