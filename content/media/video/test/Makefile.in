@@ -158,6 +158,7 @@ _TEST_FILES += \
 		test_progress2.html \
 		test_progress4.html \
 		test_wav_8bit.html \
+		test_wav_ended1.html \
 		test_wav_ended2.html \
 		test_wav_list.html \
 		test_wav_onloadedmetadata.html \
@@ -172,6 +173,7 @@ _TEST_FILES += \
 		test_wav_seek_then_play.html \
 		test_wav_timeupdate1.html \
 		test_wav_timeupdate2.html \
+		test_wav_trailing.html \
 		test_wav_trunc.html \
 		test_wav_trunc_seek.html \
 		r11025_s16_c1.wav \
@@ -180,21 +182,6 @@ _TEST_FILES += \
 		r11025_u8_c1_trunc.wav \
 		r16000_u8_c1_list.wav \
 		$(NULL)
-
-# Video test(s) disabled on MacOSX SeaMonkey (on 1.9.1). (Bug 494769)
-ifndef MOZ_SUITE
-_TEST_FILES += \
-		test_wav_ended1.html \
-		test_wav_trailing.html \
- 		$(NULL)
-else
-ifeq (,$(filter mac cocoa,$(MOZ_WIDGET_TOOLKIT)))
-_TEST_FILES += \
-		test_wav_ended1.html \
-		test_wav_trailing.html \
-		$(NULL)
-endif
-endif # MOZ_SUITE
 
 else
 _TEST_FILES += \
