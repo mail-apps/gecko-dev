@@ -75,6 +75,7 @@
   color: black;
   text-shadow: white -1px -1px .5em, white -1px 1px .5em, white 1px 1px .5em, white 1px -1px .5em;
 }
+%endif
 
 /* ::::: fullscreen window controls ::::: */
 
@@ -98,4 +99,3 @@
 #close-button:hover:active {
   -moz-image-region: rect(32px, 49px, 48px, 32px);
 }
-%endif
