@@ -1579,6 +1579,10 @@ tabpanels {
   -moz-image-region: auto;
 }
 %else
+.tabs-alltabs-button {
+  width: 17px;
+}
+
 .tabs-alltabs-button > .toolbarbutton-icon {
   list-style-image: url("chrome://browser/skin/mainwindow-dropdown-arrow.png");
   margin: 5px 0 4px;
@@ -1593,7 +1597,7 @@ tabpanels {
 .tabs-alltabs-box-animate {
   margin-top: 2px;
   margin-bottom: 4px;
-  width: 18px !important;
+  width: 17px !important;
   background-image: url("chrome://browser/skin/tabbrowser/alltabs-box-overflow-end-bkgnd-animate.png");
   background-repeat: no-repeat;
   opacity: 0.0;
