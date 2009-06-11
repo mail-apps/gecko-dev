@@ -535,6 +535,7 @@ class TraceRecorder : public avmplus::GCObject {
     JS_REQUIRES_STACK void arg(unsigned n, nanojit::LIns* i);
     JS_REQUIRES_STACK nanojit::LIns* var(unsigned n);
     JS_REQUIRES_STACK void var(unsigned n, nanojit::LIns* i);
+    JS_REQUIRES_STACK nanojit::LIns* TraceRecorder::upvar(JSScript* script, JSUpvarArray* uva, uintN index, jsval& v);
     JS_REQUIRES_STACK nanojit::LIns* stack(int n);
     JS_REQUIRES_STACK void stack(int n, nanojit::LIns* i);
 

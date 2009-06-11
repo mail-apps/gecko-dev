@@ -8409,23 +8409,27 @@ TraceRecorder::record_JSOP_CALLNAME()
 JS_DEFINE_CALLINFO_5(extern, UINT32, js_GetUpvarOnTrace, CONTEXT, UINT32, UINT32, UINT32,
                      DOUBLEPTR, 0, 0)
 
-JS_REQUIRES_STACK JSRecordingStatus
-TraceRecorder::record_JSOP_GETUPVAR()
+
+/*
+ * Record LIR to get the given upvar. Return the LIR instruction for
+ * the upvar value. NULL is returned only on a can't-happen condition
+ * with an invalid typemap. The value of the upvar is returned as v.
+ */
+JS_REQUIRES_STACK LIns*
+TraceRecorder::upvar(JSScript* script, JSUpvarArray* uva, uintN index, jsval& v)
 {
-    uintN index = GET_UINT16(cx->fp->regs->pc);
-    JSScript *script = cx->fp->script;
-
-    JSUpvarArray* uva = JS_SCRIPT_UPVARS(script);
-    JS_ASSERT(index < uva->length);
-
     /*
-     * Try to find the upvar in the current trace's tracker.
+     * Try to find the upvar in the current trace's tracker. For &vr to be
+     * the address of the jsval found in js_GetUpvar, we must initialize
+     * vr directly with the result, so it is a reference to the same location.
+     * It does not work to assign the result to v, because v is an already
+     * existing reference that points to something else.
      */
-    jsval& v = js_GetUpvar(cx, script->staticLevel, uva->vector[index]);
-    LIns* upvar_ins = get(&v);
+    jsval& vr = js_GetUpvar(cx, script->staticLevel, uva->vector[index]);
+    v = vr;
+    LIns* upvar_ins = get(&vr);
     if (upvar_ins) {
-        stack(0, upvar_ins);
-        return JSRS_CONTINUE;
+        return upvar_ins;
     }
 
     /*
@@ -8466,13 +8470,28 @@ TraceRecorder::record_JSOP_GETUPVAR()
       case JSVAL_BOXED:
       default:
         JS_NOT_REACHED("found boxed type in an upvar type map entry");
-        return JSRS_STOP;
+        return NULL;
     }
 
     LIns* result = lir->insLoad(loadOp, outp, lir->insImm(0));
     if (type == JSVAL_INT)
         result = lir->ins1(LIR_i2f, result);
-    stack(0, result);
+    return result;
+}
+
+JS_REQUIRES_STACK JSRecordingStatus
+TraceRecorder::record_JSOP_GETUPVAR()
+{
+    uintN index = GET_UINT16(cx->fp->regs->pc);
+    JSScript *script = cx->fp->script;
+    JSUpvarArray* uva = JS_SCRIPT_UPVARS(script);
+    JS_ASSERT(index < uva->length);
+
+    jsval v;
+    LIns* upvar_ins = upvar(script, uva, index, v);
+    if (!upvar_ins)
+        return JSRS_STOP;
+    stack(0, upvar_ins);
     return JSRS_CONTINUE;
 }
 
