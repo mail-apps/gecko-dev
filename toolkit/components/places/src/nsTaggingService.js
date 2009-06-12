@@ -267,7 +267,7 @@ TaggingService.prototype = {
 
   // nsITaggingService
   getURIsForTag: function TS_getURIsForTag(aTag) {
-    if (aTag.length == 0)
+    if (!aTag || aTag.length == 0)
       throw Cr.NS_ERROR_INVALID_ARG;
 
     var uris = [];
