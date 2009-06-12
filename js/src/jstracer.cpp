@@ -1869,40 +1869,32 @@ FlushNativeGlobalFrame(JSContext* cx, unsigned ngslots, uint16* gslots, uint8* m
 }
 
 /*
- * Helper for js_GetUpvarOnTrace.
+ * Generic function to read upvars on trace.
+ *     T   Traits type parameter. Must provide static functions:
+ *             interp_get(fp, slot)     Read the value out of an interpreter frame.
+ *             native_slot(argc, slot)  Return the position of the desired value in the on-trace
+ *                                      stack frame (with position 0 being callee).
+ *
+ *     level       Static level of the function containing the upvar definition.
+ *     slot        Identifies the value to get. The meaning is defined by the traits type.
+ *     callDepth   Call depth of current point relative to trace entry
  */
-static uint32 
-GetUpvarOnTraceTail(InterpState* state, uint32 cookie,
-                    int32 nativeStackFramePos, uint8* typemap, double* result)
+template<typename T>
+uint32 JS_INLINE
+js_GetUpvarOnTrace(JSContext* cx, uint32 level, int32 slot, uint32 callDepth, double* result)
 {
-    uintN slot = UPVAR_FRAME_SLOT(cookie);
-    slot = (slot == CALLEE_UPVAR_SLOT) ? 0 : 2/*callee,this*/ + slot;
-    *result = state->stackBase[nativeStackFramePos + slot];
-    return typemap[slot];
-}
-
-/*
- * Builtin to get an upvar on trace. See js_GetUpvar for the meaning
- * of the first three arguments. The value of the upvar is stored in
- * *result as an unboxed native. The return value is the typemap type.
- */
-uint32 JS_FASTCALL
-js_GetUpvarOnTrace(JSContext* cx, uint32 level, uint32 cookie, uint32 callDepth, double* result)
-{
-    uintN skip = UPVAR_FRAME_SKIP(cookie);
-    uintN upvarLevel = level - skip;
     InterpState* state = cx->interpState;
     FrameInfo** fip = state->rp + callDepth;
 
     /*
      * First search the FrameInfo call stack for an entry containing
-     * our upvar, namely one with staticLevel == upvarLevel.
+     * our upvar, namely one with level == upvarLevel.
      */
     while (--fip >= state->callstackBase) {
         FrameInfo* fi = *fip;
         JSFunction* fun = GET_FUNCTION_PRIVATE(cx, fi->callee);
         uintN calleeLevel = fun->u.i.script->staticLevel;
-        if (calleeLevel == upvarLevel) {
+        if (calleeLevel == level) {
             /*
              * Now find the upvar's value in the native stack.
              * nativeStackFramePos is the offset of the start of the 
@@ -1913,24 +1905,64 @@ js_GetUpvarOnTrace(JSContext* cx, uint32 level, uint32 cookie, uint32 callDepth,
             for (FrameInfo** fip2 = state->callstackBase; fip2 <= fip; fip2++)
                 nativeStackFramePos += (*fip2)->spdist;
             nativeStackFramePos -= (2 + (*fip)->get_argc());
-            return GetUpvarOnTraceTail(state, cookie, nativeStackFramePos,
-                                       fi->get_typemap(), result);
+            uint32 native_slot = T::native_slot((*fip)->get_argc(), slot);
+            *result = state->stackBase[nativeStackFramePos + native_slot];
+            return fi->get_typemap()[native_slot];
         }
     }
 
-    if (state->outermostTree->script->staticLevel == upvarLevel) {
-        return GetUpvarOnTraceTail(state, cookie, 0, state->callstackBase[0]->get_typemap(), 
-                                   result);
+    // Next search the trace entry frame, which is not in the FrameInfo stack.
+    if (state->outermostTree->script->staticLevel == level) {
+        uint32 argc = ((VMFragment*) state->outermostTree->fragment)->argc;
+        uint32 native_slot = T::native_slot(argc, slot);
+        *result = state->stackBase[native_slot];
+        return state->callstackBase[0]->get_typemap()[native_slot];
     }
 
     /*
      * If we did not find the upvar in the frames for the active traces,
      * then we simply get the value from the interpreter state.
      */
-    jsval v = js_GetUpvar(cx, level, cookie);
+    JS_ASSERT(level < JS_DISPLAY_SIZE);
+    JSStackFrame* fp = cx->display[level];
+    jsval v = T::interp_get(fp, slot);
     uint8 type = getCoercedType(v);
     ValueToNative(cx, v, type, result);
     return type;
+}
+
+// For this traits type, 'slot' is the argument index, which may be -2 for callee.
+struct UpvarArgTraits {
+    static jsval interp_get(JSStackFrame* fp, int32 slot) {
+        return fp->argv[slot];
+    }
+
+    static uint32 native_slot(uint32 argc, int32 slot) {
+        return 2 /*callee,this*/ + slot;
+    }
+};
+
+uint32 JS_FASTCALL
+js_GetUpvarArgOnTrace(JSContext* cx, uint32 staticLevel, int32 slot, uint32 callDepth, double* result)
+{
+    return js_GetUpvarOnTrace<UpvarArgTraits>(cx, staticLevel, slot, callDepth, result);
+}
+
+// For this traits type, 'slot' is an index into the local slots array.
+struct UpvarVarTraits {
+    static jsval interp_get(JSStackFrame* fp, int32 slot) {
+        return fp->slots[slot];
+    }
+
+    static uint32 native_slot(uint32 argc, int32 slot) {
+        return 2 /*callee,this*/ + argc + slot;
+    }
+};
+
+uint32 JS_FASTCALL
+js_GetUpvarVarOnTrace(JSContext* cx, uint32 staticLevel, int32 slot, uint32 callDepth, double* result)
+{
+    return js_GetUpvarOnTrace<UpvarVarTraits>(cx, staticLevel, slot, callDepth, result);
 }
 
 /**
@@ -8406,7 +8438,9 @@ TraceRecorder::record_JSOP_CALLNAME()
     return JSRS_CONTINUE;
 }
 
-JS_DEFINE_CALLINFO_5(extern, UINT32, js_GetUpvarOnTrace, CONTEXT, UINT32, UINT32, UINT32,
+JS_DEFINE_CALLINFO_5(extern, UINT32, js_GetUpvarArgOnTrace, CONTEXT, UINT32, INT32, UINT32,
+                     DOUBLEPTR, 0, 0)
+JS_DEFINE_CALLINFO_5(extern, UINT32, js_GetUpvarVarOnTrace, CONTEXT, UINT32, INT32, UINT32,
                      DOUBLEPTR, 0, 0)
 
 
@@ -8425,7 +8459,8 @@ TraceRecorder::upvar(JSScript* script, JSUpvarArray* uva, uintN index, jsval& v)
      * It does not work to assign the result to v, because v is an already
      * existing reference that points to something else.
      */
-    jsval& vr = js_GetUpvar(cx, script->staticLevel, uva->vector[index]);
+    uint32 cookie = uva->vector[index];
+    jsval& vr = js_GetUpvar(cx, script->staticLevel, cookie);
     v = vr;
     LIns* upvar_ins = get(&vr);
     if (upvar_ins) {
@@ -8436,15 +8471,33 @@ TraceRecorder::upvar(JSScript* script, JSUpvarArray* uva, uintN index, jsval& v)
      * The upvar is not in the current trace, so get the upvar value 
      * exactly as the interpreter does and unbox.
      */
+    uint32 level = script->staticLevel - UPVAR_FRAME_SKIP(cookie);
+    uint32 cookieSlot = UPVAR_FRAME_SLOT(cookie);
+    JSStackFrame* fp = cx->display[level];
+    const CallInfo* ci;
+    int32 slot;
+    if (!fp->fun) {
+        ci = &js_GetUpvarVarOnTrace_ci;
+        slot = cookieSlot + fp->script->nfixed;
+    } else if (cookieSlot < fp->fun->nargs) {
+        ci = &js_GetUpvarArgOnTrace_ci;
+        slot = cookieSlot;
+    } else if (cookieSlot == CALLEE_UPVAR_SLOT) {
+        ci = &js_GetUpvarArgOnTrace_ci;
+        slot = -2;
+    } else {
+        ci = &js_GetUpvarVarOnTrace_ci;
+        slot = cookieSlot - fp->fun->nargs;
+    }
+
     LIns* outp = lir->insAlloc(sizeof(double));
     LIns* args[] = { 
         outp,
         INS_CONST(callDepth),
-        INS_CONST(uva->vector[index]), 
-        INS_CONST(script->staticLevel), 
+        INS_CONST(slot), 
+        INS_CONST(level), 
         cx_ins 
     };
-    const CallInfo* ci = &js_GetUpvarOnTrace_ci;
     LIns* call_ins = lir->insCall(ci, args);
     uint8 type = getCoercedType(v);
     guard(true,
