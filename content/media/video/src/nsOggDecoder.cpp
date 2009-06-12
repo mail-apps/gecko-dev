@@ -1331,10 +1331,10 @@ void nsOggDecodeStateMachine::DecodeToFrame(nsAutoMonitor& aMonitor,
       aMonitor.Enter();
     } while (mState != DECODER_STATE_SHUTDOWN && r == E_OGGPLAY_TIMEOUT);
 
+    HandleDecodeErrors(r);
+
     if (mState == DECODER_STATE_SHUTDOWN)
       break;
-
-    HandleDecodeErrors(r);
 
     FrameData* nextFrame = NextFrame();
     if (!nextFrame)
