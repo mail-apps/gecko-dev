@@ -50,17 +50,21 @@ var _passed = true;
 var _tests_pending = 0;
 var _passedChecks = 0, _falsePassedChecks = 0;
 
+
 function _TimerCallback(expr) {
   this._expr = expr;
 }
 _TimerCallback.prototype = {
   _expr: "",
+
   QueryInterface: function(iid) {
     if (iid.Equals(Components.interfaces.nsITimerCallback) ||
         iid.Equals(Components.interfaces.nsISupports))
       return this;
+
     throw Components.results.NS_ERROR_NO_INTERFACE;
   },
+
   notify: function(timer) {
     eval(this._expr);
   }
@@ -89,6 +93,11 @@ function _do_quit() {
 }
 
 function _execute_test() {
+  // _HEAD_FILES is dynamically defined by <runxpcshelltests.py>.
+  _load_files(_HEAD_FILES);
+  // _TEST_FILE is dynamically defined by <runxpcshelltests.py>.
+  _load_files(_TEST_FILE);
+
   try {
     do_test_pending();
     run_test();
@@ -102,6 +111,9 @@ function _execute_test() {
       dump("TEST-UNEXPECTED-FAIL | (xpcshell/head.js) | " + e + "\n");
   }
 
+  // _TAIL_FILES is dynamically defined by <runxpcshelltests.py>.
+  _load_files(_TAIL_FILES);
+
   if (!_passed)
     return;
 
@@ -112,6 +124,19 @@ function _execute_test() {
   else
     // ToDo: switch to TEST-UNEXPECTED-FAIL when all tests have been updated. (Bug 496443)
     dump("TEST-INFO | (xpcshell/head.js) | No (+ " + _falsePassedChecks + ") checks actually run\n");
+}
+
+/**
+ * Loads files.
+ *
+ * @param aFiles Array of files to load.
+ */
+function _load_files(aFiles) {
+  function loadTailFile(element, index, array) {
+    load(element);
+  }
+
+  aFiles.forEach(loadTailFile);
 }
 
 
@@ -235,6 +260,14 @@ function do_get_file(path, allowNonexistent) {
 // do_get_cwd() isn't exactly self-explanatory, so provide a helper
 function do_get_cwd() {
   return do_get_file("");
+}
+
+/**
+ * Loads _HTTPD_JS_PATH file, which is dynamically defined by
+ * <runxpcshelltests.py>.
+ */
+function do_load_httpd_js() {
+  load(_HTTPD_JS_PATH);
 }
 
 function do_load_module(path) {
