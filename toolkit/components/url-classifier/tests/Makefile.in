@@ -55,9 +55,9 @@ REQUIRES = \
 	necko \
 	$(NULL)
 
-# mochitest tests - disabled due to bugs 497884 and 497893
-# DIRS += mochitest \
-#	$(NULL)
+# mochitest tests
+DIRS += mochitest \
+	$(NULL)
 
 # xpcshell tests
 XPCSHELL_TESTS=unit
