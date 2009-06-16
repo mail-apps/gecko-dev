@@ -6448,11 +6448,13 @@ PresShell::FireOrClearDelayedEvents(PRBool aFireEvents)
     return;
   }
 
-  if (!mIsDestroying && mDocument) {
+  if (mDocument) {
     nsCOMPtr<nsIDocument> doc = mDocument;
-    while (mDelayedEvents.Length() && !doc->EventHandlingSuppressed()) {
-      mDelayedEvents[0]->Dispatch(this);
+    while (!mIsDestroying && mDelayedEvents.Length() &&
+           !doc->EventHandlingSuppressed()) {
+      nsAutoPtr<nsDelayedEvent> ev(mDelayedEvents[0].forget());
       mDelayedEvents.RemoveElementAt(0);
+      ev->Dispatch(this);
     }
     if (!doc->EventHandlingSuppressed()) {
       mDelayedEvents.Clear();
