@@ -901,11 +901,10 @@ nsFaviconService::GetFaviconImageForPage(nsIURI* aPageURI, nsIURI** _retval)
 
 // nsFaviconService::GetFaviconLinkForIcon
 
-nsresult
+NS_IMETHODIMP
 nsFaviconService::GetFaviconLinkForIcon(nsIURI* aFaviconURI,
                                         nsIURI** aOutputURI)
 {
-  NS_ENSURE_ARG(aFaviconURI);
   NS_ENSURE_ARG_POINTER(aOutputURI);
 
   nsCAutoString spec;
@@ -933,7 +932,8 @@ ExpireFailedFaviconsCallback(nsCStringHashKey::KeyType aKey,
 NS_IMETHODIMP
 nsFaviconService::AddFailedFavicon(nsIURI* aFaviconURI)
 {
-  NS_ENSURE_ARG(aFaviconURI);
+  if (!aFaviconURI)
+    return NS_OK;
 
   nsCAutoString spec;
   nsresult rv = aFaviconURI->GetSpec(spec);
@@ -959,7 +959,8 @@ nsFaviconService::AddFailedFavicon(nsIURI* aFaviconURI)
 NS_IMETHODIMP
 nsFaviconService::RemoveFailedFavicon(nsIURI* aFaviconURI)
 {
-  NS_ENSURE_ARG(aFaviconURI);
+  if (!aFaviconURI)
+    return NS_OK;
 
   nsCAutoString spec;
   nsresult rv = aFaviconURI->GetSpec(spec);
@@ -976,7 +977,12 @@ nsFaviconService::RemoveFailedFavicon(nsIURI* aFaviconURI)
 NS_IMETHODIMP
 nsFaviconService::IsFailedFavicon(nsIURI* aFaviconURI, PRBool* _retval)
 {
-  NS_ENSURE_ARG(aFaviconURI);
+  NS_ENSURE_ARG_POINTER(_retval);
+  if (!aFaviconURI) {
+    *_retval = PR_FALSE;
+    return NS_OK;
+  }
+
   nsCAutoString spec;
   nsresult rv = aFaviconURI->GetSpec(spec);
   NS_ENSURE_SUCCESS(rv, rv);
