@@ -53,7 +53,7 @@ const NS_REFTESTHELPER_CONTRACTID =
 const NS_NETWORK_PROTOCOL_CONTRACTID_PREFIX =
           "@mozilla.org/network/protocol;1?name=";
 
-const LOAD_FAILURE_TIMEOUT = 10000; // ms
+var gLoadTimeout = 0;
 
 var gBrowser;
 var gCanvas1, gCanvas2;
@@ -124,6 +124,16 @@ function ReleaseCanvas(canvas)
 function OnRefTestLoad()
 {
     gBrowser = document.getElementById("browser");
+
+    /* set the gLoadTimeout */
+    try {
+      var prefs = Components.classes["@mozilla.org/preferences-service;1"].
+                  getService(Components.interfaces.nsIPrefBranch2);
+      gLoadTimeout = prefs.getIntPref("reftest.timeout");
+    }                  
+    catch(e) {
+      gLoadTimeout = 5 * 60 * 1000; //5 minutes as per bug 479518
+    }
 
     gBrowser.addEventListener("load", OnDocumentLoad, true);
 
@@ -419,7 +429,7 @@ function StartCurrentTest()
 function StartCurrentURI(aState)
 {
     gCurrentTestStartTime = Date.now();
-    gFailureTimeout = setTimeout(LoadFailed, LOAD_FAILURE_TIMEOUT);
+    gFailureTimeout = setTimeout(LoadFailed, gLoadTimeout);
     gFailureReason = "timed out waiting for onload to fire";
 
     gState = aState;
