@@ -2468,7 +2468,9 @@ TraceRecorder::snapshot(ExitType exitType)
     /* Capture the type map into a temporary location. */
     unsigned ngslots = treeInfo->globalSlots->length();
     unsigned typemap_size = (stackSlots + ngslots) * sizeof(uint8);
-    uint8* typemap = (uint8*)alloca(typemap_size);
+    void *mark = JS_ARENA_MARK(&cx->tempPool);
+    uint8* typemap;
+    JS_ARENA_ALLOCATE_CAST(typemap, uint8*, &cx->tempPool, typemap_size);
     uint8* m = typemap;
 
     /* Determine the type of a store by looking at the current type of the actual value the
@@ -2513,6 +2515,7 @@ TraceRecorder::snapshot(ExitType exitType)
                 ngslots == e->numGlobalSlots &&
                 !memcmp(getFullTypeMap(exits[n]), typemap, typemap_size)) {
                 AUDIT(mergedLoopExits);
+                JS_ARENA_RELEASE(&cx->tempPool, mark);
                 return e;
             }
         }
@@ -2529,6 +2532,7 @@ TraceRecorder::snapshot(ExitType exitType)
          */
         stackSlots = 0;
         ngslots = 0;
+        typemap_size = 0;
         trashSelf = true;
     }
 
@@ -2553,6 +2557,8 @@ TraceRecorder::snapshot(ExitType exitType)
     exit->rp_adj = exit->calldepth * sizeof(FrameInfo*);
     exit->nativeCalleeWord = 0;
     memcpy(getFullTypeMap(exit), typemap, typemap_size);
+
+    JS_ARENA_RELEASE(&cx->tempPool, mark);
     return exit;
 }
 
