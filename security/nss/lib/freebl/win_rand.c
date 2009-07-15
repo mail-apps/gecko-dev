@@ -141,15 +141,15 @@ static void
 EnumSystemFilesInFolder(Handler func, PRUnichar* szSysDir, int maxDepth) 
 {
     int                 iContinue;
-    unsigned int        iFolders  = 0;
-    unsigned int        iFiles    = 0;
+    unsigned int        uFolders  = 0;
+    unsigned int        uFiles    = 0;
     HANDLE              lFindHandle;
     WIN32_FIND_DATAW    fdData;
     PRUnichar           szFileName[_MAX_PATH];
 
     if (maxDepth < 0)
     	return;
-    // append *.* so we actually look for files. this will not overflow
+    // append *.* so we actually look for files.
     _snwprintf(szFileName, _MAX_PATH, L"%s\\*.*", szSysDir);
 
     lFindHandle = FindFirstFileW(szFileName, &fdData);
@@ -165,10 +165,10 @@ EnumSystemFilesInFolder(Handler func, PRUnichar* szSysDir, int maxDepth)
 	    _snwprintf(szFileName, _MAX_PATH, L"%s\\%s", szSysDir, 
 		       fdData.cFileName);
 	    if (fdData.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
-		if (++iFolders <= MAX_FOLDERS)
+		if (++uFolders <= MAX_FOLDERS)
 		    EnumSystemFilesInFolder(func, szFileName, maxDepth - 1);
 	    } else {
-		iContinue = (++iFiles <= MAX_FILES) && !(*func)(szFileName);
+		iContinue = (++uFiles <= MAX_FILES) && !(*func)(szFileName);
 	    }
 	}
 	if (iContinue)
@@ -216,7 +216,6 @@ static int
 ReadSingleFile(const char *filename)
 {
     PRFileDesc *    file;
-    int             nBytes;
     unsigned char   buffer[1024];
 
     file = PR_Open(filename, PR_RDONLY, 0);
@@ -426,9 +425,10 @@ void RNG_FileForRNG(const char *filename)
 size_t RNG_SystemRNG(void *dest, size_t maxLen)
 {
     size_t bytes = 0;
+    usedWindowsPRNG = PR_FALSE;
     if (CeGenRandom(maxLen, dest)) {
-	    bytes = maxLen;
-	    usedWindowsPRNG = PR_TRUE;
+	bytes = maxLen;
+	usedWindowsPRNG = PR_TRUE;
     }
     if (bytes == 0) {
 	bytes = rng_systemFromNoise(dest,maxLen);
