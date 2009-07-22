@@ -409,7 +409,7 @@ PRBool nsCSSValue::IsNonTransparentColor() const
   nsDependentString buf;
   return
     (mUnit == eCSSUnit_Color && NS_GET_A(GetColorValue()) > 0) ||
-    (mUnit == eCSSUnit_Ident &&
+    (mUnit == eCSSUnit_String &&
      !nsGkAtoms::transparent->Equals(GetStringValue(buf))) ||
     (mUnit == eCSSUnit_EnumColor);
 }
