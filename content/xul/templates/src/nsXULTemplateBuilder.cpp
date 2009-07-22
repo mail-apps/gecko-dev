@@ -100,7 +100,7 @@
 #include "plhash.h"
 #include "nsIDOMClassInfo.h"
 #include "nsPIDOMWindow.h"
-
+#include "nsThreadUtils.h"
 #include "nsNetUtil.h"
 #include "nsXULTemplateBuilder.h"
 #include "nsXULTemplateQueryProcessorRDF.h"
