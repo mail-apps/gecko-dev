@@ -241,6 +241,8 @@ nsDragService::InvokeDragSession(nsIDOMNode *aDOMNode,
           gtk_drag_set_icon_default(context);
 
         gtk_target_list_unref(sourceList);
+
+        StartDragSession();
     }
 
     return NS_OK;
@@ -306,7 +308,8 @@ nsDragService::StartDragSession()
 NS_IMETHODIMP
 nsDragService::EndDragSession(PRBool aDoneDrag)
 {
-    PR_LOG(sDragLm, PR_LOG_DEBUG, ("nsDragService::EndDragSession"));
+    PR_LOG(sDragLm, PR_LOG_DEBUG, ("nsDragService::EndDragSession %d",
+                                   aDoneDrag));
     // unset our drag action
     SetDragAction(DRAGDROP_ACTION_NONE);
     return nsBaseDragService::EndDragSession(aDoneDrag);
@@ -1151,10 +1154,43 @@ nsDragService::GetSourceList(void)
 }
 
 void
-nsDragService::SourceEndDrag(void)
+nsDragService::SourceEndDrag(GdkDragContext *aContext)
 {
     // this just releases the list of data items that we provide
-    mSourceDataItems = 0;
+    mSourceDataItems = nsnull;
+
+    if (!mDoingDrag)
+        return; // EndDragSession() was called on drop
+
+    // Either the drag was aborted or the drop occurred outside the app.
+    // The dropEffect of mDataTransfer is not updated for motion outside the
+    // app, but is needed for the dragend event, so set it now.
+
+    // aContext->dest_window will be non-NULL only if the drop succeeded .
+    GdkDragAction action =
+        aContext->dest_window ? aContext->action : (GdkDragAction)0;
+
+    // Only one bit of action should be set, but, just in case someone does
+    // something funny, erring away from MOVE, and not recording unusual
+    // action combinations as NONE.
+    PRUint32 dropEffect;
+    if (!action)
+        dropEffect = DRAGDROP_ACTION_NONE;
+    else if (action & GDK_ACTION_COPY)
+        dropEffect = DRAGDROP_ACTION_COPY;
+    else if (action & GDK_ACTION_LINK)
+        dropEffect = DRAGDROP_ACTION_LINK;
+    else if (action & GDK_ACTION_MOVE)
+        dropEffect = DRAGDROP_ACTION_MOVE;
+    else
+        dropEffect = DRAGDROP_ACTION_COPY;
+    
+    nsCOMPtr<nsIDOMNSDataTransfer> dataTransfer =
+        do_QueryInterface(mDataTransfer);
+
+    if (dataTransfer) {
+        dataTransfer->SetDropEffectInt(dropEffect);
+    }
 
     // Inform the drag session that we're ending the drag.
     EndDragSession(PR_TRUE);
@@ -1343,7 +1379,7 @@ invisibleSourceDragDataGet(GtkWidget        *aWidget,
                            guint32           aTime,
                            gpointer          aData)
 {
-    PR_LOG(sDragLm, PR_LOG_DEBUG, ("invisibleDragDataGet"));
+    PR_LOG(sDragLm, PR_LOG_DEBUG, ("invisibleSourceDragDataGet"));
     nsDragService *dragService = (nsDragService *)aData;
     dragService->SourceDataGet(aWidget, aContext,
                                aSelectionData, aInfo, aTime);
@@ -1355,7 +1391,7 @@ invisibleSourceDragEnd(GtkWidget        *aWidget,
                        GdkDragContext   *aContext,
                        gpointer          aData)
 {
-    PR_LOG(sDragLm, PR_LOG_DEBUG, ("invisibleDragEnd"));
+    PR_LOG(sDragLm, PR_LOG_DEBUG, ("invisibleSourceDragEnd"));
     nsDragService *dragService = (nsDragService *)aData;
 
     gint x, y;
@@ -1366,6 +1402,6 @@ invisibleSourceDragEnd(GtkWidget        *aWidget,
     }
 
     // The drag has ended.  Release the hostages!
-    dragService->SourceEndDrag();
+    dragService->SourceEndDrag(aContext);
 }
 
