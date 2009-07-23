@@ -443,19 +443,8 @@ nsContentSink::ProcessHTTPHeaders(nsIChannel* aChannel)
   nsresult rv = httpchannel->GetResponseHeader(NS_LITERAL_CSTRING("link"),
                                                linkHeader);
   if (NS_SUCCEEDED(rv) && !linkHeader.IsEmpty()) {
-    mDocument->SetHeaderData(nsGkAtoms::link,
-                             NS_ConvertASCIItoUTF16(linkHeader));
-
-    NS_ASSERTION(!mProcessLinkHeaderEvent.get(),
-                 "Already dispatched an event?");
-
-    mProcessLinkHeaderEvent =
-      new nsNonOwningRunnableMethod<nsContentSink>(this,
-                                           &nsContentSink::DoProcessLinkHeader);
-    rv = NS_DispatchToCurrentThread(mProcessLinkHeaderEvent.get());
-    if (NS_FAILED(rv)) {
-      mProcessLinkHeaderEvent.Forget();
-    }
+    ProcessHeaderData(nsGkAtoms::link,
+                      NS_ConvertASCIItoUTF16(linkHeader));
   }
   
   return NS_OK;
@@ -549,14 +538,6 @@ nsContentSink::ProcessHeaderData(nsIAtom* aHeader, const nsAString& aValue,
   return rv;
 }
 
-
-void
-nsContentSink::DoProcessLinkHeader()
-{
-  nsAutoString value;
-  mDocument->GetHeaderData(nsGkAtoms::link, value);
-  ProcessLinkHeader(nsnull, value);
-}
 
 static const PRUnichar kSemiCh = PRUnichar(';');
 static const PRUnichar kCommaCh = PRUnichar(',');
@@ -1730,12 +1711,6 @@ nsContentSink::WillBuildModelImpl()
   }
 
   mScrolledToRefAlready = PR_FALSE;
-
-  if (mProcessLinkHeaderEvent.get()) {
-    mProcessLinkHeaderEvent.Revoke();
-
-    DoProcessLinkHeader();
-  }
 }
 
 void
