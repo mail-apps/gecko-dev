@@ -3278,8 +3278,6 @@ TraceRecorder::emitTreeCall(Fragment* inner, VMSideExit* exit)
     /* Read back all registers, in case the called tree changed any of them. */
     JS_ASSERT(!memchr(getGlobalTypeMap(exit), JSVAL_BOXED, exit->numGlobalSlots) &&
               !memchr(getStackTypeMap(exit), JSVAL_BOXED, exit->numStackSlots));
-    import(ti, inner_sp_ins, exit->numStackSlots, exit->numGlobalSlots,
-           exit->calldepth, getFullTypeMap(exit));
     /* bug 502604 - It is illegal to extend from the outer typemap without first extending from the
      * inner. Make a new typemap here.
      */
