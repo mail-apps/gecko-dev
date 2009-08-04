@@ -6463,7 +6463,7 @@ js_InitJIT(JSTraceMonitor *tm)
         Fragmento* fragmento = new (&gc) Fragmento(core, &js_LogController, 32, tm->codeAlloc);
         verbose_only(fragmento->labels = new (alloc) LabelMap(alloc, &js_LogController);)
         tm->fragmento = fragmento;
-        tm->lirbuf = new (&gc) LirBuffer(alloc);
+        tm->lirbuf = new LirBuffer(alloc);
 #ifdef DEBUG
         tm->lirbuf->names = new (alloc) LirNameMap(alloc, tm->fragmento->labels);
 #endif
@@ -6492,7 +6492,7 @@ js_InitJIT(JSTraceMonitor *tm)
         Fragmento* fragmento = new (&gc) Fragmento(core, &js_LogController, 32, tm->reCodeAlloc);
         verbose_only(fragmento->labels = new (reAlloc) LabelMap(reAlloc, &js_LogController);)
         tm->reFragmento = fragmento;
-        tm->reLirBuf = new (&gc) LirBuffer(reAlloc);
+        tm->reLirBuf = new LirBuffer(reAlloc);
 #ifdef DEBUG
         tm->reLirBuf->names = new (reAlloc) LirNameMap(reAlloc, fragmento->labels);
 #endif
