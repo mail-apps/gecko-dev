@@ -219,6 +219,7 @@ INSTALLED_HEADERS += \
 		Assembler.h     \
 		Allocator.h     \
 		CodeAlloc.h     \
+		Containers.h    \
 		LIR.h		\
 		avmplus.h	\
 		Fragmento.h	\
@@ -233,6 +234,7 @@ CPPSRCS += \
 		Assembler.cpp  \
 		Allocator.cpp  \
 		CodeAlloc.cpp  \
+		Containers.cpp \
 		Fragmento.cpp  \
 		LIR.cpp        \
 		RegAlloc.cpp   \
