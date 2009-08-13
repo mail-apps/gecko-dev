@@ -3553,7 +3553,7 @@ TraceRecorder::compile(JSTraceMonitor* tm)
         ResetJIT(cx);
         return;
     }
-    Fragmento* fragmento = tm->fragmento;
+    verbose_only(Fragmento* fragmento = tm->fragmento;)
     if (treeInfo->maxNativeStackSlots >= MAX_NATIVE_STACK_SLOTS) {
         debug_only_print0(LC_TMTracer, "Blacklist: excessive stack use.\n");
         Blacklist((jsbytecode*) fragment->root->ip);
