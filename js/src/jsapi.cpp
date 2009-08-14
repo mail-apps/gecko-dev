@@ -84,6 +84,7 @@
 #include "jsdbgapi.h"
 #include "prmjtime.h"
 #include "jsstaticcheck.h"
+#include "jsvector.h"
 
 #if JS_HAS_FILE_OBJECT
 #include "jsfile.h"
@@ -5489,7 +5490,10 @@ JS_Stringify(JSContext *cx, jsval *vp, JSObject *replacer, jsval space,
              JSONWriteCallback callback, void *data)
 {
     CHECK_REQUEST(cx);
-    return js_Stringify(cx, vp, replacer, space, callback, data);
+    JSCharVector cb(cx);
+    if (!js_Stringify(cx, vp, replacer, space, cb))
+        return false;
+    return callback(cb.begin(), cb.size(), data);
 }
 
 JS_PUBLIC_API(JSBool)
