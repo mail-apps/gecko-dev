@@ -1716,7 +1716,8 @@ nsresult nsChildView::ConfigureChildren(const nsTArray<Configuration>& aConfigur
   return NS_OK;
 }  
 
-void nsChildView::Scroll(const nsIntPoint& aDelta, const nsIntRect& aSource,
+void nsChildView::Scroll(const nsIntPoint& aDelta,
+                         const nsTArray<nsIntRect>& aDestRects,
                          const nsTArray<Configuration>& aConfigurations)
 {
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
@@ -1729,10 +1730,12 @@ void nsChildView::Scroll(const nsIntPoint& aDelta, const nsIntRect& aSource,
   if (mVisible) {
     viewWasDirty = [mView needsDisplay];
 
-    NSRect rect;
-    GeckoRectToNSRect(aSource, rect);
-    NSSize scrollVector = {aDelta.x, aDelta.y};
-    [mView scrollRect:rect by:scrollVector];
+    for (PRUint32 i = 0; i < aDestRects.Length(); ++i) {
+      NSRect rect;
+      GeckoRectToNSRect(aDestRects[i] - aDelta, rect);
+      NSSize scrollVector = {aDelta.x, aDelta.y};
+      [mView scrollRect:rect by:scrollVector];
+    }
   }
 
   // Don't force invalidation of the child if it's moving by the scroll
