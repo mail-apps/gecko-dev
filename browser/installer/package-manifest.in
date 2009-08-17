@@ -67,6 +67,7 @@
 @BINPATH@/msvcr80.dll
 #else
 @BINPATH@/mozcrt19.dll
+@BINPATH@/mozcpp19.dll
 #endif
 #endif
 
