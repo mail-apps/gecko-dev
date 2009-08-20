@@ -1810,7 +1810,7 @@ main(int argc, char **argv)
     // Shut down the crashreporter service to prevent leaking some strings it holds.
     if (crashReporter) {
         crashReporter->SetEnabled(PR_FALSE);
-        crashReporter = null;
+        crashReporter = nsnull;
     }
 #endif
 
