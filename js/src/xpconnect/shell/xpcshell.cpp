@@ -27,6 +27,7 @@
  *   Pierre Phaneuf <pp@ludusdesign.com>
  *   IBM Corp.
  *   Dan Mosedale <dan.mosedale@oracle.com>
+ *   Serge Gautherie <sgautherie.bz@free.fr>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -103,6 +104,10 @@
 #endif
 
 #include "nsIJSContextStack.h"
+
+#ifdef MOZ_CRASHREPORTER
+#include "nsICrashReporter.h"
+#endif
 
 class XPCShellDirProvider : public nsIDirectoryServiceProvider2
 {
@@ -1625,7 +1630,7 @@ main(int argc, char **argv)
         nsCOMPtr<nsIServiceManager> servMan;
         rv = NS_InitXPCOM2(getter_AddRefs(servMan), appDir, &dirprovider);
         if (NS_FAILED(rv)) {
-            printf("NS_InitXPCOM failed!\n");
+            printf("NS_InitXPCOM2 failed!\n");
             return 1;
         }
         {
@@ -1778,6 +1783,14 @@ main(int argc, char **argv)
         JS_GC(cx);
         JS_DestroyContext(cx);
     } // this scopes the nsCOMPtrs
+
+#ifdef MOZ_CRASHREPORTER
+    // Get the crashreporter service while XPCOM is still active.
+    // This is a special exception: it will remain usable after NS_ShutdownXPCOM().
+    nsCOMPtr<nsICrashReporter> crashReporter =
+        do_GetService("@mozilla.org/toolkit/crash-reporter;1");
+#endif
+
     // no nsCOMPtrs are allowed to be alive when you call NS_ShutdownXPCOM
     rv = NS_ShutdownXPCOM( NULL );
     NS_ASSERTION(NS_SUCCEEDED(rv), "NS_ShutdownXPCOM failed");
@@ -1792,6 +1805,14 @@ main(int argc, char **argv)
     appDir = nsnull;
     appFile = nsnull;
     dirprovider.ClearGREDir();
+
+#ifdef MOZ_CRASHREPORTER
+    // Shut down the crashreporter service to prevent leaking some strings it holds.
+    if (crashReporter) {
+        crashReporter->SetEnabled(PR_FALSE);
+        crashReporter = null;
+    }
+#endif
 
     NS_LogTerm();
 
