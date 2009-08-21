@@ -1499,6 +1499,8 @@ GK_ATOM(onMozRotateGesture, "onMozRotateGesture")
 GK_ATOM(onMozTapGesture, "onMozTapGesture")
 GK_ATOM(onMozPressTapGesture, "onMozPressTapGesture")
 
+// orientation support
+GK_ATOM(onMozOrientation, "onMozOrientation")
 
 //---------------------------------------------------------------------------
 // Special atoms
