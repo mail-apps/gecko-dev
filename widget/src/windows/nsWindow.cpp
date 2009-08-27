@@ -154,6 +154,9 @@
 
 #if defined(WINCE)
 #include "nsWindowCE.h"
+#endif
+
+#if defined(WINCE_WINDOWS_MOBILE)
 #define KILL_PRIORITY_ID 2444
 #endif
 
@@ -3845,16 +3848,16 @@ PRBool nsWindow::ProcessMessage(UINT msg, WPARAM &wParam, LPARAM &lParam,
     }
     break;
 
+#ifdef WINCE_WINDOWS_MOBILE
     case WM_TIMER:
-#ifdef WINCE
       SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_NORMAL);
       KillTimer(mWnd, KILL_PRIORITY_ID);
-#endif
       break;
+#endif
 
     case WM_LBUTTONDOWN:
     {
-#ifdef WINCE
+#ifdef WINCE_WINDOWS_MOBILE
       SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_ABOVE_NORMAL);
       SetTimer(mWnd, KILL_PRIORITY_ID, 2000 /* 2 seconds */, NULL);
 #endif
@@ -3870,7 +3873,7 @@ PRBool nsWindow::ProcessMessage(UINT msg, WPARAM &wParam, LPARAM &lParam,
                                   PR_FALSE, nsMouseEvent::eLeftButton);
       DispatchPendingEvents();
 
-#ifdef WINCE
+#ifdef WINCE_WINDOWS_MOBILE
       SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_NORMAL);
       KillTimer(mWnd, KILL_PRIORITY_ID);
 #endif
