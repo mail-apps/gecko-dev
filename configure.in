@@ -5140,6 +5140,7 @@ then
         PKG_CHECK_MODULES(MOZ_GNOMEVFS, gnome-vfs-2.0 >= $GNOMEVFS_VERSION gnome-vfs-module-2.0 >= $GNOMEVFS_VERSION,[
             MOZ_GNOMEVFS_LIBS=`echo $MOZ_GNOMEVFS_LIBS | sed 's/-llinc\>//'`
             MOZ_ENABLE_GNOMEVFS=1
+            AC_DEFINE(MOZ_ENABLE_GNOMEVFS)
         ],[
             if test "$MOZ_ENABLE_GNOMEVFS" = "force"
             then
