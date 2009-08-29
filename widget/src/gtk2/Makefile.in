@@ -100,6 +100,7 @@ CPPSRCS		= \
 		nsScreenManagerGtk.cpp \
 		nsImageToPixbuf.cpp \
 		nsAccessibilityHelper.cpp \
+		nsAccelerometerUnix.cpp \
 		$(NULL)
 
 ifdef NS_OSSO
