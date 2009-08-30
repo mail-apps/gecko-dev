@@ -54,7 +54,13 @@ function test() {
 
   function setupCleanSlate() {
     gLastOpenDirectory.reset();
-    gPrefService.clearUserPref(kPrefName);
+    try {
+      gPrefService.clearUserPref(kPrefName);
+    } catch(e) {
+      // pref didn't exist originally
+      if (e.result != Components.results.NS_ERROR_UNEXPECTED)
+        throw e;
+    }
   }
 
   setupCleanSlate();
