@@ -63,6 +63,8 @@ _BROWSER_TEST_FILES =  \
 		browser_privatebrowsing_certexceptionsui.js \
 		browser_privatebrowsing_sslsite_transition.js \
 		browser_privatebrowsing_opendir.js \
+		browser_privatebrowsing_geoprompt.js \
+		browser_privatebrowsing_geoprompt_page.html \
 		$(NULL)
 
 libs:: $(_BROWSER_TEST_FILES)
