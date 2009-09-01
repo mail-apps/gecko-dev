@@ -14,7 +14,6 @@ user_pref("extensions.update.enabled", false);
 user_pref("extensions.update.notifyUser", false);
 user_pref("javascript.allow.mailnews", true);
 user_pref("mail.startup.enabledMailCheckOnce", false);
-user_pref("security.enable_java", false);
 user_pref("security.warn_submit_insecure", false);
 user_pref("signed.applets.codebase_principal_support", true);
 user_pref("mailnews.start_page.override_url", "http://test.mozilla.com/bin/install-extensions-1.html");
