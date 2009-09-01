@@ -1794,7 +1794,6 @@ nsCocoaWindow::UnifiedShading(void* aInfo, const float* aIn, float* aOut)
     [super setBackgroundColor:mColor];
 
     mUnifiedToolbarHeight = 0.0f;
-    mSuppressPainting = NO;
 
     // setBottomCornerRounded: is a private API call, so we check to make sure
     // we respond to it just in case.
@@ -1964,14 +1963,16 @@ nsCocoaWindow::UnifiedShading(void* aInfo, const float* aIn, float* aOut)
 
 @implementation ToolbarWindow(Private)
 
-// [self display] seems to be the only way to repaint a window's titlebar.
-// The bad thing about it is that it repaints all the window's subviews as well.
-// So we use a guard to prevent unnecessary redrawing.
 - (void)redrawTitlebar
 {
-  mSuppressPainting = YES;
-  [self display];
-  mSuppressPainting = NO;
+  NSView* borderView = [[self contentView] superview];
+  if (!borderView)
+    return;
+
+  NSRect rect = NSMakeRect(0, [[self contentView] bounds].size.height,
+                           [borderView bounds].size.width, [self titlebarHeight]);
+  // setNeedsDisplayInRect doesn't have any effect here, but displayRect does.
+  [borderView displayRect:rect];
 }
 
 @end

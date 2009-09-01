@@ -196,8 +196,6 @@ PRUint32 nsChildView::sLastInputEventCount = 0;
 
 + (NSEvent*)makeNewCocoaEventWithType:(NSEventType)type fromEvent:(NSEvent*)theEvent;
 
-- (BOOL)isPaintingSuppressed;
-
 - (void)maybeInvalidateShadow;
 - (void)invalidateShadow;
 
