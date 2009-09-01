@@ -1876,11 +1876,6 @@ nsCocoaWindow::UnifiedShading(void* aInfo, const float* aIn, float* aOut)
   return frameRect.size.height - [self contentRectForFrameRect:frameRect].size.height;
 }
 
-- (BOOL)isPaintingSuppressed
-{
-  return mSuppressPainting;
-}
-
 // Always show the toolbar pill button.
 - (BOOL)_hasToolbar
 {
