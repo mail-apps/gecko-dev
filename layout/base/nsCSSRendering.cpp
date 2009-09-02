@@ -1946,32 +1946,6 @@ PaintBackgroundLayer(nsPresContext* aPresContext,
     }
   }
 
-  nsSize imageSize;
-  nsCOMPtr<imgIContainer> image;
-  if (aLayer.mImage.GetType() == eBackgroundImage_Image) {
-    // Lookup the image
-    imgIRequest *req = aLayer.mImage.GetImageData();
-    if (!HaveCompleteBackgroundImage(req))
-      return;
-
-    req->GetImage(getter_AddRefs(image));
-    req = nsnull;
-
-    nsIntSize imageIntSize;
-    image->GetWidth(&imageIntSize.width);
-    image->GetHeight(&imageIntSize.height);
-
-    imageSize.width = nsPresContext::CSSPixelsToAppUnits(imageIntSize.width);
-    imageSize.height = nsPresContext::CSSPixelsToAppUnits(imageIntSize.height);
-  } else if (aLayer.mImage.GetType() == eBackgroundImage_Gradient) {
-    imageSize = bgPositioningArea.Size();
-  } else {
-    return;
-  }
-
-  if (imageSize.width == 0 || imageSize.height == 0)
-    return;
-
   // Compute the anchor point.
   //
   // relative to aBorderArea.TopLeft() (which is where the top-left
@@ -2011,6 +1985,32 @@ PaintBackgroundLayer(nsPresContext* aPresContext,
   } else {
     offset = bgPositioningArea.TopLeft();
   }
+
+  nsSize imageSize;
+  nsCOMPtr<imgIContainer> image;
+  if (aLayer.mImage.GetType() == eBackgroundImage_Image) {
+    // Lookup the image
+    imgIRequest *req = aLayer.mImage.GetImageData();
+    if (!HaveCompleteBackgroundImage(req))
+      return;
+
+    req->GetImage(getter_AddRefs(image));
+    req = nsnull;
+
+    nsIntSize imageIntSize;
+    image->GetWidth(&imageIntSize.width);
+    image->GetHeight(&imageIntSize.height);
+
+    imageSize.width = nsPresContext::CSSPixelsToAppUnits(imageIntSize.width);
+    imageSize.height = nsPresContext::CSSPixelsToAppUnits(imageIntSize.height);
+  } else if (aLayer.mImage.GetType() == eBackgroundImage_Gradient) {
+    imageSize = bgPositioningArea.Size();
+  } else {
+    return;
+  }
+
+  if (imageSize.width == 0 || imageSize.height == 0)
+    return;
      
   // Scale the image as specified for background-size and as required for
   // proper background positioning when background-position is defined with
