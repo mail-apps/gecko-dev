@@ -10081,7 +10081,7 @@ TraceRecorder::enterDeepBailCall()
 
     // Tell nanojit not to discard or defer stack writes before this call.
     LIns* guardRec = createGuardRecord(exit);
-    lir->insGuard(LIR_xbarrier, guardRec, guardRec);
+    lir->insGuard(LIR_xbarrier, NULL, guardRec);
 }
 
 JS_REQUIRES_STACK void
