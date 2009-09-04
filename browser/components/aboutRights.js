@@ -58,8 +58,12 @@ AboutRights.prototype = {
     var secMan = Cc["@mozilla.org/scriptsecuritymanager;1"].
                  getService(Ci.nsIScriptSecurityManager);
 
-    var channel = ios.newChannel("chrome://browser/content/aboutRights.xhtml",
-                                 null, null);
+#ifdef OFFICIAL_BUILD
+    var sourceURL = "chrome://global/content/aboutRights.xhtml";
+#else
+    var sourceURL = "chrome://global/content/aboutRights-unbranded.xhtml";
+#endif
+    var channel = ios.newChannel(sourceURL, null, null);
     var principal = secMan.getCodebasePrincipal(aURI);
 
     channel.originalURI = aURI;
