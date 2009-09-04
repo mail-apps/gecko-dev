@@ -88,7 +88,13 @@ function test() {
                "chrome,titlebar", window);
   }
 
-  gPrefService.clearUserPref("general.open_location.last_url");
+  try {
+    gPrefService.clearUserPref("general.open_location.last_url");
+  } catch(e) {
+    // pref didn't exist originally
+    if (e.result != Components.results.NS_ERROR_UNEXPECTED)
+      throw e;
+  }
 
   openLocation("http://example.com/", "", function() {
     openLocation("http://example.org/", "http://example.com/", function() {

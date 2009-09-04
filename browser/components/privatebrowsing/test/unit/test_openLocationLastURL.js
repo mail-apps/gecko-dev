@@ -47,7 +47,13 @@ function run_test_on_service()
            getService(Ci.nsIPrivateBrowsingService);
   let pref = Cc["@mozilla.org/preferences-service;1"].
              getService(Ci.nsIPrefBranch);
-  gOpenLocationLastURL.reset();
+  try {
+    gOpenLocationLastURL.reset();
+  } catch(e) {
+    // pref didn't exist originally
+    if (e.result != Components.results.NS_ERROR_UNEXPECTED)
+      throw e;
+  }
 
   do_check_eq(typeof gOpenLocationLastURL, "object");
   do_check_eq(gOpenLocationLastURL.value, "");
