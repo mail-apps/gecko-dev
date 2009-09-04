@@ -6347,6 +6347,7 @@ HistoryMenu.populateUndoSubmenu = function PHM_populateUndoSubmenu() {
   var strings = gNavigatorBundle;
   undoPopup.appendChild(document.createElement("menuseparator"));
   m = undoPopup.appendChild(document.createElement("menuitem"));
+  m.id = "menu_restoreAllTabs";
   m.setAttribute("label", strings.getString("menuOpenAllInTabs.label"));
   m.setAttribute("accesskey", strings.getString("menuOpenAllInTabs.accesskey"));
   m.addEventListener("command", function() {
@@ -6417,6 +6418,7 @@ HistoryMenu.populateUndoWindowSubmenu = function PHM_populateUndoWindowSubmenu()
   // "Open All in Windows"
   undoPopup.appendChild(document.createElement("menuseparator"));
   let m = undoPopup.appendChild(document.createElement("menuitem"));
+  m.id = "menu_restoreAllWindows";
   m.setAttribute("label", gNavigatorBundle.getString("menuRestoreAllWindows.label"));
   m.setAttribute("accesskey", gNavigatorBundle.getString("menuRestoreAllWindows.accesskey"));
   m.setAttribute("oncommand",
