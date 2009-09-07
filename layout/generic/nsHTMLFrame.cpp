@@ -315,13 +315,13 @@ public:
   }
 
   virtual void Paint(nsDisplayListBuilder* aBuilder,
-                     nsIRenderingContext* aCtx, const nsRect& aDirtyRect)
+                     nsIRenderingContext* aCtx)
   {
     CanvasFrame* frame = static_cast<CanvasFrame*>(mFrame);
     nsPoint offset = aBuilder->ToReferenceFrame(mFrame);
     nsRect bgClipRect = frame->CanvasArea() + offset;
     nsCSSRendering::PaintBackground(mFrame->PresContext(), *aCtx, mFrame,
-                                    aDirtyRect,
+                                    mVisibleRect,
                                     nsRect(offset, mFrame->GetSize()),
                                     0, &bgClipRect);
   }
@@ -349,7 +349,7 @@ public:
   }
 
   virtual void Paint(nsDisplayListBuilder* aBuilder,
-                     nsIRenderingContext* aCtx, const nsRect& aDirtyRect)
+                     nsIRenderingContext* aCtx)
   {
     CanvasFrame* frame = static_cast<CanvasFrame*>(mFrame);
     frame->PaintFocus(*aCtx, aBuilder->ToReferenceFrame(mFrame));

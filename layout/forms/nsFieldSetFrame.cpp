@@ -188,8 +188,8 @@ public:
 
   virtual nsIFrame* HitTest(nsDisplayListBuilder* aBuilder, nsPoint aPt,
                             HitTestState* aState);
-  virtual void Paint(nsDisplayListBuilder* aBuilder, nsIRenderingContext* aCtx,
-     const nsRect& aDirtyRect);
+  virtual void Paint(nsDisplayListBuilder* aBuilder,
+                     nsIRenderingContext* aCtx);
   NS_DISPLAY_DECL_NAME("FieldSetBorderBackground")
 };
 
@@ -204,10 +204,11 @@ nsIFrame* nsDisplayFieldSetBorderBackground::HitTest(nsDisplayListBuilder* aBuil
 
 void
 nsDisplayFieldSetBorderBackground::Paint(nsDisplayListBuilder* aBuilder,
-     nsIRenderingContext* aCtx, const nsRect& aDirtyRect)
+                                         nsIRenderingContext* aCtx)
 {
   static_cast<nsFieldSetFrame*>(mFrame)->
-    PaintBorderBackground(*aCtx, aBuilder->ToReferenceFrame(mFrame), aDirtyRect);
+    PaintBorderBackground(*aCtx, aBuilder->ToReferenceFrame(mFrame),
+                          mVisibleRect);
 }
 
 NS_IMETHODIMP

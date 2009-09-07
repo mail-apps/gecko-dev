@@ -394,18 +394,18 @@ public:
 
   virtual nsIFrame* HitTest(nsDisplayListBuilder* aBuilder, nsPoint aPt,
                             HitTestState* aState) { return mFrame; }
-  virtual void Paint(nsDisplayListBuilder* aBuilder, nsIRenderingContext* aCtx,
-     const nsRect& aDirtyRect);
+  virtual void Paint(nsDisplayListBuilder* aBuilder,
+                     nsIRenderingContext* aCtx);
   virtual nsRect GetBounds(nsDisplayListBuilder* aBuilder);
 
   NS_DISPLAY_DECL_NAME("TableCellBackground")
 };
 
 void nsDisplayTableCellBackground::Paint(nsDisplayListBuilder* aBuilder,
-     nsIRenderingContext* aCtx, const nsRect& aDirtyRect)
+                                         nsIRenderingContext* aCtx)
 {
   static_cast<nsTableCellFrame*>(mFrame)->
-    PaintBackground(*aCtx, aDirtyRect, aBuilder->ToReferenceFrame(mFrame));
+    PaintBackground(*aCtx, mVisibleRect, aBuilder->ToReferenceFrame(mFrame));
 }
 
 nsRect
