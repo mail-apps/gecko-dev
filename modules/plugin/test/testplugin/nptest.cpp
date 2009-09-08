@@ -62,7 +62,6 @@ typedef bool (* ScriptableFunction)
 
 static bool setUndefinedValueTest(NPObject* npobj, const NPVariant* args, uint32_t argCount, NPVariant* result);
 static bool identifierToStringTest(NPObject* npobj, const NPVariant* args, uint32_t argCount, NPVariant* result);
-static bool timerTest(NPObject* npobj, const NPVariant* args, uint32_t argCount, NPVariant* result);
 static bool queryPrivateModeState(NPObject* npobj, const NPVariant* args, uint32_t argCount, NPVariant* result);
 static bool lastReportedPrivateModeState(NPObject* npobj, const NPVariant* args, uint32_t argCount, NPVariant* result);
 static bool hasWidget(NPObject* npobj, const NPVariant* args, uint32_t argCount, NPVariant* result);
@@ -72,14 +71,12 @@ static bool getClipRegionRectEdge(NPObject* npobj, const NPVariant* args, uint32
 static bool startWatchingInstanceCount(NPObject* npobj, const NPVariant* args, uint32_t argCount, NPVariant* result);
 static bool getInstanceCount(NPObject* npobj, const NPVariant* args, uint32_t argCount, NPVariant* result);
 static bool stopWatchingInstanceCount(NPObject* npobj, const NPVariant* args, uint32_t argCount, NPVariant* result);
-static bool unscheduleAllTimers(NPObject* npobj, const NPVariant* args, uint32_t argCount, NPVariant* result);
 static bool getLastMouseX(NPObject* npobj, const NPVariant* args, uint32_t argCount, NPVariant* result);
 static bool getLastMouseY(NPObject* npobj, const NPVariant* args, uint32_t argCount, NPVariant* result);
 
 static const NPUTF8* sPluginMethodIdentifierNames[] = {
   "setUndefinedValueTest",
   "identifierToStringTest",
-  "timerTest",
   "queryPrivateModeState",
   "lastReportedPrivateModeState",
   "hasWidget",
@@ -89,7 +86,6 @@ static const NPUTF8* sPluginMethodIdentifierNames[] = {
   "startWatchingInstanceCount",
   "getInstanceCount",
   "stopWatchingInstanceCount",
-  "unscheduleAllTimers",
   "getLastMouseX",
   "getLastMouseY",
 };
@@ -97,7 +93,6 @@ static NPIdentifier sPluginMethodIdentifiers[ARRAY_LENGTH(sPluginMethodIdentifie
 static const ScriptableFunction sPluginMethodFunctions[ARRAY_LENGTH(sPluginMethodIdentifierNames)] = {
   setUndefinedValueTest,
   identifierToStringTest,
-  timerTest,
   queryPrivateModeState,
   lastReportedPrivateModeState,
   hasWidget,
@@ -107,7 +102,6 @@ static const ScriptableFunction sPluginMethodFunctions[ARRAY_LENGTH(sPluginMetho
   startWatchingInstanceCount,
   getInstanceCount,
   stopWatchingInstanceCount,
-  unscheduleAllTimers,
   getLastMouseX,
   getLastMouseY,
 };
@@ -564,18 +558,6 @@ NPN_MemFree(void* ptr)
   return sBrowserFuncs->memfree(ptr);
 }
 
-uint32_t
-NPN_ScheduleTimer(NPP instance, uint32_t interval, NPBool repeat, void (*timerFunc)(NPP npp, uint32_t timerID))
-{
-  return sBrowserFuncs->scheduletimer(instance, interval, repeat, timerFunc);
-}
-
-void
-NPN_UnscheduleTimer(NPP instance, uint32_t timerID)
-{
-  return sBrowserFuncs->unscheduletimer(instance, timerID);
-}
-
 void
 NPN_ReleaseVariantValue(NPVariant *variant)
 {
@@ -695,49 +677,6 @@ identifierToStringTest(NPObject* npobj, const NPVariant* args, uint32_t argCount
   if (!utf8String)
     return false;
   STRINGZ_TO_NPVARIANT(utf8String, *result);
-  return true;
-}
-
-static void timerCallback(NPP npp, uint32_t timerID)
-{
-  InstanceData* id = static_cast<InstanceData*>(npp->pdata);
-
-  NPObject* windowObject;
-  NPN_GetValue(npp, NPNVWindowNPObject, &windowObject);
-  if (!windowObject)
-    return;
-
-  NPVariant rval;
-  if (timerID == id->timerID1)
-    NPN_Invoke(npp, windowObject, NPN_GetStringIdentifier("shortTimerFired"), NULL, 0, &rval);
-  else if (timerID == id->timerID2)
-    NPN_Invoke(npp, windowObject, NPN_GetStringIdentifier("longTimerFired"), NULL, 0, &rval);
-
-  NPN_ReleaseObject(windowObject);
-}
-
-static bool
-timerTest(NPObject* npobj, const NPVariant* args, uint32_t argCount, NPVariant* result)
-{
-  NPP npp = static_cast<TestNPObject*>(npobj)->npp;
-  InstanceData* id = static_cast<InstanceData*>(npp->pdata);
-
-  NPObject* windowObject;
-  NPN_GetValue(npp, NPNVWindowNPObject, &windowObject);
-  if (!windowObject)
-    return false;
-
-  id->timerID1 = NPN_ScheduleTimer(npp, 50, false, timerCallback);
-  id->timerID2 = NPN_ScheduleTimer(npp, 150, true, timerCallback);
-
-  NPVariant rval;
-  NPVariant uniqueIDArgs[1];
-  BOOLEAN_TO_NPVARIANT((id->timerID1 != id->timerID2), uniqueIDArgs[0]);
-  NPN_Invoke(npp, windowObject, NPN_GetStringIdentifier("uniqueID"), uniqueIDArgs, 1, &rval);
-  NPN_ReleaseVariantValue(&uniqueIDArgs[0]);
-
-  NPN_ReleaseObject(windowObject);
-
   return true;
 }
 
@@ -867,20 +806,6 @@ stopWatchingInstanceCount(NPObject* npobj, const NPVariant* args, uint32_t argCo
     return false;
 
   sWatchingInstanceCount = false;
-  return true;
-}
-
-static bool
-unscheduleAllTimers(NPObject* npobj, const NPVariant* args, uint32_t argCount, NPVariant* result)
-{
-  NPP npp = static_cast<TestNPObject*>(npobj)->npp;
-  InstanceData* id = static_cast<InstanceData*>(npp->pdata);
-
-  NPN_UnscheduleTimer(npp, id->timerID1);
-  id->timerID1 = 0;
-  NPN_UnscheduleTimer(npp, id->timerID2);
-  id->timerID2 = 0;
-
   return true;
 }
 

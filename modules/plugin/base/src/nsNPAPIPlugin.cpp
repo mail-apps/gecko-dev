@@ -253,8 +253,6 @@ nsNPAPIPlugin::CheckClassInitialized(void)
   CALLBACKS.getvalueforurl = ((NPN_GetValueForURLPtr)_getvalueforurl);
   CALLBACKS.setvalueforurl = ((NPN_SetValueForURLPtr)_setvalueforurl);
   CALLBACKS.getauthenticationinfo = ((NPN_GetAuthenticationInfoPtr)_getauthenticationinfo);
-  CALLBACKS.scheduletimer = ((NPN_ScheduleTimerPtr)_scheduletimer);
-  CALLBACKS.unscheduletimer = ((NPN_UnscheduleTimerPtr)_unscheduletimer);
 
   if (!sPluginThreadAsyncCallLock)
     sPluginThreadAsyncCallLock = nsAutoLock::NewLock("sPluginThreadAsyncCallLock");
