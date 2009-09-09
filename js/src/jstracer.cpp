@@ -5639,6 +5639,9 @@ ExecuteTree(JSContext* cx, Fragment* f, uintN& inlineCallCount,
         rec = u.func(state, NULL);
 #endif
     }
+
+    JS_ASSERT(*(uint64*)&global[globalFrameSize] == 0xdeadbeefdeadbeefLL);
+
     VMSideExit* lr = (VMSideExit*)rec->exit;
 
     AUDIT(traceTriggered);
@@ -5942,9 +5945,6 @@ LeaveTree(InterpState& state, VMSideExit* lr)
     double* global = (double*)(&state + 1);
     FlushNativeGlobalFrame(cx, global,
                            ngslots, gslots, globalTypeMap);
-    JS_ASSERT(*(uint64*)&global[STOBJ_NSLOTS(JS_GetGlobalForObject(cx, cx->fp->scopeChain))] ==
-              0xdeadbeefdeadbeefLL);
-
 #ifdef DEBUG
     /* Verify that our state restoration worked. */
     for (JSStackFrame* fp = cx->fp; fp; fp = fp->down) {
