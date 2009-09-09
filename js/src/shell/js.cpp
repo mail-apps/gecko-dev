@@ -4810,6 +4810,8 @@ main(int argc, char **argv, char **envp)
 
     JS_EndRequest(cx);
 
+    JS_CommenceRuntimeShutDown(rt);
+
     WITH_LOCKED_CONTEXT_LIST( 
         JS_DestroyContext(cx)
     );
