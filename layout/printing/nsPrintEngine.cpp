@@ -325,7 +325,6 @@ nsresult nsPrintEngine::Initialize(nsIDocumentViewerPrint* aDocViewerPrint,
   NS_ENSURE_ARG_POINTER(aContainer);
   NS_ENSURE_ARG_POINTER(aDocument);
   NS_ENSURE_ARG_POINTER(aDevContext);
-  NS_ENSURE_ARG_POINTER(aParentWidget);
 
   mDocViewerPrint = aDocViewerPrint;
   mContainer      = aContainer;      // weak reference
