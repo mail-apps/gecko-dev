@@ -610,6 +610,9 @@ gfxWindowsPlatform::FindFontForCharProc(nsStringHashKey::KeyType aKey,
 {
     FontSearch *data = (FontSearch*)userArg;
 
+#ifdef MOZ_FT2_FONTS
+    aFontFamily->FindFontForChar(data);
+#else
     const PRUint32 ch = data->mCh;
 
     nsRefPtr<FontEntry> fe = aFontFamily->FindFontEntry(*data->mFontToMatch->GetStyle());
@@ -623,7 +626,6 @@ gfxWindowsPlatform::FindFontForCharProc(nsStringHashKey::KeyType aKey,
     // a better entry is found
     PRInt32 rank = 1;
 
-#ifndef MOZ_FT2_FONTS
     // skip over non-unicode and bitmap fonts and fonts that don't have
     // the code point we're looking for
     if (fe->IsCrappyFont() || !fe->mCharacterMap.test(ch))
@@ -643,7 +645,7 @@ gfxWindowsPlatform::FindFontForCharProc(nsStringHashKey::KeyType aKey,
         rank += 3;
     if (fe->mWindowsPitch == mfe->mWindowsPitch)
         rank += 3;
-#endif
+
     /* italic */
     const PRBool italic = (data->mFontToMatch->GetStyle()->style != FONT_STYLE_NORMAL);
     if (fe->mItalic != italic)
@@ -662,6 +664,7 @@ gfxWindowsPlatform::FindFontForCharProc(nsStringHashKey::KeyType aKey,
         data->mBestMatch = fe;
         data->mMatchRank = rank;
     }
+#endif
 
     return PL_DHASH_NEXT;
 }
@@ -682,10 +685,10 @@ gfxWindowsPlatform::FindFontForChar(PRUint32 aCh, gfxFont *aFont)
     if (data.mBestMatch) {
 #ifdef MOZ_FT2_FONTS
         nsRefPtr<gfxFT2Font> font =
-            gfxFT2Font::GetOrMakeFont(data.mBestMatch->mName, 
+            gfxFT2Font::GetOrMakeFont(static_cast<FontEntry*>(data.mBestMatch.get()), 
                                       aFont->GetStyle()); 
-            gfxFont* ret = font.forget().get();
-            return already_AddRefed<gfxFont>(ret);
+        gfxFont* ret = font.forget().get();
+        return already_AddRefed<gfxFont>(ret);
 #else
         nsRefPtr<gfxWindowsFont> font =
             gfxWindowsFont::GetOrMakeFont(static_cast<FontEntry*>(data.mBestMatch.get()),
