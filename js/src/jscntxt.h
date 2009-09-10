@@ -1092,10 +1092,6 @@ struct JSContext {
      */
     InterpState         *interpState;
     VMSideExit          *bailExit;
-
-    /* Used when calling natives from trace to root the vp vector. */
-    uintN               nativeVpLen;
-    jsval               *nativeVp;
 #endif
 
 #ifdef JS_THREADSAFE

@@ -4792,7 +4792,7 @@ SynthesizeFrame(JSContext* cx, const FrameInfo& fi, JSObject* callee)
 }
 
 static void
-SynthesizeSlowNativeFrame(JSContext *cx, VMSideExit *exit)
+SynthesizeSlowNativeFrame(InterpState& state, JSContext *cx, VMSideExit *exit)
 {
     VOUCH_DOES_NOT_REQUIRE_STACK();
 
@@ -4813,9 +4813,9 @@ SynthesizeSlowNativeFrame(JSContext *cx, VMSideExit *exit)
     fp->varobj = cx->fp->varobj;
     fp->script = NULL;
     // fp->thisp is really a jsval, so reinterpret_cast here, not JSVAL_TO_OBJECT.
-    fp->thisp = (JSObject *) cx->nativeVp[1];
-    fp->argc = cx->nativeVpLen - 2;
-    fp->argv = cx->nativeVp + 2;
+    fp->thisp = (JSObject *) state.nativeVp[1];
+    fp->argc = state.nativeVpLen - 2;
+    fp->argv = state.nativeVp + 2;
     fp->fun = GET_FUNCTION_PRIVATE(cx, JSVAL_TO_OBJECT(fp->argv[-2]));
     fp->rval = JSVAL_VOID;
     fp->down = cx->fp;
@@ -5570,6 +5570,7 @@ ExecuteTree(JSContext* cx, Fragment* f, uintN& inlineCallCount,
     state->lastTreeExitGuard = NULL;
     state->lastTreeCallGuard = NULL;
     state->rpAtLastTreeCall = NULL;
+    state->nativeVp = NULL;
     state->builtinStatus = 0;
 
     /* Set up the native global frame. */
@@ -5641,6 +5642,7 @@ ExecuteTree(JSContext* cx, Fragment* f, uintN& inlineCallCount,
     }
 
     JS_ASSERT(*(uint64*)&global[globalFrameSize] == 0xdeadbeefdeadbeefLL);
+    JS_ASSERT(!state->nativeVp);
 
     VMSideExit* lr = (VMSideExit*)rec->exit;
 
@@ -5939,7 +5941,7 @@ LeaveTree(InterpState& state, VMSideExit* lr)
     JS_ASSERT(unsigned(slots) == innermost->numStackSlots);
 
     if (innermost->nativeCalleeWord)
-        SynthesizeSlowNativeFrame(cx, innermost);
+        SynthesizeSlowNativeFrame(state, cx, innermost);
 
     /* Write back interned globals. */
     double* global = (double*)(&state + 1);
@@ -9300,8 +9302,8 @@ TraceRecorder::emitNativePropertyOp(JSScope* scope, JSScopeProperty* sprop, LIns
     // because the getter or setter could end up resizing the object's dslots.
     // Instead, use a word of stack and root it in nativeVp.
     LIns* vp_ins = lir->insAlloc(sizeof(jsval));
-    lir->insStorei(vp_ins, cx_ins, offsetof(JSContext, nativeVp));
-    lir->insStorei(INS_CONST(1), cx_ins, offsetof(JSContext, nativeVpLen));
+    lir->insStorei(vp_ins, lirbuf->state, offsetof(InterpState, nativeVp));
+    lir->insStorei(INS_CONST(1), lirbuf->state, offsetof(InterpState, nativeVpLen));
     if (setflag)
         lir->insStorei(boxed_ins, vp_ins, 0);
 
@@ -9321,7 +9323,7 @@ TraceRecorder::emitNativePropertyOp(JSScope* scope, JSScopeProperty* sprop, LIns
     LIns* ok_ins = lir->insCall(ci, args);
 
     // Cleanup. Immediately clear nativeVp before we might deep bail.
-    lir->insStorei(INS_NULL(), cx_ins, offsetof(JSContext, nativeVp));
+    lir->insStorei(INS_NULL(), lirbuf->state, offsetof(InterpState, nativeVp));
     leaveDeepBailCall();
 
     // Guard that the call succeeded and builtinStatus is still 0.
@@ -9368,7 +9370,7 @@ TraceRecorder::emitNativeCall(JSSpecializedNative* sn, uintN argc, LIns* args[],
 
     // Immediately unroot the vp as soon we return since we might deep bail next.
     if (rooted)
-        lir->insStorei(INS_NULL(), cx_ins, offsetof(JSContext, nativeVp));
+        lir->insStorei(INS_NULL(), lirbuf->state, offsetof(InterpState, nativeVp));
 
     rval_ins = res_ins;
     switch (JSTN_ERRTYPE(sn)) {
@@ -9576,9 +9578,7 @@ TraceRecorder::callNative(uintN argc, JSOp mode)
     uintN vplen = 2 + JS_MAX(argc, FUN_MINARGS(fun)) + fun->u.n.extra;
     if (!(fun->flags & JSFUN_FAST_NATIVE))
         vplen++; // slow native return value slot
-    lir->insStorei(INS_CONST(vplen), cx_ins, offsetof(JSContext, nativeVpLen));
     LIns* invokevp_ins = lir->insAlloc(vplen * sizeof(jsval));
-    lir->insStorei(invokevp_ins, cx_ins, offsetof(JSContext, nativeVp));
 
     // vp[0] is the callee.
     lir->insStorei(INS_CONSTWORD(OBJECT_TO_JSVAL(funobj)), invokevp_ins, 0);
@@ -9710,6 +9710,14 @@ TraceRecorder::callNative(uintN argc, JSOp mode)
                                                         : JSTN_UNBOX_AFTER);
     generatedSpecializedNative.prefix = NULL;
     generatedSpecializedNative.argtypes = NULL;
+
+    // We only have to ensure that the values we wrote into the stack buffer
+    // are rooted if we actually make it to the call, so only set nativeVp and
+    // nativeVpLen immediately before emitting the call code. This way we avoid
+    // leaving trace with a bogus nativeVp because we fall off trace while unboxing
+    // values into the stack buffer.
+    lir->insStorei(INS_CONST(vplen), lirbuf->state, offsetof(InterpState, nativeVpLen));
+    lir->insStorei(invokevp_ins, lirbuf->state, offsetof(InterpState, nativeVp));
 
     // argc is the original argc here. It is used to calculate where to place
     // the return value.
