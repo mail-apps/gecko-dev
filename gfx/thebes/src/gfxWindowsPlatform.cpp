@@ -617,7 +617,11 @@ gfxWindowsPlatform::FindFontForCharProc(nsStringHashKey::KeyType aKey,
     if (!fe)
         return PL_DHASH_NEXT;
 
-    PRInt32 rank = 0;
+    // initialize rank to 1 so that any match is better than the initial
+    // value of data->mMatchRank (zero); therefore the first font that
+    // passes the mCharacterMap.test() will become the mBestMatch until
+    // a better entry is found
+    PRInt32 rank = 1;
 
 #ifndef MOZ_FT2_FONTS
     // skip over non-unicode and bitmap fonts and fonts that don't have
