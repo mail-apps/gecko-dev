@@ -1079,8 +1079,10 @@ nsBlockFrame::Reflow(nsPresContext*           aPresContext,
     nscoord lineTop = havePosition ? position.mTop
                                    : aReflowState.mComputedBorderPadding.top;
     ReflowBullet(state, metrics, lineTop);
+    NS_ASSERTION(!BulletIsEmpty() || metrics.height == 0,
+                 "empty bullet took up space");
 
-    if (havePosition) {
+    if (havePosition && !BulletIsEmpty()) {
       // We have some lines to align the bullet with.  
 
       // Doing the alignment using the baseline will also cater for
@@ -2253,30 +2255,34 @@ nsBlockFrame::ReflowDirtyLines(nsBlockReflowState& aState)
     nsHTMLReflowMetrics metrics;
     ReflowBullet(aState, metrics,
                  aState.mReflowState.mComputedBorderPadding.top);
+    NS_ASSERTION(!BulletIsEmpty() || metrics.height == 0,
+                 "empty bullet took up space");
 
-    // There are no lines so we have to fake up some y motion so that
-    // we end up with *some* height.
+    if (!BulletIsEmpty()) {
+      // There are no lines so we have to fake up some y motion so that
+      // we end up with *some* height.
 
-    if (metrics.ascent == nsHTMLReflowMetrics::ASK_FOR_BASELINE &&
-        !nsLayoutUtils::GetFirstLineBaseline(mBullet, &metrics.ascent)) {
-      metrics.ascent = metrics.height;
-    }
+      if (metrics.ascent == nsHTMLReflowMetrics::ASK_FOR_BASELINE &&
+          !nsLayoutUtils::GetFirstLineBaseline(mBullet, &metrics.ascent)) {
+        metrics.ascent = metrics.height;
+      }
 
-    nsIRenderingContext *rc = aState.mReflowState.rendContext;
-    nsLayoutUtils::SetFontFromStyle(rc, GetStyleContext());
-    nsCOMPtr<nsIFontMetrics> fm;
-    rc->GetFontMetrics(*getter_AddRefs(fm));
+      nsIRenderingContext *rc = aState.mReflowState.rendContext;
+      nsLayoutUtils::SetFontFromStyle(rc, GetStyleContext());
+      nsCOMPtr<nsIFontMetrics> fm;
+      rc->GetFontMetrics(*getter_AddRefs(fm));
 
-    nscoord minAscent =
-      nsLayoutUtils::GetCenteredFontBaseline(fm, aState.mMinLineHeight);
-    nscoord minDescent = aState.mMinLineHeight - minAscent;
+      nscoord minAscent =
+        nsLayoutUtils::GetCenteredFontBaseline(fm, aState.mMinLineHeight);
+      nscoord minDescent = aState.mMinLineHeight - minAscent;
 
-    aState.mY += PR_MAX(minAscent, metrics.ascent) +
-                 PR_MAX(minDescent, metrics.height - metrics.ascent);
+      aState.mY += PR_MAX(minAscent, metrics.ascent) +
+                   PR_MAX(minDescent, metrics.height - metrics.ascent);
 
-    nscoord offset = minAscent - metrics.ascent;
-    if (offset > 0) {
-      mBullet->SetRect(mBullet->GetRect() + nsPoint(0, offset));
+      nscoord offset = minAscent - metrics.ascent;
+      if (offset > 0) {
+        mBullet->SetRect(mBullet->GetRect() + nsPoint(0, offset));
+      }
     }
   }
 
@@ -2792,7 +2798,7 @@ nsBlockFrame::IsSelfEmpty()
     return PR_FALSE;
   }
 
-  if (HaveOutsideBullet()) {
+  if (HaveOutsideBullet() && !BulletIsEmpty()) {
     return PR_FALSE;
   }
 
@@ -4110,6 +4116,8 @@ nsBlockFrame::PlaceLine(nsBlockReflowState& aState,
         aLine == mLines.begin().next()))) {
     nsHTMLReflowMetrics metrics;
     ReflowBullet(aState, metrics, aState.mY);
+    NS_ASSERTION(!BulletIsEmpty() || metrics.height == 0,
+                 "empty bullet took up space");
     aLineLayout.AddBulletFrame(mBullet, metrics);
     addedBullet = PR_TRUE;
   }
@@ -6346,7 +6354,8 @@ NS_IMETHODIMP nsBlockFrame::GetAccessible(nsIAccessible** aAccessible)
 }
 #endif
 
-void nsBlockFrame::ClearLineCursor() {
+void nsBlockFrame::ClearLineCursor()
+{
   if (!(GetStateBits() & NS_BLOCK_HAS_LINE_CURSOR)) {
     return;
   }
@@ -6355,7 +6364,8 @@ void nsBlockFrame::ClearLineCursor() {
   RemoveStateBits(NS_BLOCK_HAS_LINE_CURSOR);
 }
 
-void nsBlockFrame::SetupLineCursor() {
+void nsBlockFrame::SetupLineCursor()
+{
   if (GetStateBits() & NS_BLOCK_HAS_LINE_CURSOR
       || mLines.empty()) {
     return;
@@ -6366,7 +6376,8 @@ void nsBlockFrame::SetupLineCursor() {
   AddStateBits(NS_BLOCK_HAS_LINE_CURSOR);
 }
 
-nsLineBox* nsBlockFrame::GetFirstLineContaining(nscoord y) {
+nsLineBox* nsBlockFrame::GetFirstLineContaining(nscoord y)
+{
   if (!(GetStateBits() & NS_BLOCK_HAS_LINE_CURSOR)) {
     return nsnull;
   }
@@ -6548,6 +6559,17 @@ nsBlockFrame::SetInitialChildList(nsIAtom*        aListName,
   }
 
   return NS_OK;
+}
+
+PRBool
+nsBlockFrame::BulletIsEmpty() const
+{
+  NS_ASSERTION(GetStyleDisplay()->mDisplay == NS_STYLE_DISPLAY_LIST_ITEM &&
+               HaveOutsideBullet(),
+               "should only care when we have an outside bullet");
+  const nsStyleList* list = GetStyleList();
+  return list->mListStyleType == NS_STYLE_LIST_STYLE_NONE &&
+         !list->mListStyleImage;
 }
 
 // static
