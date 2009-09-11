@@ -470,6 +470,8 @@ enum nsDOMClassInfoID {
   eDOMClassInfo_CanvasRenderingContextGLWeb20_id,
 #endif
 
+  eDOMClassInfo_ScrollAreaEvent_id,
+
   // This one better be the last one in this list
   eDOMClassInfoIDCount
 };

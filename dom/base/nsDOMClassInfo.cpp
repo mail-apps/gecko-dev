@@ -234,6 +234,7 @@
 #include "nsIDOMMessageEvent.h"
 #include "nsPaintRequest.h"
 #include "nsIDOMNotifyPaintEvent.h"
+#include "nsIDOMScrollAreaEvent.h"
 #include "nsIDOMNSDocumentStyle.h"
 #include "nsIDOMDocumentRange.h"
 #include "nsIDOMDocumentTraversal.h"
@@ -1327,6 +1328,9 @@ static nsDOMClassInfoData sClassInfoData[] = {
   NS_DEFINE_CLASSINFO_DATA(CanvasRenderingContextGLWeb20, nsDOMGenericSH,
                            DOM_DEFAULT_SCRIPTABLE_FLAGS)
 #endif
+
+  NS_DEFINE_CLASSINFO_DATA(ScrollAreaEvent, nsDOMGenericSH,
+                           DOM_DEFAULT_SCRIPTABLE_FLAGS)
 };
 
 // Objects that shuld be constructable through |new Name();|
@@ -3646,6 +3650,11 @@ nsDOMClassInfo::Init()
     DOM_CLASSINFO_MAP_ENTRY(nsICanvasRenderingContextGL)
   DOM_CLASSINFO_MAP_END
 #endif
+
+  DOM_CLASSINFO_MAP_BEGIN(ScrollAreaEvent, nsIDOMScrollAreaEvent)
+    DOM_CLASSINFO_MAP_ENTRY(nsIDOMScrollAreaEvent)
+    DOM_CLASSINFO_UI_EVENT_MAP_ENTRIES
+  DOM_CLASSINFO_MAP_END
 
 #ifdef NS_DEBUG
   {
