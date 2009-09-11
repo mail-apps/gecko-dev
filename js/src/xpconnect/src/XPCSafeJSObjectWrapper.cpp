@@ -527,13 +527,12 @@ static inline JSBool
 CallWithoutStatics(JSContext *cx, JSObject *obj, jsval fval, uintN argc,
                    jsval *argv, jsval *rval)
 {
-  JSRegExpStatics statics;
-  JSTempValueRooter tvr;
-  js_SaveRegExpStatics(cx, &statics, &tvr);
-  JS_ClearRegExpStatics(cx);
-  JSBool ok = ::JS_CallFunctionValue(cx, obj, fval, argc, argv, rval);
-  js_RestoreRegExpStatics(cx, &statics, &tvr);
-  return ok;
+    JSRegExpStatics statics;
+    JSTempValueRooter tvr;
+    js_SaveAndClearRegExpStatics(cx, &statics, &tvr);
+    JSBool ok = ::JS_CallFunctionValue(cx, obj, fval, argc, argv, rval);
+    js_RestoreRegExpStatics(cx, &statics, &tvr);
+    return ok;
 }
 
 // Call wrapper to help with wrapping calls to functions or callable
