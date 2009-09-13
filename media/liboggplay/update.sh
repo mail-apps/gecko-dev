@@ -62,3 +62,4 @@ patch -p3 < bug487519.patch
 patch -p3 < oggplay_os2.patch
 patch -p3 < bug498815.patch
 patch -p3 < bug498824.patch
+patch -p3 < bug500311.patch

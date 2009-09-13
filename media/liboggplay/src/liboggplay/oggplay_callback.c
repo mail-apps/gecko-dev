@@ -59,6 +59,7 @@ oggplay_init_theora(void *user_data) {
   decoder->y_width = 0;
   decoder->convert_to_rgb = 0;
   decoder->decoder.decoded_type = OGGPLAY_YUV_VIDEO;
+  decoder->decoder.player->active_tracks++;
 }
 
 void
@@ -362,6 +363,7 @@ oggplay_init_audio (void * user_data) {
                                       (void *)decoder);
 
   decoder->decoder.decoded_type = OGGPLAY_FLOATS_AUDIO;
+  decoder->decoder.player->active_tracks++;
 }
 
 void
@@ -562,7 +564,7 @@ oggplay_initialise_decoder(OggPlay *me, int content_type, int serialno) {
   decoder->content_type = content_type;
   decoder->content_type_name =
           oggz_stream_get_content_type (me->oggz, serialno);
-  decoder->active = 0;
+  decoder->active = 1;
   decoder->final_granulepos = -1;
   decoder->player = me;
   decoder->decoded_type = OGGPLAY_TYPE_UNKNOWN;
