@@ -64,6 +64,10 @@ function createTestData() {
   * This test will test Queries that use relative search terms and URI options
   */
  function run_test() {
+   // This test is randomly failing pretty often, so it's disabled.
+   // See Bug 516505.
+   return;
+
    createTestData();
    populateDB(testData);
    var query = histsvc.getNewQuery();
