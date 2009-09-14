@@ -281,7 +281,6 @@
                     oncommand="gContextMenu.viewFrameInfo();"/>
         </menupopup>
       </menu>
-      <menuseparator id="context-sep-properties"/>
       <menuitem id="context-viewpartialsource-selection"
                 label="&viewPartialSourceForSelectionCmd.label;"
                 accesskey="&viewPartialSourceCmd.accesskey;"
@@ -292,6 +291,7 @@
                 accesskey="&viewPartialSourceCmd.accesskey;"
                 oncommand="gContextMenu.viewPartialSource('mathml');"
                 observes="isImage"/>
+      <menuseparator id="context-sep-viewsource"/>
       <menuitem id="context-viewsource"
                 label="&viewPageSourceCmd.label;"
                 accesskey="&viewPageSourceCmd.accesskey;"
