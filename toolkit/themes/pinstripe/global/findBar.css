@@ -38,6 +38,7 @@ findbar {
   border: 1px solid rgba(0, 0, 0, .4);
   -moz-border-radius: 100%;
   background: -moz-linear-gradient(top, bottom, from(#FFF), to(#CACACA)) repeat-x;
+  color: buttontext;
   margin: 0 4px;
   padding: 1px 3px;
   -moz-box-shadow: 0 1px 0 rgba(255, 255, 255, .4);
