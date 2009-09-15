@@ -1414,6 +1414,7 @@ void
 nsWaveDecoder::NotifyBytesDownloaded()
 {
   UpdateReadyStateForData();
+  Progress(PR_FALSE);
 }
 
 void
