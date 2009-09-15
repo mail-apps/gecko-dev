@@ -175,6 +175,14 @@ function eventQueue(aEventType)
                       this);
   }
 
+  /**
+   * This function is called when all events in the queue were handled.
+   * Override it if you need to be notified of this.
+   */
+  this.onFinish = function eventQueue_finish()
+  {
+  }
+
   // private
 
   /**
@@ -229,6 +237,7 @@ function eventQueue(aEventType)
       gA11yEventApplicantsCount--;
       listenA11yEvents(false);
 
+      this.onFinish();
       SimpleTest.finish();
       return;
     }
@@ -340,10 +349,14 @@ function eventQueue(aEventType)
 
       for (var idx = 0; idx < this.mEventSeq.length; idx++) {
         var eventType = this.getEventType(idx);
-        if (typeof eventType == "string") // DOM event
-          document.addEventListener(eventType, this, true);
-        else // A11y event
+        if (typeof eventType == "string") {
+          // DOM event
+          var target = this.getEventTarget(idx);
+          target.ownerDocument.addEventListener(eventType, this, true);
+        } else {
+          // A11y event
           addA11yEventListener(eventType, this);
+        }
       }
     }
   }
@@ -353,10 +366,15 @@ function eventQueue(aEventType)
     if (this.mEventSeq) {
       for (var idx = 0; idx < this.mEventSeq.length; idx++) {
         var eventType = this.getEventType(idx);
-        if (typeof eventType == "string") // DOM event
-          document.removeEventListener(eventType, this, true);
-        else // A11y event
+        if (typeof eventType == "string") {
+          // DOM event
+          var target = this.getEventTarget(idx);
+          target.ownerDocument.removeEventListener(eventType, this, true);
+        }
+        else {
+          // A11y event
           removeA11yEventListener(eventType, this);
+        }
       }
 
       this.mEventSeq = null;
