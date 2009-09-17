@@ -6366,7 +6366,6 @@ js_AbortRecording(JSContext* cx, const char* reason)
 {
     JSTraceMonitor* tm = &JS_TRACE_MONITOR(cx);
     JS_ASSERT(tm->recorder != NULL);
-    AUDIT(recorderAborted);
 
     /* Abort the trace and blacklist its starting point. */
     Fragment* f = tm->recorder->getFragment();
@@ -6381,6 +6380,8 @@ js_AbortRecording(JSContext* cx, const char* reason)
         DeleteRecorder(cx);
         return;
     }
+
+    AUDIT(recorderAborted);
 
     JS_ASSERT(!f->vmprivate);
 #ifdef DEBUG
