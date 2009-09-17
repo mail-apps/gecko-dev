@@ -4057,8 +4057,7 @@ SimpleMatch(REGlobalData *gData, REMatchState *x, REOp op,
             JS_ASSERT(charSet->converted);
             ch = *x->cp;
             index = ch >> 3;
-            if (charSet->length != 0 &&
-                ch <= charSet->length &&
+            if (ch <= charSet->length &&
                 (charSet->u.bits[index] & (1 << (ch & 0x7)))) {
                 result = x;
                 result->cp++;
@@ -4073,8 +4072,7 @@ SimpleMatch(REGlobalData *gData, REMatchState *x, REOp op,
             JS_ASSERT(charSet->converted);
             ch = *x->cp;
             index = ch >> 3;
-            if (charSet->length == 0 ||
-                ch > charSet->length ||
+            if (ch > charSet->length ||
                 !(charSet->u.bits[index] & (1 << (ch & 0x7)))) {
                 result = x;
                 result->cp++;
@@ -4170,8 +4168,7 @@ ExecuteREBytecode(REGlobalData *gData, REMatchState *x)
                         goto bad;
                     matchCh1 = *x->cp;
                     k = matchCh1 >> 3;
-                    if ((charSet->length == 0 ||
-                         matchCh1 > charSet->length ||
+                    if ((matchCh1 > charSet->length ||
                          !(charSet->u.bits[k] & (1 << (matchCh1 & 0x7)))) ^
                         charSet->sense) {
                         goto doAlt;
