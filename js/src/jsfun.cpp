@@ -333,6 +333,8 @@ js_Arguments(JSContext *cx, JSObject *parent, uint32 argc, JSObject *callee,
              double *argv, js_ArgsPrivateNative *apn)
 {
     JSObject *argsobj = NewArguments(cx, parent, argc, callee);
+    if (!argsobj)
+        return NULL;
     apn->argv = argv;
     SetArgsPrivateNative(argsobj, apn);
     return argsobj;
