@@ -5922,11 +5922,11 @@ fi
 dnl ========================================================
 dnl SMIL
 dnl ========================================================
-MOZ_SMIL=1
+MOZ_SMIL=0
 MOZ_ARG_DISABLE_BOOL(smil,
-[  --disable-smil           Disable SMIL animation support],
-    MOZ_SMIL=,
-    MOZ_SMIL=1 )
+[  --enable-smil           Enable SMIL animation support],
+    MOZ_SMIL=1,
+    MOZ_SMIL= )
 # Automatically disable SMIL if SVG is disabled
 if test -z "$MOZ_SVG"; then
   MOZ_SMIL=
