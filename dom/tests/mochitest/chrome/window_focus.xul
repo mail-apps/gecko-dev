@@ -458,9 +458,11 @@ function startTest()
   // the focus() method on the legend element should focus the legend if it is
   // focusable, or the first element after the legend if it is not focusable.
   if (!gPartialTabbing) {
+    gLastFocusMethod = fm.FLAG_BYMOVEFOCUS;
     var legend = getById("legend");
     expectFocusShift(function () legend.focus(),
                      null, getById("t28"), true, "focus method on unfocusable legend");
+    gLastFocusMethod = 0;
     legend.tabIndex = "0";
     expectFocusShift(function () legend.focus(),
                      null, getById("legend"), true, "focus method on focusable legend");
@@ -476,7 +478,8 @@ function startTest()
   for (var k = 0; k < keys.length; k++) {
     var key = String.fromCharCode(65 + k);
 
-    gLastFocusMethod = fm.FLAG_BYKEY;
+    // accesskeys D and G are for labels so get redirected
+    gLastFocusMethod = (key == "D" || key == "G") ? fm.FLAG_BYMOVEFOCUS : fm.FLAG_BYKEY;
 
     // on Windows and Linux, the shift key must be pressed for content area access keys
     if (navigator.platform.indexOf("Mac") == -1)
@@ -487,18 +490,18 @@ function startTest()
   }
 
   // clicking on the labels
-  gLastFocusMethod = -1;
+  gLastFocusMethod = fm.FLAG_BYMOVEFOCUS;
   expectFocusShift(function () synthesizeMouse(getById("ad"), 2, 2, { }, gChildWindow),
                    null, getById("t29"), true, "mouse on html label with content inside");
   expectFocusShift(function () synthesizeMouse(getById("ag"), 2, 2, { }, gChildWindow),
                    null, getById("n14"), true, "mouse on html label with for attribute");
+  gLastFocusMethod = 0;
   expectFocusShift(function () synthesizeMouse(getById("aj"), 2, 2, { }),
                    null, getById("o9"), true, "mouse on xul label with content inside");
   expectFocusShift(function () synthesizeMouse(getById("ak"), 2, 2, { }),
                    null, getById("n6"), true, "mouse on xul label with control attribute");
 
   // test accesskeys that shouldn't work
-  gLastFocusMethod = 0;
   k = "o".charCodeAt(0);
   while (k++ < "v".charCodeAt(0)) {
     var key = String.fromCharCode(k);
@@ -664,9 +667,9 @@ function startTest()
   if (!gPartialTabbing)
     doCommandDispatcherTests();
 
-  doRemoveTests();
-
   testMoveFocus();
+
+  doRemoveTests();
 
   // tests various focus manager apis for null checks
   var exh = false;
@@ -688,6 +691,7 @@ function startTest()
 
   // ---- tests for the FLAG_NOSWITCHFRAME flag
   getById("o5").focus();
+  gLastFocusMethod = 0;
   gEvents = "";
   // focus is being shifted in a child, so the focus should not change
   expectFocusShift(function () fm.setFocus(getById("t20"), fm.FLAG_NOSWITCHFRAME),
@@ -726,19 +730,25 @@ function startTest()
   var textbox2 = document.createElement("textbox");
   $("innerbox").appendChild(textbox2);
 
+  gLastFocusMethod = 0;
+
   expectFocusShift(function () textbox2.focus(),
                    null, textbox2.inputField, true, "focus on textbox");
+  gLastFocusMethod = fm.FLAG_BYKEY;
   expectFocusShift(function () synthesizeKey("VK_TAB", { shiftKey: true }),
                    null, textbox1.inputField, true, "shift+tab on textbox");
 
   textbox1.tabIndex = 2;
   textbox2.tabIndex = 2;
+  gLastFocusMethod = 0;
   expectFocusShift(function () textbox2.focus(),
                    null, textbox2.inputField, true, "focus on textbox with tabindex set");
+  gLastFocusMethod = fm.FLAG_BYKEY;
   expectFocusShift(function () synthesizeKey("VK_TAB", { shiftKey: true }),
                    null, textbox1.inputField, true, "shift+tab on textbox with tabindex set");
 
   setFocusTo("t9", window);
+  gLastFocusMethod = -1;
   window.openDialog("focus_window2.xul", "_blank", "chrome", otherWindowFocused, null);
 }
 
@@ -799,6 +809,7 @@ function testMoveFocus()
 
   // moving focus while an element is already focused
   var newFocus;
+  gLastFocusMethod = fm.FLAG_BYMOVEFOCUS;
   var expectedFirst = getById(gPartialTabbing ? "t3" : "t1");
   expectFocusShift(function () newFocus = fm.moveFocus(null, null, fm.MOVEFOCUS_FIRST, 0),
                    window, expectedFirst, true, "moveFocus to first null window null content");
@@ -808,6 +819,7 @@ function testMoveFocus()
                    window, getById("last"), true, "moveFocus to last null window null content");
   is(newFocus, fm.focusedElement, "moveFocus to last null window null content return value");
 
+  gLastFocusMethod = 0;
   newFocus = fm.moveFocus(null, null, fm.MOVEFOCUS_ROOT, 0);
   is(newFocus, null, "moveFocus to root null window null content return value");
   is(fm.focusedWindow, window, "moveFocus to root null window null content focusedWindow");
@@ -817,6 +829,7 @@ function testMoveFocus()
   fm.clearFocus(window);
   gEvents = "";
   gLastFocus = null;
+  gLastFocusMethod = fm.FLAG_BYMOVEFOCUS;
   expectFocusShift(function () newFocus = fm.moveFocus(null, null, fm.MOVEFOCUS_FIRST, 0),
                    window, expectedFirst, true, "moveFocus to first null window null content no focus");
   is(newFocus, fm.focusedElement, "moveFocus to first null window null content no focus return value");
@@ -828,6 +841,7 @@ function testMoveFocus()
   is(newFocus, fm.focusedElement, "moveFocus to last null window null content no focus return value");
   fm.clearFocus(window);
   gEvents = "";
+  gLastFocusMethod = 0;
   newFocus = fm.moveFocus(null, null, fm.MOVEFOCUS_ROOT, 0);
   is(newFocus, null, "moveFocus to root null window null content no focus return value");
   is(fm.focusedWindow, window, "moveFocus to root null window null content no focus focusedWindow");
@@ -835,6 +849,7 @@ function testMoveFocus()
 
   // moving focus from a specified element
   setFocusTo("t6", window);
+  gLastFocusMethod = fm.FLAG_BYMOVEFOCUS;
   expectFocusShift(function () newFocus = fm.moveFocus(null, getById("specialroot"), fm.MOVEFOCUS_FIRST, 0),
                    window, getById("t3"), true, "moveFocus to first null window with content");
 // XXXndeakin P3 this doesn't work
@@ -860,6 +875,7 @@ function testMoveFocus()
   // move focus to root in child window
   setFocusTo("t6", window);
   var childroot = getById("t" + kChildDocumentRootIndex);
+  gLastFocusMethod = 0;
   newFocus = fm.moveFocus(gChildWindow, null, fm.MOVEFOCUS_ROOT, 0),
   is(newFocus, childroot, "moveFocus to root child window null content return value");
   is(fm.focusedWindow, gChildWindow, "moveFocus to root child window null content focusedWindow");
@@ -904,6 +920,24 @@ function testMoveFocus()
   is(fm.focusedElement, getById("t24"), "move caret away onto link");
 
   prefs.setBoolPref("accessibility.browsewithcaret", false);
+
+  var t19 = getById("t19");
+  t19.setSelectionRange(0, 0);
+  setFocusTo("t18", gChildWindow);
+
+  gLastFocusMethod = fm.FLAG_BYMOVEFOCUS;
+  expectFocusShift(function () newFocus = fm.moveFocus(null, null, fm.MOVEFOCUS_FORWARD, 0),
+                   gChildWindow, t19, true, "moveFocus to next textbox");
+  is(t19.selectionStart, 0, "input focused after moveFocus selectionStart");
+  is(t19.selectionEnd, 5, "input focused after moveFocus selectionEnd");
+
+  t19.setSelectionRange(0, 0);
+  setFocusTo("t18", gChildWindow);
+  gLastFocusMethod = fm.FLAG_BYKEY;
+  expectFocusShift(function () newFocus = fm.moveFocus(null, null, fm.MOVEFOCUS_FORWARD, fm.FLAG_BYKEY),
+                   gChildWindow, t19, true, "moveFocus to next textbox by key");
+  is(t19.selectionStart, 0, "input focused after moveFocus by key selectionStart");
+  is(t19.selectionEnd, 5, "input focused after moveFocus by key selectionEnd");
 }
 
 function otherWindowFocused(otherWindow)
