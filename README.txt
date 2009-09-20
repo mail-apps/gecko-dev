@@ -1,5 +1,5 @@
 An explanation of the Mozilla Source Code Directory Structure and links to
-project pages with documentation can be found at: 
+project pages with documentation can be found at:
 
     https://developer.mozilla.org/en/Mozilla_Source_Code_Directory_Structure
 
