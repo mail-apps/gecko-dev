@@ -62,6 +62,7 @@ _TEST_FILES = \
         moonsurface.jpg \
         redirect.sjs \
         somestyle.css \
+        test_bug329869.html \
         test_bug383369.html \
         test_bug455367.html \
         test_bug472986.html \
