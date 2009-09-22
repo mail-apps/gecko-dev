@@ -1197,7 +1197,8 @@ PRBool nsChildView::ShowsResizeIndicator(nsIntRect* aResizerRect)
   while ((superView = [topLevelView superview]))
     topLevelView = superView;
 
-  if (![[topLevelView window] showsResizeIndicator])
+  if (![[topLevelView window] showsResizeIndicator] ||
+      !([[topLevelView window] styleMask] & NSResizableWindowMask))
     return PR_FALSE;
 
   if (aResizerRect) {
