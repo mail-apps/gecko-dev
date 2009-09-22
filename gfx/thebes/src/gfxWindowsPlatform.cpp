@@ -975,3 +975,14 @@ gfxWindowsPlatform::GetFTLibrary()
     return gPlatformFTLibrary;
 }
 #endif
+
+void
+gfxWindowsPlatform::InitDisplayCaps()
+{
+    HDC dc = GetDC((HWND)nsnull);
+
+    gfxPlatform::sDPI = GetDeviceCaps(dc, LOGPIXELSY);
+
+    ReleaseDC((HWND)nsnull, dc);
+}
+
