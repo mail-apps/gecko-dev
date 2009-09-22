@@ -131,6 +131,7 @@
 
 #include "nsIDirectoryService.h"
 #include "nsDirectoryServiceDefs.h"
+#include "nsXULAppAPI.h"
 #include "nsAppDirectoryServiceDefs.h"
 #include "nsIFile.h"
 #include "nsPluginDirServiceProvider.h"
@@ -4973,8 +4974,10 @@ nsresult nsPluginHost::FindPlugins(PRBool aCreatePluginList, PRBool * aPluginsCh
   *aPluginsChanged = PR_FALSE;
   nsresult rv;
 
-  // Read cached plugins info
-  ReadPluginInfo();
+  // Read cached plugins info. If the profile isn't yet available then don't
+  // scan for plugins
+  if (ReadPluginInfo() == NS_ERROR_NOT_AVAILABLE)
+    return NS_OK;
 
   nsCOMPtr<nsIComponentManager> compManager;
   NS_GetComponentManager(getter_AddRefs(compManager));
@@ -5174,8 +5177,16 @@ nsPluginHost::WritePluginInfo()
   directoryService->Get(NS_APP_USER_PROFILE_50_DIR, NS_GET_IID(nsIFile),
                         getter_AddRefs(mPluginRegFile));
 
-  if (!mPluginRegFile)
-    return NS_ERROR_FAILURE;
+  if (!mPluginRegFile) {
+    // There is no profile yet, this will tell us if there is going to be one
+    // in the future.
+    directoryService->Get(NS_APP_PROFILE_DIR_STARTUP, NS_GET_IID(nsIFile),
+                          getter_AddRefs(mPluginRegFile));
+    if (!mPluginRegFile)
+      return NS_ERROR_FAILURE;
+    else
+      return NS_ERROR_NOT_AVAILABLE;
+  }
 
   PRFileDesc* fd = nsnull;
 
