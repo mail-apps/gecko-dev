@@ -3411,6 +3411,8 @@ nsTextFrame::Destroy()
 
 class nsContinuingTextFrame : public nsTextFrame {
 public:
+  NS_DECL_FRAMEARENA_HELPERS
+
   friend nsIFrame* NS_NewContinuingTextFrame(nsIPresShell* aPresShell, nsStyleContext* aContext);
 
   NS_IMETHOD Init(nsIContent*      aContent,
@@ -3664,11 +3666,15 @@ NS_NewTextFrame(nsIPresShell* aPresShell, nsStyleContext* aContext)
   return new (aPresShell) nsTextFrame(aContext);
 }
 
+NS_IMPL_FRAMEARENA_HELPERS(nsTextFrame)
+
 nsIFrame*
 NS_NewContinuingTextFrame(nsIPresShell* aPresShell, nsStyleContext* aContext)
 {
   return new (aPresShell) nsContinuingTextFrame(aContext);
 }
+
+NS_IMPL_FRAMEARENA_HELPERS(nsContinuingTextFrame)
 
 nsTextFrame::~nsTextFrame()
 {

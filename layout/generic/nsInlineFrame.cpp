@@ -72,6 +72,8 @@ NS_NewInlineFrame(nsIPresShell* aPresShell, nsStyleContext* aContext)
   return new (aPresShell) nsInlineFrame(aContext);
 }
 
+NS_IMPL_FRAMEARENA_HELPERS(nsInlineFrame)
+
 NS_QUERYFRAME_HEAD(nsInlineFrame)
   NS_QUERYFRAME_ENTRY(nsInlineFrame)
 NS_QUERYFRAME_TAIL_INHERITING(nsInlineFrameSuper)
@@ -899,6 +901,8 @@ NS_NewFirstLineFrame(nsIPresShell* aPresShell, nsStyleContext* aContext)
   return new (aPresShell) nsFirstLineFrame(aContext);
 }
 
+NS_IMPL_FRAMEARENA_HELPERS(nsFirstLineFrame)
+
 #ifdef DEBUG
 NS_IMETHODIMP
 nsFirstLineFrame::GetFrameName(nsAString& aResult) const
@@ -1076,6 +1080,8 @@ NS_NewPositionedInlineFrame(nsIPresShell* aPresShell, nsStyleContext* aContext)
 {
   return new (aPresShell) nsPositionedInlineFrame(aContext);
 }
+
+NS_IMPL_FRAMEARENA_HELPERS(nsPositionedInlineFrame)
 
 void
 nsPositionedInlineFrame::Destroy()

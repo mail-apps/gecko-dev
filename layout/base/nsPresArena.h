@@ -1,5 +1,5 @@
 /* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- *
+ * vim: set ts=2 sw=2 et tw=78:
  * ***** BEGIN LICENSE BLOCK *****
  * Version: MPL 1.1/GPL 2.0/LGPL 2.1
  *
@@ -16,11 +16,16 @@
  * The Original Code is mozilla.org code.
  *
  * The Initial Developer of the Original Code is
- * IBM Corporation.
- * Portions created by the Initial Developer are Copyright (C) 2000
+ * Netscape Communications Corporation.
+ * Portions created by the Initial Developer are Copyright (C) 1998
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
+ *   Steve Clark <buster@netscape.com>
+ *   Håkan Waara <hwaara@chello.se>
+ *   Dan Rosen <dr@netscape.com>
+ *   Daniel Glazman <glazman@netscape.com>
+ *   Mats Palmgren <mats.palmgren@bredband.net>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either of the GNU General Public License Version 2 or later (the "GPL"),
@@ -34,43 +39,44 @@
  * the provisions above, a recipient may use your version of this file under
  * the terms of any one of the MPL, the GPL or the LGPL.
  *
- * ***** END LICENSE BLOCK ***** */
+ * ***** END LICENSE BLOCK *****
+ */
 
-#ifdef IBMBIDI
+#ifndef nsPresArena_h___
+#define nsPresArena_h___
 
-#ifndef nsBidiFrames_h___
-#define nsBidiFrames_h___
+#include "nscore.h"
+#include "nsQueryFrame.h"
 
-#include "nsFrame.h"
+// Uncomment this to disable arenas, instead forwarding to
+// malloc for every allocation.
+//#define DEBUG_TRACEMALLOC_PRESARENA 1
 
-
-class nsDirectionalFrame : public nsFrame
-{
-protected:
-  virtual ~nsDirectionalFrame();
-
-public:
-  NS_DECL_FRAMEARENA_HELPERS
-
-  nsDirectionalFrame(nsStyleContext* aContext, PRUnichar aChar);
-
-  /**
-   * Get the "type" of the frame
-   *
-   * @see nsGkAtoms::directionalFrame
-   */
-  virtual nsIAtom* GetType() const;
-
-  PRUnichar GetChar() const { return mChar; }
-
-#ifdef NS_DEBUG
-  NS_IMETHOD GetFrameName(nsAString& aResult) const;
+// The debugging version of nsPresArena does not free all the memory it
+// allocated when the arena itself is destroyed.
+#ifdef DEBUG_TRACEMALLOC_PRESARENA
+#define PRESARENA_MUST_FREE_DURING_DESTROY PR_TRUE
+#else
+#define PRESARENA_MUST_FREE_DURING_DESTROY PR_FALSE
 #endif
 
+class nsPresArena {
+public:
+  nsPresArena();
+  ~nsPresArena();
+
+  // Pool allocation with recycler lists indexed by object size.
+  NS_HIDDEN_(void*) AllocateBySize(size_t aSize);
+  NS_HIDDEN_(void)  FreeBySize(size_t aSize, void* aPtr);
+
+  // Pool allocation with recycler lists indexed by object-type code.
+  // Every type code must always be used with the same object size.
+  NS_HIDDEN_(void*) AllocateByCode(nsQueryFrame::FrameIID aCode, size_t aSize);
+  NS_HIDDEN_(void)  FreeByCode(nsQueryFrame::FrameIID aCode, void* aPtr);
+
 private:
-  PRUnichar mChar;
+  struct State;
+  State* mState;
 };
 
-
-#endif /* nsBidiFrames_h___ */
-#endif /* IBMBIDI */
+#endif

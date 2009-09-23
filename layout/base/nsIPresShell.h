@@ -55,6 +55,7 @@
 #define nsIPresShell_h___
 
 #include "nsISupports.h"
+#include "nsQueryFrame.h"
 #include "nsCoord.h"
 #include "nsRect.h"
 #include "nsColor.h"
@@ -104,9 +105,10 @@ class nsDisplayListBuilder;
 typedef short SelectionType;
 typedef PRUint32 nsFrameState;
 
-#define NS_IPRESSHELL_IID \
-{ 0xfea81c36, 0xed5b, 0x41f5, \
-  { 0x89, 0x5d, 0x4c, 0x50, 0x79, 0x49, 0xad, 0x3b } }
+// eed2ef56-133f-4696-9eee-5fc45d816be8
+#define NS_IPRESSHELL_IID     \
+{ 0xeed2ef56, 0x133f, 0x4696, \
+  { 0x9e, 0xee, 0x5f, 0xc4, 0x5d, 0x81, 0x6b, 0xe8 } }
 
 // Constants for ScrollContentIntoView() function
 #define NS_PRESSHELL_SCROLL_TOP      0
@@ -169,11 +171,20 @@ public:
   
   PRBool IsDestroying() { return mIsDestroying; }
 
-  // All frames owned by the shell are allocated from an arena.  They are also recycled
-  // using free lists (separate free lists being maintained for each size_t).
-  // Methods for recycling frames.
-  virtual void* AllocateFrame(size_t aSize) = 0;
-  virtual void  FreeFrame(size_t aSize, void* aFreeChunk) = 0;
+  // All frames owned by the shell are allocated from an arena.  They
+  // are also recycled using free lists.  Separate free lists are
+  // maintained for each frame type (aCode), which must always
+  // correspond to the same aSize value. AllocateFrame clears the
+  // memory that it returns.
+  virtual void* AllocateFrame(nsQueryFrame::FrameIID aCode, size_t aSize) = 0;
+  virtual void  FreeFrame(nsQueryFrame::FrameIID aCode, void* aChunk) = 0;
+
+  // Objects closely related to the frame tree, but that are not
+  // actual frames (subclasses of nsFrame) are also allocated from the
+  // arena, and recycled via a separate set of per-size free lists.
+  // AllocateMisc does *not* clear the memory that it returns.
+  virtual void* AllocateMisc(size_t aSize) = 0;
+  virtual void  FreeMisc(size_t aSize, void* aChunk) = 0;
 
   /**
    * Stack memory allocation:

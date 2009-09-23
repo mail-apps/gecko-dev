@@ -50,8 +50,8 @@ struct PRLogModuleInfo;
  */
 class nsIFrameDebug {
 public:
-  NS_DECLARE_FRAME_ACCESSOR(nsIFrameDebug)
-  
+  NS_DECL_QUERYFRAME_TARGET(nsIFrameDebug)
+
   NS_IMETHOD  List(FILE* out, PRInt32 aIndent) const = 0;
   /**
    * lists the frames beginning from the root frame
