@@ -462,6 +462,9 @@ enum nsDOMClassInfoID {
 
   eDOMClassInfo_Worker_id,
 
+  eDOMClassInfo_PaintRequest_id,
+  eDOMClassInfo_PaintRequestList_id,
+
 #ifdef MOZ_ENABLE_CANVAS3D
   eDOMClassInfo_CanvasRenderingContextGLWeb20_id,
 #endif
