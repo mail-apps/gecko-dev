@@ -60,10 +60,6 @@
 #undef max
 #endif
 
-#include <bitset>
-
-// code from gfxWindowsFonts.h
-
 class gfxSparseBitSet {
 private:
     enum { BLOCK_SIZE = 32 };   // ==> 256 codepoints per block
@@ -379,7 +375,9 @@ public:
         NAME_ID_FULL = 4,  // used as key to GDI CreateFontIndirect
         NAME_ID_VERSION = 5,
         NAME_ID_POSTSCRIPT = 6,
-        NAME_ID_PREFERRED_FAMILY = 16       
+        NAME_ID_PREFERRED_FAMILY = 16,
+        
+        CMAP_MAX_CODEPOINT = 0x10ffff     // maximum possible Unicode codepoint 
     };
 
     // read all names matching aNameID, returning in aNames array
