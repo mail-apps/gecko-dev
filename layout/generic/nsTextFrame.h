@@ -419,7 +419,7 @@ protected:
                       PRUint32 aLength,
                       nsCSSShadowItem* aShadowDetails,
                       PropertyProvider* aProvider,
-                      const gfxRect& aDirtyRect,
+                      const nsRect& aDirtyRect,
                       const gfxPoint& aFramePt,
                       const gfxPoint& aTextBaselinePt,
                       gfxContext* aCtx,
