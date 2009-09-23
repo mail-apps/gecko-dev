@@ -313,15 +313,10 @@ gfxPlatformGtk::LookupLocalFont(const gfxProxyFontEntry *aProxyEntry,
 
 gfxFontEntry* 
 gfxPlatformGtk::MakePlatformFont(const gfxProxyFontEntry *aProxyEntry, 
-                                 nsISupports *aLoader,
                                  const PRUint8 *aFontData, PRUint32 aLength)
 {
-    // Just being consistent with other platforms.
-    // This will mean that only fonts in SFNT formats will be accepted.
-    if (!gfxFontUtils::ValidateSFNTHeaders(aFontData, aLength))
-        return nsnull;
-
-    return gfxPangoFontGroup::NewFontEntry(*aProxyEntry, aLoader,
+    // passing ownership of the font data to the new font entry
+    return gfxPangoFontGroup::NewFontEntry(*aProxyEntry,
                                            aFontData, aLength);
 }
 
@@ -336,7 +331,8 @@ gfxPlatformGtk::IsFontFormatSupported(nsIURI *aFontURI, PRUint32 aFormatFlags)
     // Pango doesn't apply features from AAT TrueType extensions.
     // Assume that if this is the only SFNT format specified,
     // then AAT extensions are required for complex script support.
-    if (aFormatFlags & (gfxUserFontSet::FLAG_FORMAT_OPENTYPE | 
+    if (aFormatFlags & (gfxUserFontSet::FLAG_FORMAT_WOFF     |
+                        gfxUserFontSet::FLAG_FORMAT_OPENTYPE | 
                         gfxUserFontSet::FLAG_FORMAT_TRUETYPE)) {
         return PR_TRUE;
     }
