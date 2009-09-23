@@ -1848,6 +1848,15 @@ CSS_PROP_BACKENDONLY(
     mPitchRange,
     eCSSType_Value,
     nsnull)
+CSS_PROP_VISIBILITY(
+    pointer-events,
+    pointer_events,
+    PointerEvents,
+    0,
+    Display,
+    mPointerEvents,
+    eCSSType_Value,
+    kPointerEventsKTable)
 CSS_PROP_DISPLAY(
     position,
     position,
@@ -2436,15 +2445,6 @@ CSS_PROP_SVGRESET(
     mMask,
     eCSSType_Value,
     nsnull)
-CSS_PROP_SVG(
-    pointer-events,
-    pointer_events,
-    PointerEvents,
-    0,
-    SVG,
-    mPointerEvents,
-    eCSSType_Value,
-    kPointerEventsKTable)
 CSS_PROP_SVG(
     shape-rendering,
     shape_rendering,
