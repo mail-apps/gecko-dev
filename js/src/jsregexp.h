@@ -199,6 +199,10 @@ js_ClearRegExpLastIndex(JSObject *obj)
 
 #endif /* __cplusplus */
 
+/* Return whether the given character array contains RegExp meta-characters. */
+extern bool
+js_ContainsRegExpMetaChars(const jschar *chars, size_t length);
+
 JS_END_EXTERN_C
 
 #endif /* jsregexp_h___ */
