@@ -602,13 +602,13 @@ NS_IMETHODIMP nsWidget::InvalidateRegion( const nsIRegion *aRegion, PRBool aIsSy
 	}
 
 nsresult nsWidget::CreateWidget(nsIWidget *aParent,
+                                nsNativeWidget aNativeParent,
                                 const nsRect &aRect,
                                 EVENT_CALLBACK aHandleEventFunction,
                                 nsIDeviceContext *aContext,
                                 nsIAppShell *aAppShell,
                                 nsIToolkit *aToolkit,
-                                nsWidgetInitData *aInitData,
-                                nsNativeWidget aNativeParent)
+                                nsWidgetInitData *aInitData)
 {
 
   PtWidget_t *parentWidget = nsnull;

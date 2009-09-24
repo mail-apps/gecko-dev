@@ -562,16 +562,14 @@ nsChildView::~nsChildView()
 
 NS_IMPL_ISUPPORTS_INHERITED1(nsChildView, nsBaseWidget, nsIPluginWidget)
 
-// Utility method for implementing both Create(nsIWidget ...)
-// and Create(nsNativeWidget...)
-nsresult nsChildView::StandardCreate(nsIWidget *aParent,
-                      const nsIntRect &aRect,
-                      EVENT_CALLBACK aHandleEventFunction,
-                      nsIDeviceContext *aContext,
-                      nsIAppShell *aAppShell,
-                      nsIToolkit *aToolkit,
-                      nsWidgetInitData *aInitData,
-                      nsNativeWidget aNativeParent)
+nsresult nsChildView::Create(nsIWidget *aParent,
+                             nsNativeWidget aNativeParent,
+                             const nsIntRect &aRect,
+                             EVENT_CALLBACK aHandleEventFunction,
+                             nsIDeviceContext *aContext,
+                             nsIAppShell *aAppShell,
+                             nsIToolkit *aToolkit,
+                             nsWidgetInitData *aInitData)
 {
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK_NSRESULT;
 
@@ -585,12 +583,13 @@ nsresult nsChildView::StandardCreate(nsIWidget *aParent,
   mBounds = aRect;
 
   BaseCreate(aParent, aRect, aHandleEventFunction, 
-              aContext, aAppShell, aToolkit, aInitData);
+             aContext, aAppShell, aToolkit, aInitData);
 
   // inherit things from the parent view and create our parallel 
   // NSView in the Cocoa display system
   mParentView = nil;
   if (aParent) {
+    // This is the case when we're the popup content view of a popup window.
     SetBackgroundColor(aParent->GetBackgroundColor());
     SetForegroundColor(aParent->GetForegroundColor());
 
@@ -599,9 +598,12 @@ nsresult nsChildView::StandardCreate(nsIWidget *aParent,
     // with windows).
     mParentView = (NSView*)aParent->GetNativeData(NS_NATIVE_WIDGET); 
     mParentWidget = aParent;   
-  }
-  else
+  } else {
+    // This is the normal case. When we're the root widget of the view hiararchy,
+    // aNativeParent will be the contentView of our window, since that's what
+    // nsCocoaWindow returns when asked for an NS_NATIVE_VIEW.
     mParentView = reinterpret_cast<NSView*>(aNativeParent);
+  }
   
   // create our parallel NSView and hook it up to our parent. Recall
   // that NS_NATIVE_WIDGET is the NSView.
@@ -688,33 +690,6 @@ void nsChildView::TearDownView()
   mView = nil;
 
   NS_OBJC_END_TRY_ABORT_BLOCK;
-}
-
-// create a nsChildView
-NS_IMETHODIMP nsChildView::Create(nsIWidget *aParent,
-                      const nsIntRect &aRect,
-                      EVENT_CALLBACK aHandleEventFunction,
-                      nsIDeviceContext *aContext,
-                      nsIAppShell *aAppShell,
-                      nsIToolkit *aToolkit,
-                      nsWidgetInitData *aInitData)
-{  
-  return(StandardCreate(aParent, aRect, aHandleEventFunction, aContext,
-                        aAppShell, aToolkit, aInitData, nsnull));
-}
-
-// Creates a main nsChildView using a native widget (an NSView)
-NS_IMETHODIMP nsChildView::Create(nsNativeWidget aNativeParent,
-                      const nsIntRect &aRect,
-                      EVENT_CALLBACK aHandleEventFunction,
-                      nsIDeviceContext *aContext,
-                      nsIAppShell *aAppShell,
-                      nsIToolkit *aToolkit,
-                      nsWidgetInitData *aInitData)
-{
-  // what we're passed in |aNativeParent| is an NSView. 
-  return(StandardCreate(nsnull, aRect, aHandleEventFunction, aContext,
-                        aAppShell, aToolkit, aInitData, aNativeParent));
 }
 
 NS_IMETHODIMP nsChildView::Destroy()
