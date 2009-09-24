@@ -200,3 +200,11 @@ The attributes which control stream tests are:
   via calls to NPP_NewStream etc, and if a "frame" attribute is present, the
   contents of that stream will be passed back to the browser and displayed
   in the specified frame via NPN_GetURL.
+
+== Internal consistency ==
+
+* doInternalConsistencyCheck()
+Does internal consistency checking, returning an empty string if everything is
+OK, otherwise returning some kind of error string. On Windows, in windowed
+mode, this checks that the position of the plugin's internal child
+window has not been disturbed relative to the plugin window.

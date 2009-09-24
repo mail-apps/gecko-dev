@@ -76,6 +76,7 @@ static bool getInstanceCount(NPObject* npobj, const NPVariant* args, uint32_t ar
 static bool stopWatchingInstanceCount(NPObject* npobj, const NPVariant* args, uint32_t argCount, NPVariant* result);
 static bool getLastMouseX(NPObject* npobj, const NPVariant* args, uint32_t argCount, NPVariant* result);
 static bool getLastMouseY(NPObject* npobj, const NPVariant* args, uint32_t argCount, NPVariant* result);
+static bool doInternalConsistencyCheck(NPObject* npobj, const NPVariant* args, uint32_t argCount, NPVariant* result);
 
 static const NPUTF8* sPluginMethodIdentifierNames[] = {
   "setUndefinedValueTest",
@@ -91,6 +92,7 @@ static const NPUTF8* sPluginMethodIdentifierNames[] = {
   "stopWatchingInstanceCount",
   "getLastMouseX",
   "getLastMouseY",
+  "doInternalConsistencyCheck",
 };
 static NPIdentifier sPluginMethodIdentifiers[ARRAY_LENGTH(sPluginMethodIdentifierNames)];
 static const ScriptableFunction sPluginMethodFunctions[ARRAY_LENGTH(sPluginMethodIdentifierNames)] = {
@@ -107,6 +109,7 @@ static const ScriptableFunction sPluginMethodFunctions[ARRAY_LENGTH(sPluginMetho
   stopWatchingInstanceCount,
   getLastMouseX,
   getLastMouseY,
+  doInternalConsistencyCheck,
 };
 
 static char* NPN_GetURLNotifyCookie = "NPN_GetURLNotify_Cookie";
@@ -1251,5 +1254,24 @@ getLastMouseY(NPObject* npobj, const NPVariant* args, uint32_t argCount, NPVaria
   NPP npp = static_cast<TestNPObject*>(npobj)->npp;
   InstanceData* id = static_cast<InstanceData*>(npp->pdata);
   INT32_TO_NPVARIANT(id->lastMouseY, *result);
+  return true;
+}
+
+static bool
+doInternalConsistencyCheck(NPObject* npobj, const NPVariant* args, uint32_t argCount, NPVariant* result)
+{
+  if (argCount != 0)
+    return false;
+
+  NPP npp = static_cast<TestNPObject*>(npobj)->npp;
+  InstanceData* id = static_cast<InstanceData*>(npp->pdata);
+  string error;
+  pluginDoInternalConsistencyCheck(id, error);
+  NPUTF8* utf8String = (NPUTF8*)NPN_MemAlloc(error.length() + 1);
+  if (!utf8String) {
+    return false;
+  }
+  memcpy(utf8String, error.c_str(), error.length() + 1);
+  STRINGZ_TO_NPVARIANT(utf8String, *result);
   return true;
 }
