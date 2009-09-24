@@ -3977,8 +3977,7 @@ nsIFrame::CheckInvalidateSizeChange(const nsRect& aOldRect,
                                     const nsRect& aOldOverflowRect,
                                     const nsSize& aNewDesiredSize)
 {
-  if (aNewDesiredSize.width == aOldRect.width &&
-      aNewDesiredSize.height == aOldRect.height)
+  if (aNewDesiredSize == aOldRect.Size())
     return;
 
   // Below, we invalidate the old frame area (or, in the case of
@@ -4028,12 +4027,24 @@ nsIFrame::CheckInvalidateSizeChange(const nsRect& aOldRect,
     }
   }
 
-  // Invalidate the old frame background if the frame has a background
-  // whose position depends on the size of the frame
   const nsStyleBackground *bg = GetStyleBackground();
-  NS_FOR_VISIBLE_BACKGROUND_LAYERS_BACK_TO_FRONT(i, bg) {
-    const nsStyleBackground::Layer &layer = bg->mLayers[i];
-    if (layer.RenderingMightDependOnFrameSize()) {
+  if (!bg->IsTransparent()) {
+    // Invalidate the old frame background if the frame has a background
+    // whose position depends on the size of the frame
+    NS_FOR_VISIBLE_BACKGROUND_LAYERS_BACK_TO_FRONT(i, bg) {
+      const nsStyleBackground::Layer &layer = bg->mLayers[i];
+      if (layer.RenderingMightDependOnFrameSize()) {
+        InvalidateRectForFrameSizeChange(this, nsRect(0, 0, aOldRect.width, aOldRect.height));
+        return;
+      }
+    }
+
+    // Invalidate the old frame background if the frame has a background
+    // that is being clipped by border-radius, since the old or new area
+    // clipped off by the radius is not necessarily in the area that has
+    // already been invalidated (even if only the top-left corner has a
+    // border radius).
+    if (nsLayoutUtils::HasNonZeroCorner(border->mBorderRadius)) {
       InvalidateRectForFrameSizeChange(this, nsRect(0, 0, aOldRect.width, aOldRect.height));
       return;
     }
