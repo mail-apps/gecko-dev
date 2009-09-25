@@ -320,11 +320,6 @@ protected:
   PRBool                  OnMouseWheel(UINT msg, WPARAM wParam, LPARAM lParam, 
                                        PRBool& result, PRBool& getWheelInfo,
                                        LRESULT *aRetValue);
-  static void             OnMouseWheelTimeout(nsITimer* aTimer, void* aClosure);
-  void                    UpdateMouseWheelSeriesCounter();
-  int                     ComputeMouseWheelDelta(int currentVDelta,
-                                                 int iDeltaPerLine,
-                                                 ULONG ulScrollLines);
 #if !defined(WINCE)
   void                    OnWindowPosChanging(LPWINDOWPOS& info);
 #endif // !defined(WINCE)
@@ -415,7 +410,6 @@ protected:
   nsNativeDragTarget*   mNativeDragTarget;
   HKL                   mLastKeyboardLayout;
   nsPopupType           mPopupType;
-  int                   mScrollSeriesCounter;
   PRPackedBool          mDisplayPanFeedback;
 #ifdef WINCE_WINDOWS_MOBILE
   nsCOMPtr<nsIRegion>   mInvalidatedRegion; 
