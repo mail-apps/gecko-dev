@@ -3227,6 +3227,9 @@ class RegExpNativeCompiler {
             re->flags |= JSREG_NOCOMPILE;
             delete lirBufWriter;
         }
+#ifdef DEBUG
+        delete sanity_filter;
+#endif
 #ifdef NJ_VERBOSE
         debug_only_stmt( if (js_LogController.lcbits & LC_TMRegexp)
                              delete lir; )
