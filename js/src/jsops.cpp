@@ -3114,10 +3114,8 @@
           restore_scope:
             /* Restore fp->scopeChain now that obj is defined in fp->varobj. */
             fp->scopeChain = obj2;
-            if (!ok) {
-                cx->weakRoots.newborn[GCX_OBJECT] = NULL;
+            if (!ok)
                 goto error;
-            }
           }
           END_CASE(JSOP_DEFFUN)
 
@@ -3165,10 +3163,8 @@
                 }
             }
 
-            if (!ok) {
-                cx->weakRoots.newborn[GCX_OBJECT] = NULL;
+            if (!ok)
                 goto error;
-            }
           END_CASE(JSOP_DEFFUN_FC)
 
           BEGIN_CASE(JSOP_DEFLOCALFUN)
