@@ -1,3 +1,4 @@
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 /* ***** BEGIN LICENSE BLOCK *****
  * Version: MPL 1.1/GPL 2.0/LGPL 2.1
  *
@@ -11,14 +12,16 @@
  * for the specific language governing rights and limitations under the
  * License.
  *
- * The Original Code is Private Browsing.
+ * The Original Code is mozilla.org code.
  *
  * The Initial Developer of the Original Code is
- * Ehsan Akhgari <ehsan.akhgari@gmail.com>
- * Portions created by the Initial Developer are Copyright (C) 2008
+ * Netscape Communications Corporation.
+ * Portions created by the Initial Developer are Copyright (C) 1998
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
+ *   Gagan Saksena (original author)
+ *   Ryan Flint <rflint@mozilla.com>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -34,30 +37,30 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-const Cc = Components.classes;
-const Ci = Components.interfaces;
+#ifndef AboutRedirector_h__
+#define AboutRedirector_h__
 
-Components.utils.import("resource://gre/modules/XPCOMUtils.jsm");
+#include "nsIAboutModule.h"
 
-function AboutPrivateBrowsing() { }
-AboutPrivateBrowsing.prototype = {
-  classDescription: "about:privatebrowsing",
-  contractID: "@mozilla.org/network/protocol/about;1?what=privatebrowsing",
-  classID: Components.ID("{d92a18c8-234d-49e4-9936-3b7e020c29a2}"),
-  QueryInterface: XPCOMUtils.generateQI([Ci.nsIAboutModule]),
-  
-  getURIFlags: function(aURI) {
-    return Ci.nsIAboutModule.ALLOW_SCRIPT;
-  },
-  
-  newChannel: function(aURI) {
-    let ios = Cc["@mozilla.org/network/io-service;1"].getService(Ci.nsIIOService);
-    let channel = ios.newChannel("chrome://browser/content/aboutPrivateBrowsing.xhtml",
-                                 null, null);
-    channel.originalURI = aURI;
-    return channel;
-  }
+namespace mozilla {
+namespace browser {
+
+class AboutRedirector : public nsIAboutModule
+{
+public:
+  NS_DECL_ISUPPORTS
+  NS_DECL_NSIABOUTMODULE
+ 
+  AboutRedirector() {}
+  virtual ~AboutRedirector() {}
+
+  static NS_METHOD
+    Create(nsISupports *aOuter, REFNSIID aIID, void **aResult);
+
+protected:
 };
 
-function NSGetModule(compMgr, fileSpec)
-  XPCOMUtils.generateModule([AboutPrivateBrowsing]);
+} // namespace browser
+} // namespace mozilla
+
+#endif // AboutRedirector_h__

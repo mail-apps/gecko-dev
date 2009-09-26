@@ -275,11 +275,6 @@
 @BINPATH@/components/zipwriter.xpt
 
 ; JavaScript components
-@BINPATH@/components/aboutCertError.js
-@BINPATH@/components/aboutPrivateBrowsing.js
-@BINPATH@/components/aboutRights.js
-@BINPATH@/components/aboutRobots.js
-@BINPATH@/components/aboutSessionRestore.js
 @BINPATH@/components/FeedProcessor.js
 @BINPATH@/components/FeedConverter.js
 @BINPATH@/components/FeedWriter.js
