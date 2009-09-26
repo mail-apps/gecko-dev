@@ -1182,6 +1182,8 @@
             clearTimeout(this._quickFindTimeout);
             this._quickFindTimeout = null;
           }
+
+          this._findFailedString = null;
         ]]></body>
       </method>
 
@@ -1746,8 +1748,7 @@
 
           var res;
           // Ensure the stored SearchString is in sync with what we want to find
-          if (this._findField.value != this._browser.fastFind.searchString &&
-              !this.hidden)
+          if (this._findField.value != this._browser.fastFind.searchString)
             res = this._find(this._findField.value);
           else
             res = this._findAgain(aFindPrevious);
