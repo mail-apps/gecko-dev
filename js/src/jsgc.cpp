@@ -3488,6 +3488,12 @@ js_GC(JSContext *cx, JSGCInvocationKind gckind)
     }
 
     js_PurgeThreads(cx);
+#ifdef JS_TRACER
+    if (gckind == GC_LAST_CONTEXT) {
+        /* Clear builtin functions, which are recreated on demand. */
+        memset(rt->builtinFunctions, 0, sizeof rt->builtinFunctions);
+    }
+#endif
 
     /*
      * Mark phase.
