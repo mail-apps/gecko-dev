@@ -1118,6 +1118,23 @@ PRBool nsCocoaWindow::OnPaint(nsPaintEvent &event)
   return PR_TRUE; // don't dispatch the update event
 }
 
+NS_IMETHODIMP nsCocoaWindow::SetCursor(nsCursor aCursor)
+{
+  if (mPopupContentView)
+    return mPopupContentView->SetCursor(aCursor);
+
+  return NS_OK;
+}
+
+NS_IMETHODIMP nsCocoaWindow::SetCursor(imgIContainer* aCursor,
+                                       PRUint32 aHotspotX, PRUint32 aHotspotY)
+{
+  if (mPopupContentView)
+    return mPopupContentView->SetCursor(aCursor, aHotspotX, aHotspotY);
+
+  return NS_OK;
+}
+
 NS_IMETHODIMP nsCocoaWindow::SetTitle(const nsAString& aTitle)
 {
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK_NSRESULT;
