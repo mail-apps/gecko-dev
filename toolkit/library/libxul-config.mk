@@ -137,7 +137,13 @@ COMPONENT_LIBS += \
 	xmlextras \
 	$(NULL)
 endif
-  
+
+ifdef BUILD_CTYPES
+COMPONENT_LIBS += \
+	jsctypes \
+	$(NULL)
+endif
+
 ifdef MOZ_PLUGINS
 DEFINES += -DMOZ_PLUGINS
 COMPONENT_LIBS += \
