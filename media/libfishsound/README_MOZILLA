@@ -11,3 +11,6 @@ The git commit id used was e98a05 from git://git.xiph.org/libfishsound.git
 endian.patch is applied to fix Bug 45269.
 
 bug487519.patch: Fixes for bug487519
+
+fishsound_reset.patch: Fixes bug 516323.
+

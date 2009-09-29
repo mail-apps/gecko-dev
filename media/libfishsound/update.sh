@@ -40,3 +40,5 @@ cp $1/src/libfishsound/convert.h ./src/libfishsound/convert.h
 cp $1/AUTHORS ./AUTHORS
 patch -p3 <endian.patch
 patch -p3 <bug487519.patch
+patch -p3 <fishsound_reset.patch
+
