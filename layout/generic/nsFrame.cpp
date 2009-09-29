@@ -1593,12 +1593,6 @@ nsIFrame::BuildDisplayListForChild(nsDisplayListBuilder*   aBuilder,
   return NS_OK;
 }
 
-nsresult
-nsIFrame::CreateWidgetForView(nsIView* aView)
-{
-  return aView->CreateWidget(kWidgetCID);
-}
-
 nsIFrame*
 nsIFrame::GetLastChild(nsIAtom* aListName) const
 {
