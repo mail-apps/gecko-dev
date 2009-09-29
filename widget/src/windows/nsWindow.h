@@ -67,6 +67,8 @@
 #include "nsWindowCE.h"
 #endif
 
+#include "WindowHook.h"
+
 #ifdef ACCESSIBILITY
 #include "OLEACC.H"
 #include "nsIAccessible.h"
@@ -92,6 +94,7 @@ class imgIContainer;
 
 class nsWindow : public nsBaseWidget
 {
+  typedef mozilla::widget::WindowHook WindowHook;
 public:
   nsWindow();
   virtual ~nsWindow();
@@ -214,6 +217,8 @@ public:
   static HWND             GetTopLevelHWND(HWND aWnd, PRBool aStopOnDialogOrPopup = PR_FALSE);
   HWND                    GetWindowHandle() { return mWnd; }
   WNDPROC                 GetPrevWindowProc() { return mPrevWndProc; }
+  static nsWindow*        GetNSWindowPtr(HWND aWnd);
+  WindowHook&             GetWindowHook() { return mWindowHook; }
 
   /**
    * Misc.
@@ -243,7 +248,6 @@ protected:
   /**
    * Window utilities
    */
-  static nsWindow*        GetNSWindowPtr(HWND aWnd);
   static BOOL             SetNSWindowPtr(HWND aWnd, nsWindow * ptr);
   LPARAM                  lParamToScreen(LPARAM lParam);
   LPARAM                  lParamToClient(LPARAM lParam);
@@ -398,6 +402,7 @@ protected:
   nsNativeDragTarget*   mNativeDragTarget;
   HKL                   mLastKeyboardLayout;
   nsPopupType           mPopupType;
+  WindowHook            mWindowHook;
   PRPackedBool          mDisplayPanFeedback;
 #ifdef WINCE_WINDOWS_MOBILE
   nsCOMPtr<nsIRegion>   mInvalidatedRegion; 
