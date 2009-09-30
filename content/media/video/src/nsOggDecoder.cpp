@@ -852,11 +852,11 @@ void nsOggDecodeStateMachine::HandleVideoData(FrameData* aFrame, int aTrackNum, 
   if (!aVideoHeader)
     return;
 
-  int y_width;
-  int y_height;
+  int y_width = 0;
+  int y_height = 0;
   oggplay_get_video_y_size(mPlayer, aTrackNum, &y_width, &y_height);
-  int uv_width;
-  int uv_height;
+  int uv_width = 0;
+  int uv_height = 0;
   oggplay_get_video_uv_size(mPlayer, aTrackNum, &uv_width, &uv_height);
 
   if (y_width >= MAX_VIDEO_WIDTH || y_height >= MAX_VIDEO_HEIGHT) {
@@ -1728,14 +1728,19 @@ nsresult nsOggDecodeStateMachine::Run()
             continue;
         }
 
-        // Set the right current time
-        mCurrentFrameTime += mCallbackPeriod;
-
-        mon.Exit();
-        nsCOMPtr<nsIRunnable> event =
-          NS_NEW_RUNNABLE_METHOD(nsOggDecoder, mDecoder, PlaybackEnded);
-        NS_DispatchToMainThread(event, NS_DISPATCH_SYNC);
-        mon.Enter();
+        if (mDecoder->GetState() == nsOggDecoder::PLAY_STATE_PLAYING) {
+          // We were playing, we need to move the current time to the end of
+          // media, and send an 'ended' event.
+          mCurrentFrameTime += mCallbackPeriod;
+          if (mDuration >= 0) {
+            mCurrentFrameTime = PR_MAX(mCurrentFrameTime, mDuration / 1000.0);
+          }
+          mon.Exit();
+          nsCOMPtr<nsIRunnable> event =
+            NS_NEW_RUNNABLE_METHOD(nsOggDecoder, mDecoder, PlaybackEnded);
+          NS_DispatchToMainThread(event, NS_DISPATCH_SYNC);
+          mon.Enter();
+        }
 
         while (mState == DECODER_STATE_COMPLETED) {
           mon.Wait();
