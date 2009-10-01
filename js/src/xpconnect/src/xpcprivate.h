@@ -704,6 +704,7 @@ public:
         IDX_PROTO                   ,
         IDX_ITERATOR                ,
         IDX_PARENT                  ,
+        IDX_EXPOSEDPROPS            ,
 #ifdef XPC_IDISPATCH_SUPPORT
         IDX_ACTIVEX_OBJECT          ,
         IDX_COM_OBJECT              ,
@@ -4302,6 +4303,9 @@ xpc_EvalInSandbox(JSContext *cx, JSObject *sandbox, const nsAString& source,
 
 inline JSBool
 xpc_ForcePropertyResolve(JSContext* cx, JSObject* obj, jsval idval);
+
+inline jsid
+GetRTIdByIndex(JSContext *cx, uintN index);
 
 inline jsval
 GetRTStringByIndex(JSContext *cx, uintN index);
