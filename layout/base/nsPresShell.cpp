@@ -7144,6 +7144,11 @@ PresShell::PostReflowEventOffTimer()
 PRBool
 PresShell::DoReflow(nsIFrame* target, PRBool aInterruptible)
 {
+  if (mReflowContinueTimer) {
+    mReflowContinueTimer->Cancel();
+    mReflowContinueTimer = nsnull;
+  }
+
   nsIFrame* rootFrame = FrameManager()->GetRootFrame();
 
   nsCOMPtr<nsIRenderingContext> rcx;
