@@ -4273,6 +4273,8 @@ nsresult nsPluginHost::ScanPluginsDirectory(nsIFile * pluginsDir,
   // put newer plugins first to weed out dups and catch upgrades, see bug 119966
   pluginFilesArray.Sort();
 
+  PRBool warnOutdated = PR_FALSE;
+
   // finally, go through the array, looking at each entry and continue processing it
   for (PRUint32 i = 0; i < pluginFilesArray.Length(); i++) {
     pluginFileinDirectory &pfd = pluginFilesArray[i];
@@ -4381,6 +4383,8 @@ nsresult nsPluginHost::ScanPluginsDirectory(nsIFile * pluginsDir,
             pluginTag->Mark(NS_PLUGIN_FLAG_BLOCKLISTED);
           else if (state == nsIBlocklistService::STATE_SOFTBLOCKED && !seenBefore)
             enabled = PR_FALSE;
+          else if (state == nsIBlocklistService::STATE_OUTDATED && !seenBefore)
+            warnOutdated = PR_TRUE;
         }
       }
 
@@ -4436,6 +4440,10 @@ nsresult nsPluginHost::ScanPluginsDirectory(nsIFile * pluginsDir,
       pluginTag = nsnull;
     }
   }
+  
+  if (warnOutdated)
+    mPrefService->SetBoolPref("plugins.update.notifyUser", PR_TRUE);
+
   return NS_OK;
 }
 
@@ -5871,6 +5879,23 @@ nsPluginHost::GetPluginName(nsIPluginInstance *aPluginInstance,
                             const char** aPluginName)
 {
   *aPluginName = GetPluginName(aPluginInstance);
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+nsPluginHost::GetPluginTagForInstance(nsIPluginInstance *aPluginInstance,
+                                      nsIPluginTag **aPluginTag)
+{
+  NS_ENSURE_ARG_POINTER(aPluginInstance);
+  NS_ENSURE_ARG_POINTER(aPluginTag);
+  
+  nsPluginInstanceTag *plugin =
+    gActivePluginList ? gActivePluginList->find(aPluginInstance) : nsnull;
+
+  NS_ENSURE_TRUE(plugin && plugin->mPluginTag, NS_ERROR_FAILURE);
+  
+  *aPluginTag = plugin->mPluginTag;
+  NS_ADDREF(*aPluginTag);
   return NS_OK;
 }
 
