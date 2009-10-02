@@ -98,6 +98,9 @@
                 label="&mediaHideControls.label;"
                 accesskey="&mediaHideControls.accesskey;"
                 oncommand="gContextMenu.mediaCommand('hidecontrols');"/>
+      <menuitem id="context-video-fullscreen"
+                label="&fullScreenCmd.label;"
+                oncommand="gContextMenu.fullScreenVideo();"/>
       <menuseparator id="context-media-sep-commands"/>
       <menuitem id="context-reloadimage"
                 label="&reloadImageCmd.label;"
