@@ -310,9 +310,9 @@ CheckXSLTParamPI(nsIDOMProcessingInstruction* aPi,
 }
 
 NS_IMETHODIMP
-nsXMLContentSink::DidBuildModel()
+nsXMLContentSink::DidBuildModel(PRBool aTerminated)
 {
-  DidBuildModelImpl();
+  DidBuildModelImpl(aTerminated);
 
   if (mXSLTProcessor) {
     // stop observing in order to avoid crashing when replacing content
@@ -384,12 +384,6 @@ nsXMLContentSink::DidBuildModel()
   DropParserAndPerfHint();
 
   return NS_OK;
-}
-
-PRBool
-nsXMLContentSink::ReadyToCallDidBuildModel(PRBool aTerminated)
-{
-  return ReadyToCallDidBuildModelImpl(aTerminated);
 }
 
 NS_IMETHODIMP

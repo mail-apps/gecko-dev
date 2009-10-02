@@ -362,7 +362,7 @@ class nsHtml5Parser : public nsIParser,
     /**
      * Emits EOF.
      */
-    NS_IMETHOD DidBuildModel();
+    NS_IMETHOD DidBuildModel(PRBool aTerminated);
 
     /**
      * Forwards to nsContentSink

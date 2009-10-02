@@ -429,12 +429,7 @@ nsHtml5Parser::Terminate(void)
   // CancelParsingEvents must be called to avoid leaking the nsParser object
   // @see bug 108049
   CancelParsingEvents();
-#ifdef DEBUG
-  PRBool ready =
-#endif
-  ReadyToCallDidBuildModelImpl(PR_TRUE);
-  NS_ASSERTION(ready, "Should always be ready to call DidBuildModel here.");
-  return DidBuildModel();
+  return DidBuildModel(PR_TRUE);
 }
 
 NS_IMETHODIMP
@@ -762,14 +757,14 @@ nsHtml5Parser::WillBuildModel(nsDTDMode aDTDMode)
 
 // This is called when the tree construction has ended
 NS_IMETHODIMP
-nsHtml5Parser::DidBuildModel()
+nsHtml5Parser::DidBuildModel(PRBool aTerminated)
 {
   NS_ASSERTION(mLifeCycle == STREAM_ENDING, "Bad life cycle.");
   mTokenizer->eof();
   mTokenizer->end();
   mLifeCycle = TERMINATED;
   // This is comes from nsXMLContentSink
-  DidBuildModelImpl();
+  DidBuildModelImpl(aTerminated);
   mDocument->ScriptLoader()->RemoveObserver(this);
   StartLayout(PR_FALSE);
   ScrollToRef();
@@ -1188,9 +1183,7 @@ nsHtml5Parser::ParseUntilSuspend()
             mFirstBuffer->setEnd(0);
             return; // no more data for now but expecting more
           case STREAM_ENDING:
-            if (ReadyToCallDidBuildModelImpl(PR_FALSE)) {
-              DidBuildModel();
-            }
+            DidBuildModel(PR_FALSE);
             return; // no more data and not expecting more
           default:
             NS_NOTREACHED("It should be impossible to reach this.");
