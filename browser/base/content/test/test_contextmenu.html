@@ -50,7 +50,8 @@ function getVisibleMenuItems(aMenu) {
 
         if (item.nodeName == "menuitem") {
             ok(item.id, "child menuitem #" + i + " has an ID");
-            ok(key, "menuitem has an access key");
+            if (item.id != "context-video-fullscreen")
+                ok(key, "menuitem has an access key");
             if (accessKeys[key])
                 ok(false, "menuitem " + item.id + " has same accesskey as " + accessKeys[key]);
             else
@@ -230,6 +231,7 @@ function runTest(testNum) {
         checkContextMenu(["context-media-play",         true,
                           "context-media-mute",         true,
                           "context-media-showcontrols", true,
+                          "context-video-fullscreen",   true,
                           "---",                        null,
                           "context-viewvideo",          true,
                           "context-copyvideourl",       true,
@@ -245,6 +247,7 @@ function runTest(testNum) {
         checkContextMenu(["context-media-play",         false,
                           "context-media-mute",         false,
                           "context-media-showcontrols", false,
+                          "context-video-fullscreen",   false,
                           "---",                        null,
                           "context-viewvideo",          true,
                           "context-copyvideourl",       true,
@@ -260,6 +263,7 @@ function runTest(testNum) {
         checkContextMenu(["context-media-play",         false,
                           "context-media-mute",         false,
                           "context-media-showcontrols", false,
+                          "context-video-fullscreen",   false,
                           "---",                        null,
                           "context-viewvideo",          false,
                           "context-copyvideourl",       false,
