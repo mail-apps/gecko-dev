@@ -2760,7 +2760,7 @@ NS_IMETHODIMP nsPluginInstanceOwner::InvalidateRect(nsPluginRect *invalidRect)
                 presContext->DevPixelsToAppUnits(invalidRect->top),
                 presContext->DevPixelsToAppUnits(invalidRect->right - invalidRect->left),
                 presContext->DevPixelsToAppUnits(invalidRect->bottom - invalidRect->top));
-    mOwner->Invalidate(rect);
+    mOwner->Invalidate(rect + mOwner->GetUsedBorderAndPadding().TopLeft());
   }
 
   return rv;
