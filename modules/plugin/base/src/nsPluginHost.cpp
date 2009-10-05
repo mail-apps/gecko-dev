@@ -2478,6 +2478,11 @@ nsPluginHost::nsPluginHost()
       mDefaultPluginDisabled = tmp;
     }
 
+    rv = mPrefService->GetBoolPref("plugin.disable", &tmp);
+    if (NS_SUCCEEDED(rv)) {
+      mPluginsDisabled = tmp;
+    }
+
 #ifdef WINCE
     mDefaultPluginDisabled = PR_TRUE;
 #endif
@@ -4939,6 +4944,9 @@ NS_IMETHODIMP nsPluginHost::LoadPlugins()
   // do not do anything if it is already done
   // use ReloadPlugins() to enforce loading
   if (mPluginsLoaded)
+    return NS_OK;
+
+  if (mPluginsDisabled)
     return NS_OK;
 
   PRBool pluginschanged;
