@@ -1795,7 +1795,7 @@ function BrowserOpenTab()
                       "chrome,all,dialog=no", "about:blank");
     return;
   }
-  gBrowser.loadOneTab("about:blank", null, null, null, false, false);
+  gBrowser.loadOneTab("about:blank", {inBackground: false});
   if (gURLBar)
     gURLBar.focus();
 }
@@ -1818,7 +1818,12 @@ function delayedOpenWindow(chrome, flags, href, postData)
    the URI kicked off before becoming the active content area. */
 function delayedOpenTab(aUrl, aReferrer, aCharset, aPostData, aAllowThirdPartyFixup)
 {
-  gBrowser.loadOneTab(aUrl, aReferrer, aCharset, aPostData, false, aAllowThirdPartyFixup);
+  gBrowser.loadOneTab(aUrl, {
+                      referrerURI: aReferrer,
+                      charset: aCharset,
+                      postData: aPostData,
+                      inBackground: false,
+                      allowThirdPartyFixup: aAllowThirdPartyFixup});
 }
 
 var gLastOpenDirectory = {
@@ -6032,7 +6037,7 @@ function blocklistInfo()
   var formatter = Components.classes["@mozilla.org/toolkit/URLFormatterService;1"]
                             .getService(Components.interfaces.nsIURLFormatter);
   var url = formatter.formatURLPref("extensions.blocklist.detailsURL");
-  gBrowser.loadOneTab(url, null, null, null, false, false);
+  gBrowser.loadOneTab(url, {inBackground: false});
   return true;
 }
 
