@@ -109,6 +109,12 @@ XPIDLSRCS	= \
 
 ifeq ($(MOZ_WIDGET_TOOLKIT),windows)
 XPIDLSRCS	+= nsIPrintSettingsWin.idl
+		nsIWinTaskbar.idl	\
+		nsITaskbarPreview.idl	\
+		nsITaskbarTabPreview.idl \
+		nsITaskbarWindowPreview.idl \
+		nsITaskbarPreviewController.idl \
+		nsITaskbarPreviewButton.idl
 endif
 
 ifeq ($(MOZ_WIDGET_TOOLKIT),cocoa)

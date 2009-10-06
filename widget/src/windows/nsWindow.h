@@ -68,6 +68,7 @@
 #endif
 
 #include "WindowHook.h"
+#include "TaskbarWindowPreview.h"
 
 #ifdef ACCESSIBILITY
 #include "OLEACC.H"
@@ -95,6 +96,9 @@ class imgIContainer;
 class nsWindow : public nsBaseWidget
 {
   typedef mozilla::widget::WindowHook WindowHook;
+#if MOZ_WINSDK_TARGETVER >= MOZ_NTDDI_WIN7
+  typedef mozilla::widget::TaskbarWindowPreview TaskbarWindowPreview;
+#endif
 public:
   nsWindow();
   virtual ~nsWindow();
@@ -230,6 +234,20 @@ public:
   // needed in nsIMM32Handler.cpp
   PRBool                  PluginHasFocus() { return mIMEEnabled == nsIWidget::IME_STATUS_PLUGIN; }
   virtual void            SetUpForPaint(HDC aHDC);
+
+#if MOZ_WINSDK_TARGETVER >= MOZ_NTDDI_WIN7
+  PRBool HasTaskbarIconBeenCreated() { return mHasTaskbarIconBeenCreated; }
+  // Called when either the nsWindow or an nsITaskbarTabPreview receives the noticiation that this window
+  // has its icon placed on the taskbar.
+  void SetHasTaskbarIconBeenCreated(PRBool created = PR_TRUE) { mHasTaskbarIconBeenCreated = created; }
+
+  // Getter/setter for the nsITaskbarWindowPreview for this nsWindow
+  already_AddRefed<nsITaskbarWindowPreview> GetTaskbarPreview() {
+    nsCOMPtr<nsITaskbarWindowPreview> preview(do_QueryReferent(mTaskbarPreview));
+    return preview.forget();
+  }
+  void SetTaskbarPreview(nsITaskbarWindowPreview *preview) { mTaskbarPreview = do_GetWeakReference(preview); }
+#endif
 
 protected:
 
@@ -462,6 +480,14 @@ protected:
 #if !defined(WINCE)
   nsWinGesture          mGesture;
 #endif // !defined(WINCE)
+
+#if MOZ_WINSDK_TARGETVER >= MOZ_NTDDI_WIN7
+  // Weak ref to the nsITaskbarWindowPreview associated with this window
+  nsWeakPtr             mTaskbarPreview;
+  // True if the taskbar (possibly through the tab preview) tells us that the
+  // icon has been created on the taskbar.
+  PRBool                mHasTaskbarIconBeenCreated;
+#endif
 
 #if defined(WINCE_HAVE_SOFTKB)
   static PRBool         sSoftKeyMenuBar;
