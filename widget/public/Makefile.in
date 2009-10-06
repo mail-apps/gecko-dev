@@ -114,7 +114,6 @@ XPIDLSRCS	+= nsIPrintSettingsWin.idl \
 		nsITaskbarTabPreview.idl \
 		nsITaskbarWindowPreview.idl \
 		nsITaskbarPreviewController.idl \
-		nsITaskbarPreviewButton.idl
 		nsITaskbarPreviewButton.idl \
 		nsITaskbarProgress.idl \
 		$(NULL)
