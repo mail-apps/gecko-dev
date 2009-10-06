@@ -353,6 +353,8 @@ def GetVCSFilename(file, srcdirs):
         for srcdir in srcdirs:
             if os.path.isdir(os.path.join(path, "CVS")):
                 fileInfo = CVSFileInfo(file, srcdir)
+                if fileInfo:
+                   root = fileInfo.root
             elif os.path.isdir(os.path.join(path, ".svn")) or \
                  os.path.isdir(os.path.join(path, "_svn")):
                  fileInfo = SVNFileInfo(file);
@@ -366,7 +368,6 @@ def GetVCSFilename(file, srcdirs):
     
     if fileInfo:
         file = fileInfo.filename
-        root = fileInfo.root
 
     # we want forward slashes on win32 paths
     return (file.replace("\\", "/"), root)
@@ -380,15 +381,15 @@ def GetPlatformSpecificDumper(**kwargs):
             'sunos5': Dumper_Solaris,
             'darwin': Dumper_Mac}[sys.platform](**kwargs)
 
-def SourceIndex(fileStream, outputPath, vcs_root):
+def SourceIndex(fileStream, outputPath, cvs_root):
     """Takes a list of files, writes info to a data block in a .stream file"""
     # Creates a .pdb.stream file in the mozilla\objdir to be used for source indexing
     # Create the srcsrv data block that indexes the pdb file
     result = True
     pdbStreamFile = open(outputPath, "w")
-    pdbStreamFile.write('''SRCSRV: ini ------------------------------------------------\r\nVERSION=2\r\nINDEXVERSION=2\r\nVERCTRL=http\r\nSRCSRV: variables ------------------------------------------\r\nHGSERVER=''')
-    pdbStreamFile.write(vcs_root)
-    pdbStreamFile.write('''\r\nSRCSRVVERCTRL=http\r\nHTTP_EXTRACT_TARGET=%hgserver%/raw-file/%var3%/%var2%\r\nSRCSRVTRG=%http_extract_target%\r\nSRCSRV: source files ---------------------------------------\r\n''')
+    pdbStreamFile.write('''SRCSRV: ini ------------------------------------------------\r\nVERSION=1\r\nSRCSRV: variables ------------------------------------------\r\nCVS_EXTRACT_CMD=%fnchdir%(%targ%)cvs.exe -d %fnvar%(%var2%) checkout -r %var4% -d %var4% -N %var3%\r\nMYSERVER=''')
+    pdbStreamFile.write(cvs_root)
+    pdbStreamFile.write('''\r\nSRCSRVTRG=%targ%\%var4%\%fnbksl%(%var3%)\r\nSRCSRVCMD=%CVS_EXTRACT_CMD%\r\nSRCSRV: source files ---------------------------------------\r\n''')
     pdbStreamFile.write(fileStream) # can't do string interpolation because the source server also uses this and so there are % in the above
     pdbStreamFile.write("SRCSRV: end ------------------------------------------------\r\n\n")
     pdbStreamFile.close()
@@ -449,7 +450,7 @@ class Dumper:
         return file
 
     # This is a no-op except on Win32
-    def SourceServerIndexing(self, debug_file, guid, sourceFileStream, vcs_root):
+    def SourceServerIndexing(self, debug_file, guid, sourceFileStream, cvs_root):
         return ""
 
     # subclasses override this if they want to support this
@@ -486,9 +487,9 @@ class Dumper:
         print >> sys.stderr, "Processing file: %s" % file
         result = False
         sourceFileStream = ''
-        # tries to get the vcs root from the .mozconfig first - if it's not set
-        # the tinderbox vcs path will be assigned further down
-        vcs_root = os.environ.get("SRCSRV_ROOT")
+        # tries to get cvsroot from the .mozconfig first - if it's not set
+        # the tinderbox cvs_path will be assigned further down
+        cvs_root = os.environ.get("SRCSRV_ROOT")
         for arch in self.archs:
             try:
                 cmd = os.popen("%s %s %s" % (self.dump_syms, arch, file), "r")
@@ -526,14 +527,14 @@ class Dumper:
                             sourcepath = filename
                             if self.vcsinfo:
                                 (filename, rootname) = GetVCSFilename(filename, self.srcdirs)
-                                # sets vcs_root in case the loop through files wre to end on an empty rootname
-                                if vcs_root is None:
+                                # sets cvs_root in case the loop through files were to end on an empty rootname
+                                if cvs_root is None:
                                   if rootname:
-                                     vcs_root = rootname
-                            # gather up files with hg for indexing   
-                            if filename.startswith("hg"):
+                                     cvs_root = rootname
+                            # gather up files with cvs for indexing   
+                            if filename.startswith("cvs"):
                                 (ver, checkout, source_file, revision) = filename.split(":", 3)
-                                sourceFileStream += sourcepath + "*" + source_file + '*' + revision + "\r\n"
+                                sourceFileStream += sourcepath + "*MYSERVER*" + source_file + '*' + revision + "\r\n"
                             f.write("FILE %s %s\n" % (index, filename))
                         else:
                             # pass through all other lines unchanged
@@ -543,7 +544,7 @@ class Dumper:
                     # we output relative paths so callers can get a list of what
                     # was generated
                     print rel_path
-                    if self.srcsrv and vcs_root:
+                    if self.srcsrv:
                         # add source server indexing to the pdb file
                         self.SourceServerIndexing(file, guid, sourceFileStream, vcs_root)
                     if self.copy_debug:
@@ -612,13 +613,13 @@ class Dumper_Win32(Dumper):
         else:
             print rel_path
         
-    def SourceServerIndexing(self, debug_file, guid, sourceFileStream, vcs_root):
+    def SourceServerIndexing(self, debug_file, guid, sourceFileStream, cvs_root):
         # Creates a .pdb.stream file in the mozilla\objdir to be used for source indexing
         debug_file = os.path.abspath(debug_file)
         streamFilename = debug_file + ".stream"
         stream_output_path = os.path.abspath(streamFilename)
         # Call SourceIndex to create the .stream file
-        result = SourceIndex(sourceFileStream, stream_output_path, vcs_root)
+        result = SourceIndex(sourceFileStream, stream_output_path, cvs_root)
         if self.copy_debug:
             pdbstr_path = os.environ.get("PDBSTR_PATH")
             pdbstr = os.path.normpath(pdbstr_path)
