@@ -115,6 +115,9 @@ XPIDLSRCS	+= nsIPrintSettingsWin.idl \
 		nsITaskbarWindowPreview.idl \
 		nsITaskbarPreviewController.idl \
 		nsITaskbarPreviewButton.idl
+		nsITaskbarPreviewButton.idl \
+		nsITaskbarProgress.idl \
+		$(NULL)
 endif
 
 ifeq ($(MOZ_WIDGET_TOOLKIT),cocoa)
