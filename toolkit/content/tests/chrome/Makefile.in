@@ -96,7 +96,9 @@ _TEST_FILES = 	findbar_window.xul \
 # textboxes and lists only, so skip this test on Mac
 ifeq (,$(filter mac cocoa,$(MOZ_WIDGET_TOOLKIT)))
 _TEST_FILES += test_panel_focus.xul \
-               window_panel_focus.xul
+               window_panel_focus.xul \
+               test_dialogfocus.xul \
+               dialog_dialogfocus.xul
 else
 _TEST_FILES += test_autocomplete.xul
 endif
