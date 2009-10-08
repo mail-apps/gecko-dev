@@ -9557,8 +9557,7 @@ nsCSSFrameConstructor::ProcessChildren(nsFrameConstructorState& aState,
                               itemsToConstruct);
   }
 
-  if (!aFrame->IsLeaf() &&
-      mDocument->BindingManager()->ShouldBuildChildFrames(aContent)) {
+  if (!aFrame->IsLeaf()) {
     // :before/:after content should have the same style context parent
     // as normal kids.
     // Note that we don't use this style context for looking up things like
