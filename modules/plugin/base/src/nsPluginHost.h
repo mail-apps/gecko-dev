@@ -40,6 +40,14 @@
 #define nsPluginHost_h_
 
 #include "nsIPluginHost.h"
+#ifdef OJI
+#include "nsIPluginManager.h"
+#include "nsIPluginManager2.h"
+#include "nsIPluginHostOld.h"
+#include "nsIFileUtilities.h"
+#include "nsICookieStorage.h"
+#include "nsICookieService.h"
+#endif
 #include "nsIObserver.h"
 #include "nsCOMPtr.h"
 #include "prlink.h"
@@ -68,7 +76,10 @@ class nsPluginHost;
 // Remember that flags are written out to pluginreg.dat, be careful
 // changing their meaning.
 #define NS_PLUGIN_FLAG_ENABLED      0x0001    // is this plugin enabled?
-// no longer used                   0x0002    // reuse only if regenerating pluginreg.dat
+#ifdef OJI
+#define NS_PLUGIN_FLAG_NPAPI        0x0002    // is this an NPAPI plugin?
+#endif
+// no longer used (if no OJI)       0x0002    // reuse only if regenerating pluginreg.dat
 #define NS_PLUGIN_FLAG_FROMCACHE    0x0004    // this plugintag info was loaded from cache
 #define NS_PLUGIN_FLAG_UNWANTED     0x0008    // this is an unwanted plugin
 #define NS_PLUGIN_FLAG_BLOCKLISTED  0x0010    // this is a blocklisted plugin
@@ -183,6 +194,12 @@ public:
 };
 
 class nsPluginHost : public nsIPluginHost,
+#ifdef OJI
+                     public nsIPluginManager2,
+                     public nsIPluginHostOld,
+                     public nsIFileUtilities,
+                     public nsICookieStorage,
+#endif
                      public nsIObserver,
                      public nsSupportsWeakReference
 {
@@ -198,6 +215,41 @@ public:
   NS_DECL_ISUPPORTS
   NS_DECL_NSIPLUGINHOST
   NS_DECL_NSIOBSERVER
+
+#ifdef OJI
+  NS_DECL_NSIFILEUTILITIES
+  NS_DECL_NSICOOKIESTORAGE
+  NS_DECL_NSIFACTORY
+
+  // nsIPluginHostOld methods not declared elsewhere
+  NS_IMETHOD GetPluginFactory(const char *aMimeType, nsIPlugin** aPlugin);
+
+  // nsIPluginManager methods not declared elsewhere
+  NS_IMETHOD GetValue(nsPluginManagerVariable aVariable, void *aValue);
+
+  NS_IMETHOD RegisterPlugin(REFNSIID aCID,
+                            const char* aPluginName,
+                            const char* aDescription,
+                            const char** aMimeTypes,
+                            const char** aMimeDescriptions,
+                            const char** aFileExtensions,
+                            PRInt32 aCount);
+
+  NS_IMETHOD UnregisterPlugin(REFNSIID aCID);
+
+  // nsIPluginManager2 methods not declared elsewhere
+
+  NS_IMETHOD BeginWaitCursor(void);
+  NS_IMETHOD EndWaitCursor(void);
+  NS_IMETHOD SupportsURLProtocol(const char* protocol, PRBool *result);
+  NS_IMETHOD NotifyStatusChange(nsIPlugin* plugin, nsresult errorStatus);
+  NS_IMETHOD RegisterWindow(nsIEventHandler* handler, nsPluginPlatformWindowRef window);
+  NS_IMETHOD UnregisterWindow(nsIEventHandler* handler, nsPluginPlatformWindowRef window);
+  NS_IMETHOD AllocateMenuID(nsIEventHandler* handler, PRBool isSubmenu, PRInt16 *result);
+  NS_IMETHOD DeallocateMenuID(nsIEventHandler* handler, PRInt16 menuID);
+  NS_IMETHOD HasAllocatedMenuID(nsIEventHandler* handler, PRInt16 menuID, PRBool *result);
+
+#endif
 
   NS_IMETHOD
   GetURL(nsISupports* pluginInst, 

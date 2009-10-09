@@ -145,6 +145,12 @@
 #include "nsIObjectLoadingContent.h"
 #include "nsIPluginHost.h"
 
+#ifdef OJI
+#include "nsIJVMManager.h"
+#include "nsILiveConnectManager.h"
+#include "nsIJVMPluginInstance.h"
+#endif
+
 // Oh, did I mention that I hate Microsoft for doing this to me?
 #ifdef XP_WIN
 #undef GetClassName
@@ -1467,6 +1473,14 @@ jsval nsDOMClassInfo::sOncut_id           = JSVAL_VOID;
 jsval nsDOMClassInfo::sOnpaste_id         = JSVAL_VOID;
 jsval nsDOMClassInfo::sJava_id            = JSVAL_VOID;
 jsval nsDOMClassInfo::sPackages_id        = JSVAL_VOID;
+#ifdef OJI
+jsval nsDOMClassInfo::sNetscape_id        = JSVAL_VOID;
+jsval nsDOMClassInfo::sSun_id             = JSVAL_VOID;
+jsval nsDOMClassInfo::sJavaObject_id      = JSVAL_VOID;
+jsval nsDOMClassInfo::sJavaClass_id       = JSVAL_VOID;
+jsval nsDOMClassInfo::sJavaArray_id       = JSVAL_VOID;
+jsval nsDOMClassInfo::sJavaMember_id      = JSVAL_VOID;
+#endif
 
 static const JSClass *sObjectClass = nsnull;
 const JSClass *nsDOMClassInfo::sXPCNativeWrapperClass = nsnull;
@@ -1663,6 +1677,14 @@ nsDOMClassInfo::DefineStaticJSVals(JSContext *cx)
   SET_JSVAL_TO_STRING(sOnpaste_id,         cx, "onpaste");
   SET_JSVAL_TO_STRING(sJava_id,            cx, "java");
   SET_JSVAL_TO_STRING(sPackages_id,        cx, "Packages");
+#ifdef OJI
+  SET_JSVAL_TO_STRING(sNetscape_id,        cx, "netscape");
+  SET_JSVAL_TO_STRING(sSun_id,             cx, "sun");
+  SET_JSVAL_TO_STRING(sJavaObject_id,      cx, "JavaObject");
+  SET_JSVAL_TO_STRING(sJavaClass_id,       cx, "JavaClass");
+  SET_JSVAL_TO_STRING(sJavaArray_id,       cx, "JavaArray");
+  SET_JSVAL_TO_STRING(sJavaMember_id,      cx, "JavaMember");
+#endif
 
   return NS_OK;
 }
@@ -4459,6 +4481,14 @@ nsDOMClassInfo::ShutDown()
   sOnpaste_id         = JSVAL_VOID;
   sJava_id            = JSVAL_VOID;
   sPackages_id        = JSVAL_VOID;
+#ifdef OJI
+  sNetscape_id        = JSVAL_VOID;
+  sSun_id             = JSVAL_VOID;
+  sJavaObject_id      = JSVAL_VOID;
+  sJavaClass_id       = JSVAL_VOID;
+  sJavaArray_id       = JSVAL_VOID;
+  sJavaMember_id      = JSVAL_VOID;
+#endif
 
   NS_IF_RELEASE(sXPConnect);
   NS_IF_RELEASE(sSecMan);
@@ -6592,7 +6622,12 @@ nsWindowSH::NewResolve(nsIXPConnectWrappedNative *wrapper, JSContext *cx,
       return NS_OK;
     }
 
-    if (id == sJava_id || id == sPackages_id) {
+    if (id == sJava_id || id == sPackages_id
+#ifdef OJI
+        || id == sNetscape_id || id == sSun_id || id == sJavaObject_id ||
+        id == sJavaClass_id || id == sJavaArray_id || id == sJavaMember_id
+#endif
+        ) {
       static PRBool isResolvingJavaProperties;
 
       if (!isResolvingJavaProperties) {
@@ -9726,10 +9761,45 @@ nsHTMLPluginObjElementSH::GetPluginJSObject(JSContext *cx, JSObject *obj,
     plugin_inst->GetJSObject(cx, plugin_obj);
     if (*plugin_obj) {
       *plugin_proto = ::JS_GetPrototype(cx, *plugin_obj);
+      return NS_OK;
     }
   }
 
+#ifdef OJI
+  *plugin_obj = nsnull;
+  *plugin_proto = nsnull;
+
+  nsCOMPtr<nsIJVMManager> jvm(do_GetService(nsIJVMManager::GetCID()));
+
+  if (!jvm) {
+    return NS_OK;
+  }
+
+  nsCOMPtr<nsIJVMPluginInstance> javaPluginInstance =
+    do_QueryInterface(plugin_inst);
+
+  if (!javaPluginInstance) {
+    return NS_OK;
+  }
+
+  jobject appletObject = nsnull;
+  nsresult rv = javaPluginInstance->GetJavaObject(&appletObject);
+
+  if (NS_FAILED(rv) || !appletObject) {
+    return rv;
+  }
+
+  nsCOMPtr<nsILiveConnectManager> manager =
+    do_GetService(nsIJVMManager::GetCID());
+
+  if (!manager) {
+    return NS_OK;
+  }
+
+  return manager->WrapJavaObject(cx, appletObject, plugin_obj);
+#else
   return NS_OK;
+#endif /* OJI */
 }
 
 

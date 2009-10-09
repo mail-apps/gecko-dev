@@ -185,6 +185,8 @@ js_XDRRegExpObject(JSXDRState *xdr, JSObject **objp);
 extern JSObject *
 js_CloneRegExpObject(JSContext *cx, JSObject *obj, JSObject *parent);
 
+#ifdef __cplusplus /* Allow inclusion from LiveConnect C files. */
+
 const uint32 JSSLOT_REGEXP_LAST_INDEX = JSSLOT_PRIVATE + 1;
 const uint32 REGEXP_CLASS_FIXED_RESERVED_SLOTS = 1;
 
@@ -194,6 +196,8 @@ js_ClearRegExpLastIndex(JSObject *obj)
     JS_ASSERT(obj->getClass() == &js_RegExpClass);
     obj->fslots[JSSLOT_REGEXP_LAST_INDEX] = JSVAL_ZERO;
 }
+
+#endif /* __cplusplus */
 
 JS_END_EXTERN_C
 

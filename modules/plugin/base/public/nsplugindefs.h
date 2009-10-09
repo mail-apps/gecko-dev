@@ -120,6 +120,8 @@ RCDATA NS_INFO_ProductName       { "NPAVI32 Dynamic Link Library\0" }
 #endif
 #endif /* __LP64__ */
 
+typedef const char*     nsMIMEType;
+
 struct nsByteRange {
     PRInt32             offset; 	/* negative offset means from the end */
     PRUint32            length;
@@ -203,6 +205,10 @@ enum nsPluginInstanceVariable {
     , nsPluginInstanceVariable_DrawingModel          = 20
 #endif
 };
+
+#ifdef OJI
+typedef nsPluginInstanceVariable nsPluginInstancePeerVariable;
+#endif
 
 ////////////////////////////////////////////////////////////////////////////////
 

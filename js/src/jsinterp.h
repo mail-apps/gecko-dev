@@ -129,6 +129,8 @@ struct JSStackFrame {
     JSStackFrame    *displaySave;   /* previous value of display entry for
                                        script->staticLevel */
 
+#ifdef __cplusplus /* Allow inclusion from LiveConnect C files. */
+
     inline void assertValidStackDepth(uintN depth);
 
     void putActivationObjects(JSContext *cx) {
@@ -147,15 +149,17 @@ struct JSStackFrame {
     JSObject *callee() {
         return argv ? JSVAL_TO_OBJECT(argv[-2]) : NULL;
     }
+
+#endif /* __cplusplus */
 };
 
 #ifdef __cplusplus
+
 static JS_INLINE uintN
 FramePCOffset(JSStackFrame* fp)
 {
     return uintN((fp->imacpc ? fp->imacpc : fp->regs->pc) - fp->script->code);
 }
-#endif
 
 static JS_INLINE jsval *
 StackBase(JSStackFrame *fp)
@@ -181,6 +185,8 @@ GlobalVarCount(JSStackFrame *fp)
         n -= fp->script->regexps()->length;
     return n;
 }
+
+#endif /* __cplusplus */
 
 typedef struct JSInlineFrame {
     JSStackFrame    frame;          /* base struct */
@@ -257,9 +263,11 @@ struct JSPropCacheEntry {
     jsuword             vcap;           /* value capability, see above */
     jsuword             vword;          /* value word, see PCVAL_* below */
 
+#ifdef __cplusplus /* Allow inclusion from LiveConnect C files. */
     bool adding() const {
         return PCVCAP_TAG(vcap) == 0 && kshape != PCVCAP_SHAPE(vcap);
     }
+#endif
 };
 
 /*
@@ -559,12 +567,16 @@ js_SameValue(jsval v1, jsval v2, JSContext *cx);
 extern JSBool
 js_InternNonIntElementId(JSContext *cx, JSObject *obj, jsval idval, jsid *idp);
 
+#ifdef __cplusplus /* Allow inclusion from LiveConnect C files. */
+
 /*
  * Given an active context, a static scope level, and an upvar cookie, return
  * the value of the upvar.
  */
 extern jsval&
 js_GetUpvar(JSContext *cx, uintN level, uintN cookie);
+
+#endif /* __cplusplus */
 
 /*
  * JS_LONE_INTERPRET indicates that the compiler should see just the code for

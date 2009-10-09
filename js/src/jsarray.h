@@ -85,21 +85,33 @@ js_IsDenseArray(JSObject *obj)
  * Callers of js_GetProtoIfDenseArray must take care to use the original object
  * (obj) for the |this| value of a getter, setter, or method call (bug 476447).
  */
+#ifdef __cplusplus /* Allow inclusion from LiveConnect C files. */
 static JS_INLINE JSObject *
 js_GetProtoIfDenseArray(JSContext *cx, JSObject *obj)
 {
     return OBJ_IS_DENSE_ARRAY(cx, obj) ? OBJ_GET_PROTO(cx, obj) : obj;
 }
+#endif
 
 extern JSObject *
 js_InitArrayClass(JSContext *cx, JSObject *obj);
 
+#ifdef __cplusplus /* Allow inclusion from LiveConnect C files. */
 extern bool
+#else
+extern JSBool
+#endif
 js_InitContextBusyArrayTable(JSContext *cx);
 
+#ifdef __cplusplus /* Allow inclusion from LiveConnect C files. */
 extern JSObject *
 js_NewArrayObject(JSContext *cx, jsuint length, jsval *vector,
                   JSBool holey = JS_FALSE);
+#else
+extern JSObject *
+js_NewArrayObject(JSContext *cx, jsuint length, jsval *vector,
+                  JSBool holey);
+#endif
 
 /* Create an array object that starts out already made slow/sparse. */
 extern JSObject *

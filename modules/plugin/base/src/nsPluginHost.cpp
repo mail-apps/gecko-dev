@@ -50,6 +50,11 @@
 #include "nsNPAPIPluginStreamListener.h"
 #include "nsIPlugin.h"
 #include "nsNPAPIPluginInstance.h"
+#ifdef OJI
+#include "nsIJVMPlugin.h"
+#include "nsIJVMPluginInstance.h"
+#include "nsIJVMManager.h"
+#endif
 #include "nsIPluginStreamListener.h"
 #include "nsIHTTPHeaderListener.h"
 #include "nsIHttpHeaderVisitor.h"
@@ -181,6 +186,10 @@ static const char *kPluginRegistryVersion = "0.11";
 // The minimum registry version we know how to read
 static const char *kMinimumRegistryVersion = "0.9";
 
+#ifdef OJI
+static NS_DEFINE_CID(kPluginOldCID, NS_PLUGINOLD_CID);
+static NS_DEFINE_IID(kIPluginInstanceOldIID, NS_IPLUGININSTANCEOLD_IID);
+#endif
 static NS_DEFINE_IID(kIPluginTagInfoIID, NS_IPLUGINTAGINFO_IID);
 static const char kDirectoryServiceContractID[] = "@mozilla.org/file/directory_service;1";
 
@@ -989,6 +998,16 @@ nsresult PostPluginUnloadEvent(PRLibrary* aLibrary)
 
 void nsPluginTag::TryUnloadPlugin()
 {
+#ifdef OJI
+  // Don't unload any XPCOM plugins.  They don't get a call to
+  // nsIPlugin::Shutdown if plugins are reloaded.
+  PRBool isXPCOM = PR_FALSE;
+  if (!(mFlags & NS_PLUGIN_FLAG_NPAPI))
+    isXPCOM = PR_TRUE;
+
+  if (isXPCOM) return;
+#endif
+
   if (mEntryPoint) {
     mEntryPoint->Shutdown();
     mEntryPoint->Release();
@@ -2488,10 +2507,22 @@ nsPluginHost::~nsPluginHost()
   sInst = nsnull;
 }
 
+#ifdef OJI
+NS_IMPL_ISUPPORTS8(nsPluginHost,
+                   nsIPluginHost,
+                   nsIPluginHostOld,
+                   nsIPluginManager,
+                   nsIPluginManager2,
+                   nsIFileUtilities,
+                   nsICookieStorage,
+                   nsIObserver,
+                   nsISupportsWeakReference)
+#else
 NS_IMPL_ISUPPORTS3(nsPluginHost,
                    nsIPluginHost,
                    nsIObserver,
                    nsISupportsWeakReference)
+#endif
 
 nsPluginHost*
 nsPluginHost::GetInst()
@@ -2588,7 +2619,14 @@ nsresult nsPluginHost::ReloadPlugins(PRBool reloadPages)
     next = p->mNext;
 
     // only remove our plugin from the list if it's not running.
-    if (!IsRunningPlugin(p)) {
+#ifdef OJI
+    // Don't remove any XPCOM plugins.  They don't get a call to
+    // nsIPlugin::Shutdown if plugins are reloaded.
+    if (!IsRunningPlugin(p) && (!p->mEntryPoint || p->HasFlag(NS_PLUGIN_FLAG_NPAPI)))
+#else
+    if (!IsRunningPlugin(p))
+#endif
+    {
       if (p == mPlugins)
         mPlugins = next;
       else
@@ -3529,6 +3567,23 @@ nsPluginHost::TrySetUpPluginInstance(const char *aMimeType,
 
   NS_ASSERTION(pluginTag, "Must have plugin tag here!");
 
+#ifdef OJI
+  PRBool isJavaPlugin = pluginTag->mIsJavaPlugin;
+  if (isJavaPlugin && !pluginTag->mIsNPRuntimeEnabledJavaPlugin) {
+    // We must make sure LiveConnect is started, if needed.
+    nsCOMPtr<nsIDocument> document;
+    aOwner->GetDocument(getter_AddRefs(document));
+    if (document) {
+      nsCOMPtr<nsPIDOMWindow> window =
+        do_QueryInterface(document->GetScriptGlobalObject());
+
+      if (window) {
+        window->InitJavaProperties();
+      }
+    }
+  }
+#endif
+
   GetPlugin(mimetype, getter_AddRefs(plugin));
 
   if (plugin) {
@@ -3550,7 +3605,27 @@ nsPluginHost::TrySetUpPluginInstance(const char *aMimeType,
       }
     }
 #endif
+#ifdef OJI
+    nsNPAPIPlugin *pluginPriv = static_cast<nsNPAPIPlugin*>(plugin.get());
+    nsIPluginOld *shadowPlugin = pluginPriv->GetShadow();
+    if (shadowPlugin) {
+      nsIPluginInstanceOld *shadowInstance = nsnull;
+      result = shadowPlugin->CreatePluginInstance(NULL,
+                                                  kIPluginInstanceOldIID,
+                                                  aMimeType,
+                                                  (void **)&shadowInstance);
+      if (NS_SUCCEEDED(result) && shadowInstance) {
+        instance =
+          static_cast<nsIPluginInstance*>(new nsNPAPIPluginInstance(shadowInstance));
+        if (!instance)
+          return NS_ERROR_OUT_OF_MEMORY;
+      }
+    } else {
+      result = plugin->CreatePluginInstance(getter_AddRefs(instance));
+    }
+#else
     result = plugin->CreatePluginInstance(getter_AddRefs(instance));
+#endif
 
 #if defined(XP_WIN) && !defined(WINCE)
     if (!firstJavaPlugin && restoreOrigDir) {
@@ -4039,12 +4114,47 @@ NS_IMETHODIMP nsPluginHost::GetPlugin(const char *aMimeType, nsIPlugin** aPlugin
     }
 
     nsIPlugin* plugin = pluginTag->mEntryPoint;
+#ifdef OJI
+    if (!plugin) {
+      // First try to get the entry point from an NPAPI plugin.
+      rv = CreateNPAPIPlugin(pluginTag, &plugin);
+      if (NS_SUCCEEDED(rv)) {
+        pluginTag->mEntryPoint = plugin;
+        pluginTag->Mark(NS_PLUGIN_FLAG_NPAPI);
+      // And if that fails, try to get an OJI plugin's entry point
+      } else if (pluginTag->mIsJavaPlugin) {
+        // Refuse to load any other OJI plugin than the JEP.
+        if (pluginTag->mName.Find("Java Embedding Plugin") != kNotFound) {
+          nsFactoryProc nsGetFactory = nsnull;
+          nsGetFactory = (nsFactoryProc) PR_FindFunctionSymbol(pluginTag->mLibrary, "NSGetFactory");
+
+          // No, this is not a leak. GetGlobalServiceManager() doesn't
+          // addref the pointer on the way out. It probably should.
+          nsIServiceManagerObsolete* serviceManager;
+          nsServiceManager::GetGlobalServiceManager((nsIServiceManager**)&serviceManager);
+
+          nsIPluginOld *shadow = nsnull;
+          rv = nsGetFactory(serviceManager, kPluginOldCID, nsnull, nsnull,
+                            (nsIFactory**)&shadow);
+          if (NS_SUCCEEDED(rv) && shadow) {
+            plugin = static_cast<nsIPlugin*>(new nsNPAPIPlugin(shadow));
+            if (!plugin)
+              return NS_ERROR_OUT_OF_MEMORY;
+            NS_ADDREF(plugin);
+            plugin->Initialize();
+            pluginTag->mEntryPoint = plugin;
+          }
+        }
+      }
+    }
+#else
     if (!plugin) {
       // Now lets try to get the entry point from an NPAPI plugin
       rv = CreateNPAPIPlugin(pluginTag, &plugin);
       if (NS_SUCCEEDED(rv))
         pluginTag->mEntryPoint = plugin;
     }
+#endif
 
     if (plugin) {
       *aPlugin = plugin;
@@ -4060,6 +4170,233 @@ NS_IMETHODIMP nsPluginHost::GetPlugin(const char *aMimeType, nsIPlugin** aPlugin
 
   return rv;
 }
+
+#ifdef OJI
+// nsIPluginHostOld methods not implemented elsewhere
+
+NS_IMETHODIMP nsPluginHost::GetPluginFactory(const char *aMimeType, nsIPlugin** aPlugin)
+{
+	return GetPlugin(aMimeType, aPlugin);
+}
+
+// nsIFactory interface
+
+NS_IMETHODIMP nsPluginHost::CreateInstance(nsISupports *aOuter,
+                                           REFNSIID aIID,
+                                           void **aResult)
+{
+  NS_NOTREACHED("how'd I get here?");
+  return NS_ERROR_UNEXPECTED;
+}
+
+NS_IMETHODIMP nsPluginHost::LockFactory(PRBool aLock)
+{
+  NS_NOTREACHED("how'd I get here?");
+  return NS_ERROR_UNEXPECTED;
+}
+
+// nsIFileUtilties interface
+
+NS_IMETHODIMP nsPluginHost::GetProgramPath(const char* *result)
+{
+  nsresult rv;
+  NS_ENSURE_ARG_POINTER(result);
+  *result = nsnull;
+
+  nsCOMPtr<nsIProperties> dirService(do_GetService(kDirectoryServiceContractID, &rv));
+  if (NS_FAILED(rv))
+    return rv;
+  nsCOMPtr<nsILocalFile> programDir;
+  rv = dirService->Get(NS_XPCOM_CURRENT_PROCESS_DIR, NS_GET_IID(nsILocalFile), getter_AddRefs(programDir));
+  if (NS_FAILED(rv))
+    return rv;
+
+  nsCAutoString temp;
+  rv = programDir->GetNativePath(temp);
+  *result = ToNewCString(temp);
+  return rv;
+}
+
+NS_IMETHODIMP nsPluginHost::GetTempDirPath(const char* *result)
+{
+  nsresult rv;
+  NS_ENSURE_ARG_POINTER(result);
+  *result = nsnull;
+
+  nsCOMPtr<nsIProperties> dirService(do_GetService(kDirectoryServiceContractID, &rv));
+  if (NS_FAILED(rv))
+    return rv;
+  nsCOMPtr<nsILocalFile> tempDir;
+  rv = dirService->Get(NS_OS_TEMP_DIR, NS_GET_IID(nsILocalFile), getter_AddRefs(tempDir));
+  if (NS_FAILED(rv))
+    return rv;
+
+  nsCAutoString temp;
+  rv = tempDir->GetNativePath(temp);
+  *result = ToNewCString(temp);
+  return rv;
+}
+
+NS_IMETHODIMP nsPluginHost::NewTempFileName(const char* prefix, PRUint32 bufLen, char* resultBuf)
+{
+  return NS_ERROR_NOT_IMPLEMENTED;
+}
+
+// nsIPluginManager methods not implemented elsewhere
+
+NS_IMETHODIMP nsPluginHost::GetValue(nsPluginManagerVariable aVariable, void *aValue)
+{
+  NS_ENSURE_ARG_POINTER(aValue);
+  if (nsPluginManagerVariable_SupportsXEmbed == aVariable)
+    *(NPBool*)aValue = PR_FALSE;
+  return NS_OK;
+}
+
+NS_IMETHODIMP nsPluginHost::RegisterPlugin(REFNSIID aCID,
+                                           const char* aPluginName,
+                                           const char* aDescription,
+                                           const char** aMimeTypes,
+                                           const char** aMimeDescriptions,
+                                           const char** aFileExtensions,
+                                           PRInt32 aCount)
+{
+  return NS_ERROR_NOT_IMPLEMENTED;
+}
+
+NS_IMETHODIMP nsPluginHost::UnregisterPlugin(REFNSIID aCID)
+{
+  return NS_ERROR_NOT_IMPLEMENTED;
+}
+
+// nsIPluginManager2 methods not implemented elsewhere
+
+NS_IMETHODIMP nsPluginHost::BeginWaitCursor(void)
+{
+  return NS_ERROR_NOT_IMPLEMENTED;
+}
+
+NS_IMETHODIMP nsPluginHost::EndWaitCursor(void)
+{
+  return NS_ERROR_NOT_IMPLEMENTED;
+}
+
+NS_IMETHODIMP nsPluginHost::SupportsURLProtocol(const char* protocol, PRBool *result)
+{
+  return NS_ERROR_NOT_IMPLEMENTED;
+}
+
+NS_IMETHODIMP nsPluginHost::NotifyStatusChange(nsIPlugin* plugin, nsresult errorStatus)
+{
+  return NS_ERROR_NOT_IMPLEMENTED;
+}
+
+NS_IMETHODIMP nsPluginHost::RegisterWindow(nsIEventHandler* handler, nsPluginPlatformWindowRef window)
+{
+  return NS_ERROR_NOT_IMPLEMENTED;
+}
+
+NS_IMETHODIMP nsPluginHost::UnregisterWindow(nsIEventHandler* handler, nsPluginPlatformWindowRef window)
+{
+  return NS_ERROR_NOT_IMPLEMENTED;
+}
+
+NS_IMETHODIMP nsPluginHost::AllocateMenuID(nsIEventHandler* handler, PRBool isSubmenu, PRInt16 *result)
+{
+  return NS_ERROR_NOT_IMPLEMENTED;
+}
+
+NS_IMETHODIMP nsPluginHost::DeallocateMenuID(nsIEventHandler* handler, PRInt16 menuID)
+{
+  return NS_ERROR_NOT_IMPLEMENTED;
+}
+
+NS_IMETHODIMP nsPluginHost::HasAllocatedMenuID(nsIEventHandler* handler, PRInt16 menuID, PRBool *result)
+{
+  return NS_ERROR_NOT_IMPLEMENTED;
+}
+
+// nsICookieStorage interface
+
+NS_IMETHODIMP nsPluginHost::GetCookie(const char* inCookieURL, void* inOutCookieBuffer, PRUint32& inOutCookieSize)
+{
+  nsresult rv = NS_ERROR_NOT_IMPLEMENTED;
+  nsXPIDLCString cookieString;
+  PRUint32 cookieStringLen = 0;
+  nsCOMPtr<nsIURI> uriIn;
+
+  if (!inCookieURL || (0 >= inOutCookieSize)) {
+    return NS_ERROR_INVALID_ARG;
+  }
+
+  nsCOMPtr<nsIIOService> ioService(do_GetService(NS_IOSERVICE_CONTRACTID, &rv));
+
+  if (NS_FAILED(rv) || !ioService)
+    return rv;
+
+  nsCOMPtr<nsICookieService> cookieService =
+           do_GetService(NS_COOKIESERVICE_CONTRACTID, &rv);
+
+  if (NS_FAILED(rv) || !cookieService)
+    return NS_ERROR_INVALID_ARG;
+
+  // make an nsURI from the argument url
+  rv = ioService->NewURI(nsDependentCString(inCookieURL), nsnull, nsnull, getter_AddRefs(uriIn));
+  if (NS_FAILED(rv))
+    return rv;
+
+  rv = cookieService->GetCookieString(uriIn, nsnull, getter_Copies(cookieString));
+
+  if (NS_FAILED(rv) || !cookieString ||
+      (inOutCookieSize <= (cookieStringLen = PL_strlen(cookieString.get())))) {
+    return NS_ERROR_FAILURE;
+  }
+
+  PL_strcpy((char *) inOutCookieBuffer, cookieString.get());
+  inOutCookieSize = cookieStringLen;
+  rv = NS_OK;
+
+  return rv;
+}
+
+NS_IMETHODIMP nsPluginHost::SetCookie(const char* inCookieURL, const void* inCookieBuffer, PRUint32 inCookieSize)
+{
+  nsresult rv = NS_ERROR_NOT_IMPLEMENTED;
+  nsCOMPtr<nsIURI> uriIn;
+
+  if (!inCookieURL || !inCookieBuffer ||
+      (0 >= inCookieSize)) {
+    return NS_ERROR_INVALID_ARG;
+  }
+
+  nsCOMPtr<nsIIOService> ioService(do_GetService(NS_IOSERVICE_CONTRACTID, &rv));
+
+  if (NS_FAILED(rv) || !ioService)
+    return rv;
+
+  nsCOMPtr<nsICookieService> cookieService =
+           do_GetService(NS_COOKIESERVICE_CONTRACTID, &rv);
+
+  if (NS_FAILED(rv) || !cookieService)
+    return NS_ERROR_FAILURE;
+
+  // make an nsURI from the argument url
+  rv = ioService->NewURI(nsDependentCString(inCookieURL), nsnull, nsnull, getter_AddRefs(uriIn));
+  if (NS_FAILED(rv))
+    return NS_ERROR_FAILURE;
+
+  nsCOMPtr<nsIPrompt> prompt;
+  GetPrompt(nsnull, getter_AddRefs(prompt));
+
+  char * cookie = (char *)inCookieBuffer;
+  char c = cookie[inCookieSize];
+  cookie[inCookieSize] = '\0';
+  rv = cookieService->SetCookieString(uriIn, prompt, cookie, nsnull);
+  cookie[inCookieSize] = c;
+
+  return rv;
+}
+
+#endif // OJI
 
 // XXX called from ScanPluginsDirectory only when told to filter
 // currently 'unwanted' plugins are Java, and all other plugins except
@@ -5473,6 +5810,10 @@ NS_IMETHODIMP nsPluginHost::Observe(nsISupports *aSubject,
     // inform all active plugins of changed private mode state
     for (nsPluginInstanceTag* ap = mPluginInstanceTagList.mFirst; ap; ap = ap->mNext) {
       nsNPAPIPluginInstance* pi = static_cast<nsNPAPIPluginInstance*>(ap->mInstance);
+#ifdef OJI
+      nsPluginTag* pt = ap->mPluginTag;
+      if (pt->HasFlag(NS_PLUGIN_FLAG_NPAPI))
+#endif
       pi->PrivateModeStateChanged();
     }
   }

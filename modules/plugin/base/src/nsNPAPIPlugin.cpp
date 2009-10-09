@@ -262,13 +262,37 @@ nsNPAPIPlugin::CheckClassInitialized(void)
   NPN_PLUGIN_LOG(PLUGIN_LOG_NORMAL,("NPN callbacks initialized\n"));
 }
 
+#ifdef OJI
+NS_IMPL_ISUPPORTS5(nsNPAPIPlugin,
+                   nsIPlugin,
+                   nsIPluginOld,
+                   nsIFactory,
+                   nsIJVMPlugin,
+                   nsIJVMConsole)
+
+#else
 NS_IMPL_ISUPPORTS1(nsNPAPIPlugin, nsIPlugin)
+#endif
+
+#ifdef OJI
+nsNPAPIPlugin::nsNPAPIPlugin(nsIPluginOld *aShadow)
+{
+  mShadow = aShadow;
+  fLibrary = nsnull;
+  fShutdownEntry = nsnull;
+  memset((void*) &fCallbacks, 0, sizeof(fCallbacks));
+  CheckClassInitialized();
+}
+#endif
 
 nsNPAPIPlugin::nsNPAPIPlugin(NPPluginFuncs* callbacks, PRLibrary* aLibrary,
                              NP_PLUGINSHUTDOWN aShutdown)
 {
   memset((void*) &fCallbacks, 0, sizeof(fCallbacks));
   fLibrary = nsnull;
+#ifdef OJI
+  mShadow = nsnull;
+#endif
 
 #if defined(XP_WIN) || defined(XP_OS2)
   // On Windows (and Mac) we need to keep a direct reference to the
@@ -336,6 +360,10 @@ nsNPAPIPlugin::~nsNPAPIPlugin()
 {
   // reset the callbacks list
   memset((void*) &fCallbacks, 0, sizeof(fCallbacks));
+
+#ifdef OJI
+  NS_IF_RELEASE(mShadow);
+#endif
 }
 
 
@@ -600,9 +628,202 @@ nsNPAPIPlugin::CreatePluginInstance(nsIPluginInstance **aResult)
   return NS_OK;
 }
 
+#ifdef OJI
+
+// nsIPluginOld methods not implemented elsewhere
+
+NS_IMETHODIMP
+nsNPAPIPlugin::CreatePluginInstance(nsISupports *aOuter, REFNSIID aIID,
+                                    const char *aPluginMIMEType, void **aResult)
+{
+  if (mShadow)
+    return mShadow->CreatePluginInstance(aOuter, aIID, aPluginMIMEType, aResult);
+  return NS_ERROR_NOT_IMPLEMENTED;
+}
+
+// nsIFactory interface
+
+NS_IMETHODIMP
+nsNPAPIPlugin::CreateInstance(nsISupports *aOuter, const nsIID &aIID,
+                              void **aResult)
+{
+  if (mShadow) {
+    const char *mimedescr = NULL;
+    mShadow->GetMIMEDescription(&mimedescr);
+    return mShadow->CreatePluginInstance(nsnull, aIID, mimedescr, aResult);
+  }
+
+  return NS_ERROR_NOT_IMPLEMENTED;
+}
+
+NS_IMETHODIMP
+nsNPAPIPlugin::LockFactory(PRBool aLock)
+{
+  // Not implemented in simplest case.
+  return NS_OK;
+}
+
+// nsIJVMPlugin interface
+
+NS_IMETHODIMP
+nsNPAPIPlugin::AddToClassPath(const char* dirPath)
+{
+  if (mShadow) {
+    nsCOMPtr<nsIJVMPlugin> plugin(do_QueryInterface(mShadow));
+    if (!plugin)
+      return NS_ERROR_NOT_IMPLEMENTED;
+    return plugin->AddToClassPath(dirPath);
+  }
+  return NS_ERROR_NOT_IMPLEMENTED;
+}
+
+NS_IMETHODIMP
+nsNPAPIPlugin::RemoveFromClassPath(const char* dirPath)
+{
+  if (mShadow) {
+    nsCOMPtr<nsIJVMPlugin> plugin(do_QueryInterface(mShadow));
+    if (!plugin)
+      return NS_ERROR_NOT_IMPLEMENTED;
+    return plugin->RemoveFromClassPath(dirPath);
+  }
+  return NS_ERROR_NOT_IMPLEMENTED;
+}
+
+NS_IMETHODIMP
+nsNPAPIPlugin::GetClassPath(const char* *result)
+{
+  if (mShadow) {
+    nsCOMPtr<nsIJVMPlugin> plugin(do_QueryInterface(mShadow));
+    if (!plugin)
+      return NS_ERROR_NOT_IMPLEMENTED;
+    return plugin->GetClassPath(result);
+  }
+  return NS_ERROR_NOT_IMPLEMENTED;
+}
+
+NS_IMETHODIMP
+nsNPAPIPlugin::GetJavaWrapper(JNIEnv* env, jint jsobj, jobject *jobj)
+{
+  if (mShadow) {
+    nsCOMPtr<nsIJVMPlugin> plugin(do_QueryInterface(mShadow));
+    if (!plugin)
+      return NS_ERROR_NOT_IMPLEMENTED;
+    return plugin->GetJavaWrapper(env, jsobj, jobj);
+  }
+  return NS_ERROR_NOT_IMPLEMENTED;
+}
+
+NS_IMETHODIMP
+nsNPAPIPlugin::CreateSecureEnv(JNIEnv* proxyEnv, nsISecureEnv* *outSecureEnv)
+{
+  if (mShadow) {
+    nsCOMPtr<nsIJVMPlugin> plugin(do_QueryInterface(mShadow));
+    if (!plugin)
+      return NS_ERROR_NOT_IMPLEMENTED;
+    return plugin->CreateSecureEnv(proxyEnv, outSecureEnv);
+  }
+  return NS_ERROR_NOT_IMPLEMENTED;
+}
+
+NS_IMETHODIMP
+nsNPAPIPlugin::SpendTime(PRUint32 timeMillis)
+{
+  if (mShadow) {
+    nsCOMPtr<nsIJVMPlugin> plugin(do_QueryInterface(mShadow));
+    if (!plugin)
+      return NS_ERROR_NOT_IMPLEMENTED;
+    return plugin->SpendTime(timeMillis);
+  }
+  return NS_ERROR_NOT_IMPLEMENTED;
+}
+
+NS_IMETHODIMP
+nsNPAPIPlugin::UnwrapJavaWrapper(JNIEnv* jenv, jobject jobj, jint* obj)
+{
+  if (mShadow) {
+    nsCOMPtr<nsIJVMPlugin> plugin(do_QueryInterface(mShadow));
+    if (!plugin)
+      return NS_ERROR_NOT_IMPLEMENTED;
+    return plugin->UnwrapJavaWrapper(jenv, jobj, obj);
+  }
+  return NS_ERROR_NOT_IMPLEMENTED;
+}
+
+// nsIJVMConsole interface
+
+NS_IMETHODIMP
+nsNPAPIPlugin::Show(void)
+{
+  if (mShadow) {
+    nsCOMPtr<nsIJVMConsole> plugin(do_QueryInterface(mShadow));
+    if (!plugin)
+      return NS_ERROR_NOT_IMPLEMENTED;
+    return plugin->Show();
+  }
+  return NS_ERROR_NOT_IMPLEMENTED;
+}
+
+NS_IMETHODIMP
+nsNPAPIPlugin::Hide(void)
+{
+  if (mShadow) {
+    nsCOMPtr<nsIJVMConsole> plugin(do_QueryInterface(mShadow));
+    if (!plugin)
+      return NS_ERROR_NOT_IMPLEMENTED;
+    return plugin->Hide();
+  }
+  return NS_ERROR_NOT_IMPLEMENTED;
+}
+
+NS_IMETHODIMP
+nsNPAPIPlugin::IsVisible(PRBool *result)
+{
+  if (mShadow) {
+    nsCOMPtr<nsIJVMConsole> plugin(do_QueryInterface(mShadow));
+    if (!plugin)
+      return NS_ERROR_NOT_IMPLEMENTED;
+    return plugin->IsVisible(result);
+  }
+  return NS_ERROR_NOT_IMPLEMENTED;
+}
+
+NS_IMETHODIMP
+nsNPAPIPlugin::Print(const char* msg, const char* encodingName)
+{
+  if (mShadow) {
+    nsCOMPtr<nsIJVMConsole> plugin(do_QueryInterface(mShadow));
+    if (!plugin)
+      return NS_ERROR_NOT_IMPLEMENTED;
+    return plugin->Print(msg, encodingName);
+  }
+  return NS_ERROR_NOT_IMPLEMENTED;
+}
+
+// Helper methods
+
+void
+nsNPAPIPlugin::SetShadow(nsIPluginOld *shadow)
+{
+  NS_IF_RELEASE(mShadow);
+  mShadow = shadow;
+  NS_IF_ADDREF(mShadow);
+}
+
+nsIPluginOld *
+nsNPAPIPlugin::GetShadow()
+{
+  return mShadow;
+}
+
+#endif // OJI
+
 nsresult
 nsNPAPIPlugin::Initialize(void)
 {
+#ifdef OJI
+  if (mShadow)
+    return mShadow->Initialize();
+#endif
   if (!fLibrary)
     return NS_ERROR_FAILURE;
   return NS_OK;
@@ -611,6 +832,11 @@ nsNPAPIPlugin::Initialize(void)
 nsresult
 nsNPAPIPlugin::Shutdown(void)
 {
+#ifdef OJI
+  if (mShadow)
+    return mShadow->Shutdown();
+#endif
+
   NPP_PLUGIN_LOG(PLUGIN_LOG_BASIC,
                  ("NPP Shutdown to be called: this=%p\n", this));
 
@@ -633,6 +859,11 @@ nsNPAPIPlugin::Shutdown(void)
 nsresult
 nsNPAPIPlugin::GetMIMEDescription(const char* *resultingDesc)
 {
+#ifdef OJI
+  if (mShadow)
+    return mShadow->GetMIMEDescription(resultingDesc);
+#endif
+
   const char* (*npGetMIMEDescription)() =
     (const char* (*)()) PR_FindFunctionSymbol(fLibrary, "NP_GetMIMEDescription");
 
@@ -648,6 +879,11 @@ nsNPAPIPlugin::GetMIMEDescription(const char* *resultingDesc)
 nsresult
 nsNPAPIPlugin::GetValue(nsPluginVariable variable, void *value)
 {
+#ifdef OJI
+  if (mShadow)
+    return mShadow->GetValue(variable, value);
+#endif
+
   PLUGIN_LOG(PLUGIN_LOG_NORMAL,
   ("nsNPAPIPlugin::GetValue called: this=%p, variable=%d\n", this, variable));
 

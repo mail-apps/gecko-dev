@@ -48,6 +48,13 @@
 #include "nsPIDOMWindow.h"
 #include "nsIPluginInstanceOwner.h"
 #include "nsITimer.h"
+#ifdef OJI
+#include "nsIPluginInstanceOld.h"
+#include "nsIPluginInstancePeer2.h"
+#include "nsIScriptablePlugin.h"
+#include "nsIPluginInstanceInternal.h"
+#include "nsIJVMPluginInstance.h"
+#endif
 
 #include "npfunctions.h"
 #include "prlink.h"
@@ -74,10 +81,39 @@ public:
 };
 
 class nsNPAPIPluginInstance : public nsIPluginInstance
+#ifdef OJI
+                             ,public nsIPluginInstanceOld,
+                              public nsIScriptablePlugin,
+                              public nsIPluginInstanceInternal,
+                              public nsIJVMPluginInstance
+#endif
 {
 public:
   NS_DECL_ISUPPORTS
   NS_DECL_NSIPLUGININSTANCE
+
+#ifdef OJI
+  NS_DECL_NSISCRIPTABLEPLUGIN
+  NS_DECL_NSIJVMPLUGININSTANCE
+
+  // nsIPluginInstanceOld methods not declared elsewhere
+  NS_IMETHOD Initialize(nsIPluginInstancePeer* peer);
+
+  NS_IMETHOD GetPeer(nsIPluginInstancePeer* *resultingPeer);
+
+  NS_IMETHOD Destroy(void);
+
+  NS_IMETHOD NewStream(nsIPluginStreamListener** listener);
+
+  // nsIPluginInstanceInternal methods not declared elsewhere
+  virtual JSObject *GetJSObject(JSContext *cx);
+
+  virtual PRUint16 GetPluginAPIVersion();
+
+  // Helper methods
+  void SetShadow(nsIPluginInstanceOld *shadow);
+  nsIPluginInstanceOld *GetShadow();
+#endif
 
   nsresult GetNPP(NPP * aNPP);
 
@@ -99,6 +135,10 @@ public:
                            void* notifyData, 
                            PRBool aCallNotify,
                            const char * aURL);
+
+#ifdef OJI
+  nsNPAPIPluginInstance(nsIPluginInstanceOld *aShadow);
+#endif
 
   nsNPAPIPluginInstance(NPPluginFuncs* callbacks, PRLibrary* aLibrary);
 
@@ -170,6 +210,10 @@ private:
   nsIPluginInstanceOwner *mOwner;
 
   nsTArray<nsNPAPITimer*> mTimers;
+
+#ifdef OJI
+  nsIPluginInstanceOld *mShadow; // Strong
+#endif
 };
 
 #endif // nsNPAPIPluginInstance_h_

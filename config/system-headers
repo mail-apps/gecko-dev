@@ -417,6 +417,9 @@ linux/version.h
 list
 List.h
 Lists.h
+#if MOZ_OJI==1
+LiveConnectManagerTests.h
+#endif
 LListBox.h
 LListener.h
 LMenuBar.h

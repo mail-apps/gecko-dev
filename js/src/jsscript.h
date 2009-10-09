@@ -131,6 +131,8 @@ struct JSScript {
     JSThread        *owner;     /* for thread-safe life-cycle assertions */
 #endif
 
+#ifdef __cplusplus /* Allow inclusion from LiveConnect C files. */
+
     /* Script notes are allocated right after the code. */
     jssrcnote *notes() { return (jssrcnote *)(code + length); }
 
@@ -168,6 +170,8 @@ struct JSScript {
     inline JSFunction *getFunction(size_t index);
 
     inline JSObject *getRegExp(size_t index);
+
+#endif /* __cplusplus */
 };
 
 #define JSSF_NO_SCRIPT_RVAL     0x01    /* no need for result value of last

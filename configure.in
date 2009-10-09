@@ -5015,6 +5015,21 @@ dnl ========================================================
 MOZ_ARG_HEADER(Components and Features)
 
 dnl ========================================================
+dnl = Enable obsolete Open JVM Interface (OJI) support on OS X
+dnl ========================================================
+case $target in
+*-darwin*)
+    MOZ_OJI=1
+    AC_DEFINE(OJI)
+    ;;
+*)
+    MOZ_OJI=
+    ;;
+esac
+
+AC_SUBST(MOZ_OJI)
+
+dnl ========================================================
 dnl = Localization
 dnl ========================================================
 MOZ_ARG_ENABLE_STRING(ui-locale,

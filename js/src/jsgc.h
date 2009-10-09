@@ -342,6 +342,7 @@ js_AddAsGCBytes(JSContext *cx, size_t sz);
 extern void
 js_RemoveAsGCBytes(JSRuntime* rt, size_t sz);
 
+#ifdef __cplusplus /* Allow inclusion from LiveConnect C files. */
 #ifdef JS_THREADSAFE
 class JSFreePointerListTask : public JSBackgroundTask {
     void *head;
@@ -363,6 +364,7 @@ class JSFreePointerListTask : public JSBackgroundTask {
     }
 };
 #endif
+#endif /* __cplusplus */
 
 /*
  * Free the chars held by str when it is finalized by the GC. When type is

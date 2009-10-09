@@ -77,6 +77,10 @@ REQUIRES	= xpcom \
 		  cairo \
 		  $(NULL)
 
+ifdef MOZ_OJI
+REQUIRES	+= oji
+endif
+
 ifdef ACCESSIBILITY
 REQUIRES	+= accessibility
 endif

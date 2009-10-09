@@ -74,6 +74,10 @@
 #include "nsPluginArray.h"
 #include "nsIPluginHost.h"
 #include "nsGeolocation.h"
+#ifdef OJI
+#include "nsIJVMManager.h"
+#include "nsILiveConnectManager.h"
+#endif
 #include "nsContentCID.h"
 #include "nsLayoutStatics.h"
 #include "nsCycleCollector.h"
@@ -348,6 +352,9 @@ static PRBool               gDOMWindowDumpEnabled      = PR_FALSE;
   PR_END_MACRO
 
 // CIDs
+#ifdef OJI
+static NS_DEFINE_CID(kJVMServiceCID, NS_JVMMANAGER_CID);
+#endif
 static NS_DEFINE_CID(kXULControllersCID, NS_XULCONTROLLERS_CID);
 
 static const char sJSStackContractID[] = "@mozilla.org/js/xpc/ContextStack;1";
@@ -5869,6 +5876,32 @@ nsGlobalWindow::InitJavaProperties()
   // No NPRuntime enabled Java plugin found, null out the owner we
   // would have used in that case as it's no longer needed.
   mDummyJavaPluginOwner = nsnull;
+
+#ifdef OJI
+  JSContext *cx = (JSContext *)scx->GetNativeContext();
+
+  nsCOMPtr<nsILiveConnectManager> manager =
+    do_GetService(nsIJVMManager::GetCID());
+
+  if (!manager) {
+    return;
+  }
+
+  PRBool started = PR_FALSE;
+  manager->StartupLiveConnect(::JS_GetRuntime(cx), started);
+
+  nsCOMPtr<nsIJVMManager> jvmManager(do_QueryInterface(manager));
+
+  if (!jvmManager) {
+    return;
+  }
+
+  {
+    JSAutoRequest ar(cx);
+
+    manager->InitLiveConnectClasses(cx, mJSObject);
+  }
+#endif
 }
 
 void*

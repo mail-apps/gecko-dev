@@ -89,6 +89,22 @@ struct JSObjectMap {
     JSObjectOps *ops;           /* high level object operation vtable */
 };
 
+#ifndef __cplusplus /* Allow inclusion from LiveConnect C files. */
+
+#define OBJ_LOOKUP_PROPERTY(cx,obj,id,objp,propp)                             \
+    (obj)->map->ops->lookupProperty(cx,obj,id,objp,propp)
+
+#define OBJ_DROP_PROPERTY(cx,obj,prop)                                        \
+    ((obj)->map->ops->dropProperty                                            \
+     ? (obj)->map->ops->dropProperty(cx,obj,prop)                             \
+     : (void)0)
+
+#define OBJ_GET_ATTRIBUTES(cx,obj,id,prop,attrsp)                             \
+    (obj)->map->ops->getAttributes(cx,obj,id,prop,attrsp)
+
+#endif /* __cplusplus */
+
+#ifdef __cplusplus /* Allow inclusion from LiveConnect C files. */
 const uint32 JS_INITIAL_NSLOTS = 5;
 
 const uint32 JSSLOT_PROTO   = 0;
@@ -106,6 +122,15 @@ const uint32 JSSLOT_PRIVATE = 2;
 const uint32 JSSLOT_PRIMITIVE_THIS = JSSLOT_PRIVATE;
 
 const uintptr_t JSSLOT_CLASS_MASK_BITS = 3;
+#else /* __cplusplus */
+#define JS_INITIAL_NSLOTS 5
+
+#define JSSLOT_PROTO   0
+#define JSSLOT_PARENT  1
+#define JSSLOT_PRIVATE 2
+
+#define JSSLOT_CLASS_MASK_BITS 3
+#endif /* __cplusplus */
 
 /*
  * JSObject struct, with members sized to fit in 32 bytes on 32-bit targets,
@@ -144,6 +169,8 @@ struct JSObject {
     jsuword     classword;                  /* classword, see above */
     jsval       fslots[JS_INITIAL_NSLOTS];  /* small number of fixed slots */
     jsval       *dslots;                    /* dynamically allocated slots */
+
+#ifdef __cplusplus /* Allow inclusion from LiveConnect C files. */
 
     JSClass *getClass() const {
         return (JSClass *) (classword & ~JSSLOT_CLASS_MASK_BITS);
@@ -302,6 +329,8 @@ struct JSObject {
         if (map->ops->dropProperty)
             map->ops->dropProperty(cx, this, prop);
     }
+
+#endif /* __cplusplus */
 };
 
 /* Compatibility macros. */
@@ -357,11 +386,19 @@ struct JSObject {
      : (JS_ASSERT((slot) < (uint32)(obj)->dslots[-1]),                        \
         (obj)->dslots[(slot) - JS_INITIAL_NSLOTS] = (value)))
 
+#ifdef __cplusplus /* Allow inclusion from LiveConnect C files. */
 inline JSClass*
 STOBJ_GET_CLASS(const JSObject* obj)
 {
     return obj->getClass();
 }
+#else
+static JS_ALWAYS_INLINE JSClass*
+STOBJ_GET_CLASS(const JSObject* obj)
+{
+    return (JSClass *) (obj->classword & ~JSSLOT_CLASS_MASK_BITS);
+}
+#endif
 
 #define OBJ_CHECK_SLOT(obj,slot)                                              \
     (JS_ASSERT(OBJ_IS_NATIVE(obj)), JS_ASSERT(slot < OBJ_SCOPE(obj)->freeslot))
@@ -515,11 +552,19 @@ extern JSClass  js_BlockClass;
  */
 #define JSSLOT_BLOCK_DEPTH      (JSSLOT_PRIVATE + 1)
 
+#ifdef __cplusplus /* Allow inclusion from LiveConnect C files. */
 static inline bool
 OBJ_IS_CLONED_BLOCK(JSObject *obj)
 {
     return obj->getProto() != NULL;
 }
+#else
+static JSBool
+OBJ_IS_CLONED_BLOCK(JSObject *obj)
+{
+    return JSVAL_TO_OBJECT(obj->fslots[JSSLOT_PROTO]) != NULL;
+}
+#endif
 
 extern JSBool
 js_DefineBlockVariable(JSContext *cx, JSObject *obj, jsid id, int16 index);
@@ -628,16 +673,28 @@ extern const char js_lookupSetter_str[];
 extern JSBool
 js_GetClassId(JSContext *cx, JSClass *clasp, jsid *idp);
 
+#ifdef __cplusplus /* Allow inclusion from LiveConnect C files. */
 extern JSObject *
 js_NewObject(JSContext *cx, JSClass *clasp, JSObject *proto,
              JSObject *parent, size_t objectSize = 0);
+#else
+extern JSObject *
+js_NewObject(JSContext *cx, JSClass *clasp, JSObject *proto,
+             JSObject *parent, size_t objectSize);
+#endif
 
 /*
  * See jsapi.h, JS_NewObjectWithGivenProto.
  */
+#ifdef __cplusplus /* Allow inclusion from LiveConnect C files. */
 extern JSObject *
 js_NewObjectWithGivenProto(JSContext *cx, JSClass *clasp, JSObject *proto,
                            JSObject *parent, size_t objectSize = 0);
+#else
+extern JSObject *
+js_NewObjectWithGivenProto(JSContext *cx, JSClass *clasp, JSObject *proto,
+                           JSObject *parent, size_t objectSize);
+#endif
 
 /*
  * Allocate a new native object with the given value of the proto and private
@@ -675,7 +732,11 @@ js_AllocSlot(JSContext *cx, JSObject *obj, uint32 *slotp);
 extern void
 js_FreeSlot(JSContext *cx, JSObject *obj, uint32 slot);
 
+#ifdef __cplusplus /* Allow inclusion from LiveConnect C files. */
 extern bool
+#else
+extern JSBool
+#endif
 js_GrowSlots(JSContext *cx, JSObject *obj, size_t nslots);
 
 extern void
@@ -696,7 +757,11 @@ js_FreeSlots(JSContext *cx, JSObject *obj)
  * value that JSClass.reserveSlots (if any) would return after the object is
  * fully initialized.
  */
+#ifdef __cplusplus /* Allow inclusion from LiveConnect C files. */
 bool
+#else
+JSBool
+#endif
 js_EnsureReservedSlots(JSContext *cx, JSObject *obj, size_t nreserved);
 
 extern jsid
@@ -743,6 +808,8 @@ extern JSBool
 js_DefineProperty(JSContext *cx, JSObject *obj, jsid id, jsval value,
                   JSPropertyOp getter, JSPropertyOp setter, uintN attrs);
 
+#ifdef __cplusplus /* Allow inclusion from LiveConnect C files. */
+
 /*
  * Flags for the defineHow parameter of js_DefineNativeProperty.
  */
@@ -761,6 +828,7 @@ js_DefineNativeProperty(JSContext *cx, JSObject *obj, jsid id, jsval value,
                         JSPropertyOp getter, JSPropertyOp setter, uintN attrs,
                         uintN flags, intN shortid, JSProperty **propp,
                         uintN defineHow = 0);
+#endif /* __cplusplus */
 
 /*
  * Unlike js_DefineNativeProperty, propp must be non-null. On success, and if
@@ -788,6 +856,7 @@ js_LookupPropertyWithFlags(JSContext *cx, JSObject *obj, jsid id, uintN flags,
  * non-global objects without prototype or with prototype that never mutates,
  * see bug 462734 and bug 487039.
  */
+#ifdef __cplusplus /* Allow inclusion from LiveConnect C files. */
 static inline bool
 js_IsCacheableNonGlobalScope(JSObject *obj)
 {
@@ -803,6 +872,7 @@ js_IsCacheableNonGlobalScope(JSObject *obj)
     JS_ASSERT_IF(cacheable, obj->map->ops->lookupProperty == js_LookupProperty);
     return cacheable;
 }
+#endif
 
 /*
  * If cacheResult is false, return JS_NO_PROP_CACHE_FILL on success.
@@ -945,10 +1015,18 @@ js_PrintObjectSlotName(JSTracer *trc, char *buf, size_t bufsize);
 extern void
 js_Clear(JSContext *cx, JSObject *obj);
 
+#ifdef __cplusplus /* Allow inclusion from LiveConnect C files. */
 extern bool
+#else
+extern JSBool
+#endif
 js_GetReservedSlot(JSContext *cx, JSObject *obj, uint32 index, jsval *vp);
 
+#ifdef __cplusplus /* Allow inclusion from LiveConnect C files. */
 bool
+#else
+JSBool
+#endif
 js_SetReservedSlot(JSContext *cx, JSObject *obj, uint32 index, jsval v);
 
 /*
@@ -999,6 +1077,7 @@ js_GetterOnlyPropertyStub(JSContext *cx, JSObject *obj, jsval id, jsval *vp);
  * FIXME: This fails to distinguish between objects with different addProperty
  * hooks. See bug 505523.
  */
+#ifdef __cplusplus /* Allow inclusion from LiveConnect C files. */
 static inline bool
 js_ObjectIsSimilarToProto(JSContext *cx, JSObject *obj, JSObjectOps *ops, JSClass *clasp,
                           JSObject *proto)
@@ -1013,6 +1092,7 @@ js_ObjectIsSimilarToProto(JSContext *cx, JSObject *obj, JSObjectOps *ops, JSClas
                  (JSCLASS_RESERVED_SLOTS_MASK << JSCLASS_RESERVED_SLOTS_SHIFT))) &&
               protoclasp->reserveSlots == clasp->reserveSlots)));
 }
+#endif
 
 #ifdef DEBUG
 JS_FRIEND_API(void) js_DumpChars(const jschar *s, size_t n);

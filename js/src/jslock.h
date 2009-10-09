@@ -192,7 +192,11 @@ extern void js_LockRuntime(JSRuntime *rt);
 extern void js_UnlockRuntime(JSRuntime *rt);
 extern void js_LockObj(JSContext *cx, JSObject *obj);
 extern void js_UnlockObj(JSContext *cx, JSObject *obj);
+#ifdef __cplusplus /* Allow inclusion from LiveConnect C files. */
 extern bool js_LockObjIfShape(JSContext *cx, JSObject *obj, uint32 shape);
+#else
+extern JSBool js_LockObjIfShape(JSContext *cx, JSObject *obj, uint32 shape);
+#endif
 extern void js_InitTitle(JSContext *cx, JSTitle *title);
 extern void js_FinishTitle(JSContext *cx, JSTitle *title);
 extern void js_LockTitle(JSContext *cx, JSTitle *title);

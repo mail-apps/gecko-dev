@@ -39,6 +39,11 @@
 #define nsNPAPIPlugin_h_
 
 #include "nsIPlugin.h"
+#ifdef OJI
+#include "nsIPluginOld.h"
+#include "nsIJVMPlugin.h"
+#include "nsIJVMConsole.h"
+#endif
 #include "prlink.h"
 #include "npfunctions.h"
 #include "nsPluginHost.h"
@@ -72,14 +77,49 @@ typedef NS_NPAPIPLUGIN_CALLBACK(NPError, NP_MAIN) (NPNetscapeFuncs* nCallbacks, 
 #endif
 
 class nsNPAPIPlugin : public nsIPlugin
+#ifdef OJI
+                     ,public nsIPluginOld,
+                      public nsIJVMPlugin,
+                      public nsIJVMConsole
+#endif
 {
 public:
+#ifdef OJI
+  nsNPAPIPlugin(nsIPluginOld *aShadow);
+#endif
   nsNPAPIPlugin(NPPluginFuncs* callbacks, PRLibrary* aLibrary,
                 NP_PLUGINSHUTDOWN aShutdown);
   virtual ~nsNPAPIPlugin();
 
   NS_DECL_ISUPPORTS
   NS_DECL_NSIPLUGIN
+
+#ifdef OJI
+  NS_DECL_NSIFACTORY
+
+  // nsIPluginOld methods not declared elsewhere
+  NS_IMETHOD CreatePluginInstance(nsISupports *aOuter, REFNSIID aIID,
+                                  const char *aPluginMIMEType, void **aResult);
+
+  // nsIJVMPlugin methods
+  NS_IMETHOD AddToClassPath(const char* dirPath);
+  NS_IMETHOD RemoveFromClassPath(const char* dirPath);
+  NS_IMETHOD GetClassPath(const char* *result);
+  NS_IMETHOD GetJavaWrapper(JNIEnv* jenv, jint obj, jobject *jobj);
+  NS_IMETHOD CreateSecureEnv(JNIEnv* proxyEnv, nsISecureEnv* *outSecureEnv);
+  NS_IMETHOD SpendTime(PRUint32 timeMillis);
+  NS_IMETHOD UnwrapJavaWrapper(JNIEnv* jenv, jobject jobj, jint* obj);
+
+  // nsIJVMConsole methods
+  NS_IMETHOD Show(void);
+  NS_IMETHOD Hide(void);
+  NS_IMETHOD IsVisible(PRBool *result);
+  NS_IMETHOD Print(const char* msg, const char* encodingName = NULL);
+  
+  // Helper methods
+  void SetShadow(nsIPluginOld *shadow);
+  nsIPluginOld *GetShadow();
+#endif
 
   // Constructs and initializes an nsNPAPIPlugin object. A NULL file path
   // will prevent this from calling NP_Initialize.
@@ -106,6 +146,10 @@ protected:
 
   // Browser-side callbacks that the plugin calls.
   static NPNetscapeFuncs CALLBACKS;
+
+#ifdef OJI
+  nsIPluginOld *mShadow; // Strong
+#endif
 };
 
 

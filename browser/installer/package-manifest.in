@@ -81,6 +81,10 @@
 @BINPATH@/platform.ini
 #ifdef XP_MACOSX
 @BINPATH@/plugins/DefaultPlugin.plugin/
+#ifdef OJI
+@BINPATH@/plugins/JavaEmbeddingPlugin.bundle/
+@BINPATH@/plugins/MRJPlugin.plugin/
+#endif
 #elifdef XP_UNIX
 @BINPATH@/plugins/libnullplugin.so
 #elifdef XP_WIN32

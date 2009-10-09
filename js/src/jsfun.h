@@ -161,6 +161,7 @@ struct JSFunction {
     } u;
     JSAtom          *atom;        /* name for diagnostics and decompiling */
 
+#ifdef __cplusplus /* Allow inclusion from LiveConnect C files. */
     bool optimizedClosure() { return FUN_KIND(this) > JSFUN_INTERPRETED; }
     bool needsWrapper()     { return FUN_NULL_CLOSURE(this) && u.i.skipmin != 0; }
 
@@ -180,6 +181,7 @@ struct JSFunction {
     }
 
     uint32 countInterpretedReservedSlots() const;
+#endif /* __cplusplus */
 };
 
 /*
@@ -222,6 +224,7 @@ extern JS_FRIEND_DATA(JSClass) js_FunctionClass;
 
 struct js_ArgsPrivateNative;
 
+#ifdef __cplusplus /* Allow inclusion from LiveConnect C files. */
 inline js_ArgsPrivateNative *
 js_GetArgsPrivateNative(JSObject *argsobj)
 {
@@ -229,6 +232,7 @@ js_GetArgsPrivateNative(JSObject *argsobj)
     uintptr_t p = (uintptr_t) argsobj->getPrivate();
     return (js_ArgsPrivateNative *) (p & 2 ? p & ~2 : NULL);
 }
+#endif
 
 extern JSObject *
 js_InitFunctionClass(JSContext *cx, JSObject *obj);
@@ -283,7 +287,11 @@ js_ReportIsNotFunction(JSContext *cx, jsval *vp, uintN flags);
 extern JSObject *
 js_GetCallObject(JSContext *cx, JSStackFrame *fp);
 
+#ifdef OJI
+JS_EXTERN_API(void)
+#else
 extern void
+#endif
 js_PutCallObject(JSContext *cx, JSStackFrame *fp);
 
 extern JSFunction *
@@ -326,10 +334,18 @@ js_GetArgsValue(JSContext *cx, JSStackFrame *fp, jsval *vp);
 extern JSBool
 js_GetArgsProperty(JSContext *cx, JSStackFrame *fp, jsid id, jsval *vp);
 
+#ifdef OJI
+JS_EXTERN_API(JSObject *)
+#else
 extern JSObject *
+#endif
 js_GetArgsObject(JSContext *cx, JSStackFrame *fp);
 
+#ifdef OJI
+JS_EXTERN_API(void)
+#else
 extern void
+#endif
 js_PutArgsObject(JSContext *cx, JSStackFrame *fp);
 
 extern JSBool

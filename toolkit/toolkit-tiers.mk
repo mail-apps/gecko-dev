@@ -158,6 +158,11 @@ tier_gecko_dirs	+= \
 		xpfe/appshell \
 		$(NULL)
 
+# Java Embedding Plugin
+ifneq (,$(filter mac cocoa,$(MOZ_WIDGET_TOOLKIT)))
+tier_gecko_dirs += plugin/oji/JEP
+endif
+
 ifdef MOZ_XMLEXTRAS
 tier_gecko_dirs += extensions/xmlextras
 endif
@@ -168,6 +173,14 @@ endif
 
 ifdef MOZ_UNIVERSALCHARDET
 tier_gecko_dirs += extensions/universalchardet
+endif
+
+ifdef MOZ_OJI
+tier_gecko_dirs	+= \
+		js/src/liveconnect \
+		sun-java \
+		modules/oji \
+		$(NULL)
 endif
 
 ifdef ACCESSIBILITY

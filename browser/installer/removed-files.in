@@ -794,4 +794,6 @@ mozcrt19.dll
 xpicleanup@BIN_SUFFIX@
 chrome.manifest
 install.rdf
+#ifndef OJI
 @DLL_PREFIX@jsj@DLL_SUFFIX@
+#endif

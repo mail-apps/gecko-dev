@@ -192,11 +192,15 @@ struct JSTraceMonitor {
     /* Keep a list of recorders we need to abort on cache flush. */
     CLS(TraceRecorder)      abortStack;
 
+#ifdef __cplusplus /* Allow inclusion from LiveConnect C files. */
+
     /* Flush the JIT cache. */
     void flush();
 
     /* Mark all objects baked into native code in the code cache. */
     void mark(JSTracer *trc);
+
+#endif
 };
 
 typedef struct InterpStruct InterpStruct;
@@ -227,9 +231,10 @@ typedef struct InterpStruct InterpStruct;
 # define EVAL_CACHE_METER_LIST(_)   _(probe), _(hit), _(step), _(noscope)
 # define identity(x)                x
 
-struct JSEvalCacheMeter {
+/* Have to typedef this for LiveConnect C code, which includes us. */
+typedef struct JSEvalCacheMeter {
     uint64 EVAL_CACHE_METER_LIST(identity);
-};
+} JSEvalCacheMeter;
 
 # undef identity
 #endif
@@ -278,6 +283,8 @@ struct JSThreadData {
      */
     size_t              gcMallocBytes;
 
+#ifdef __cplusplus /* Allow inclusion from LiveConnect C files. */
+
 #ifdef JS_THREADSAFE
     /*
      * Deallocator task for this thread.
@@ -290,6 +297,8 @@ struct JSThreadData {
         traceMonitor.mark(trc);
 #endif
     }
+    
+#endif /* __cplusplus */
 };
 
 #ifdef JS_THREADSAFE
@@ -715,6 +724,8 @@ struct JSRuntime {
     char                lastScriptFilename[1024];
 #endif
 
+#ifdef __cplusplus /* Allow inclusion from LiveConnect C files. */
+
     void setGCTriggerFactor(uint32 factor);
     void setGCLastBytes(size_t lastBytes);
 
@@ -737,6 +748,8 @@ struct JSRuntime {
 #ifdef JS_THREADSAFE
     JSBackgroundThread    *deallocatorThread;
 #endif
+
+#endif /* __cplusplus */
 };
 
 /* Common macros to access thread-local caches in JSThread or JSRuntime. */
@@ -1088,6 +1101,8 @@ struct JSContext {
     VMSideExit          *bailExit;
 #endif
 
+#ifdef __cplusplus /* Allow inclusion from LiveConnect C files, */
+
 #ifdef JS_THREADSAFE
     inline void createDeallocatorTask() {
         JSThreadData* tls = JS_THREAD_DATA(this);
@@ -1208,6 +1223,8 @@ struct JSContext {
         p->~T();
         this->free(p);
     }
+
+#endif /* __cplusplus */
 };
 
 #ifdef JS_THREADSAFE
@@ -1299,7 +1316,7 @@ class JSAutoResolveFlags
     uintN mSaved;
 };
 
-#endif /* __cpluscplus */
+#endif /* __cplusplus */
 
 /*
  * Slightly more readable macros for testing per-context option settings (also
@@ -1637,7 +1654,11 @@ js_GetScriptedCaller(JSContext *cx, JSStackFrame *fp);
 extern jsbytecode*
 js_GetCurrentBytecodePC(JSContext* cx);
 
+#ifdef __cplusplus /* Allow inclusion from LiveConnect C files. */
 extern bool
+#else
+extern JSBool
+#endif
 js_CurrentPCIsInImacro(JSContext *cx);
 
 #ifdef JS_TRACER

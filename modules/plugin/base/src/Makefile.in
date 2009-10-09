@@ -76,6 +76,10 @@ REQUIRES	= xpcom \
 		  locale \
 		  $(NULL)
 
+ifdef MOZ_OJI
+REQUIRES	+= oji
+endif
+
 ifneq (,$(filter gtk2,$(MOZ_WIDGET_TOOLKIT)))
 REQUIRES	+= gtkxtbin
 endif
@@ -87,6 +91,10 @@ CPPSRCS		= \
 		nsPluginModule.cpp \
 		nsJSNPRuntime.cpp \
 		$(NULL)
+
+ifdef MOZ_OJI
+CPPSRCS		+= nsJVMAuthTools.cpp
+endif
 
 ifeq ($(OS_ARCH), BeOS)
 	CPPSRCS += nsPluginsDirBeOS.cpp

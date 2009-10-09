@@ -257,7 +257,12 @@ PutArguments(JSContext *cx, JSObject *argsobj, jsval *args)
     JS_UNLOCK_OBJ(cx, argsobj);
 }
 
+#ifdef OJI
+JS_BEGIN_EXTERN_C
+JS_EXPORT_API(JSObject *)
+#else
 JSObject *
+#endif
 js_GetArgsObject(JSContext *cx, JSStackFrame *fp)
 {
     /*
@@ -301,7 +306,11 @@ js_GetArgsObject(JSContext *cx, JSStackFrame *fp)
     return argsobj;
 }
 
+#ifdef OJI
+JS_EXPORT_API(void)
+#else
 void
+#endif
 js_PutArgsObject(JSContext *cx, JSStackFrame *fp)
 {
     JSObject *argsobj = JSVAL_TO_OBJECT(fp->argsobj);
@@ -310,6 +319,9 @@ js_PutArgsObject(JSContext *cx, JSStackFrame *fp)
     argsobj->setPrivate(NULL);
     fp->argsobj = JSVAL_NULL;
 }
+#ifdef OJI
+JS_END_EXTERN_C
+#endif
 
 /*
  * Traced versions of js_GetArgsObject and js_PutArgsObject.
@@ -884,7 +896,12 @@ js_GetCallObjectFunction(JSObject *obj)
     return GET_FUNCTION_PRIVATE(cx, JSVAL_TO_OBJECT(v));
 }
 
+#ifdef OJI
+JS_BEGIN_EXTERN_C
+JS_EXPORT_API(void)
+#else
 void
+#endif
 js_PutCallObject(JSContext *cx, JSStackFrame *fp)
 {
     JSObject *callobj = fp->callobj;
@@ -929,6 +946,9 @@ js_PutCallObject(JSContext *cx, JSStackFrame *fp)
     callobj->setPrivate(NULL);
     fp->callobj = NULL;
 }
+#ifdef OJI
+JS_END_EXTERN_C
+#endif
 
 static JSBool
 call_enumerate(JSContext *cx, JSObject *obj)

@@ -76,6 +76,14 @@
 #include "nsIPluginTagInfo.h"
 #include "plstr.h"
 #include "nsILinkHandler.h"
+#ifdef OJI
+#include "nsIPluginTagInfo2.h"
+#include "nsIPluginInstancePeer2.h"
+#include "nsIWindowlessPlugInstPeer.h"
+#include "nsPIPluginInstancePeer.h"
+#include "nsIJVMPluginTagInfo.h"
+#include "nsIPluginInstanceOld.h"
+#endif
 #include "nsIEventListener.h"
 #include "nsIScrollableView.h"
 #include "nsIScrollPositionListener.h"
@@ -236,6 +244,13 @@ public:
 
 class nsPluginInstanceOwner : public nsIPluginInstanceOwner,
                               public nsIPluginTagInfo,
+#ifdef OJI
+                              public nsIPluginTagInfo2,
+                              public nsIPluginInstancePeer2,
+                              public nsIWindowlessPluginInstancePeer,
+                              public nsPIPluginInstancePeer,
+                              public nsIJVMPluginTagInfo,
+#endif
                               public nsIEventListener,
                               public nsITimerCallback,
                               public nsIDOMMouseListener,
@@ -312,6 +327,34 @@ public:
   NS_IMETHOD GetUniqueID(PRUint32 *result);
 
   NS_IMETHOD GetDOMElement(nsIDOMElement* *result);
+
+#ifdef OJI
+  NS_DECL_NSIPLUGININSTANCEPEER2
+  NS_DECL_NSPIPLUGININSTANCEPEER
+
+  //nsIPluginInstancePeer methods not declared elsewhere
+
+  NS_IMETHOD GetValue(nsPluginInstancePeerVariable variable, void *value);
+
+  NS_IMETHOD GetMIMEType(nsMIMEType *result);
+
+  NS_IMETHOD SetWindowSize(PRUint32 width, PRUint32 height);
+
+  NS_IMETHOD NewStream(nsMIMEType type, const char* target, nsIOutputStream* *result);
+
+  //nsIJVMPluginTagInfo interface
+
+  NS_IMETHOD GetCode(const char* *result);
+
+  NS_IMETHOD GetCodeBase(const char* *result);
+
+  NS_IMETHOD GetArchive(const char* *result);
+
+  NS_IMETHOD GetName(const char* *result);
+
+  NS_IMETHOD GetMayScript(PRBool *result);
+
+#endif /* OJI */
 
   // nsIDOMMouseListener interfaces 
   NS_IMETHOD MouseDown(nsIDOMEvent* aMouseEvent);
@@ -526,6 +569,10 @@ private:
     const nsIntSize& mPluginSize;
     const nsIntRect& mDirtyRect;
   };
+#endif
+
+#ifdef OJI
+  PRUint32 mThreadID;
 #endif
 
 };
@@ -2068,6 +2115,11 @@ DoStopPlugin(nsPluginInstanceOwner *aInstanceOwner, PRBool aDelayedStop)
         // XXXjst: ns4xPluginInstance::Destroy() is a no-op, clean
         // this mess up when there are no other instance types.
         inst->Stop();
+#ifdef OJI
+        nsCOMPtr<nsIPluginInstanceOld> instOld(do_QueryInterface(inst));
+        if (instOld)
+          instOld->Destroy();
+#endif
 
         if (window) 
           window->CallSetWindow(nullinst);
@@ -2084,6 +2136,11 @@ DoStopPlugin(nsPluginInstanceOwner *aInstanceOwner, PRBool aDelayedStop)
           return;
 
         inst->Stop();
+#ifdef OJI
+        nsCOMPtr<nsIPluginInstanceOld> instOld(do_QueryInterface(inst));
+        if (instOld)
+          instOld->Destroy();
+#endif
       }
     }
     else {
@@ -2367,6 +2424,11 @@ nsPluginInstanceOwner::nsPluginInstanceOwner()
   mLastPoint = nsIntPoint(0,0);
 #endif
 
+#ifdef OJI
+  // record the thread we were created in.
+  mThreadID = NS_PTR_TO_INT32(PR_GetCurrentThread());
+#endif
+
   PR_LOG(nsObjectFrameLM, PR_LOG_DEBUG,
          ("nsPluginInstanceOwner %p created\n", this));
 }
@@ -2432,6 +2494,15 @@ NS_IMPL_RELEASE(nsPluginInstanceOwner)
 NS_INTERFACE_MAP_BEGIN(nsPluginInstanceOwner)
   NS_INTERFACE_MAP_ENTRY(nsIPluginInstanceOwner)
   NS_INTERFACE_MAP_ENTRY(nsIPluginTagInfo)
+#ifdef OJI
+  NS_INTERFACE_MAP_ENTRY(nsIPluginTagInfo2)
+  NS_INTERFACE_MAP_ENTRY(nsIPluginTagInfoOld)
+  NS_INTERFACE_MAP_ENTRY(nsIPluginInstancePeer)
+  NS_INTERFACE_MAP_ENTRY(nsIPluginInstancePeer2)
+  NS_INTERFACE_MAP_ENTRY(nsIWindowlessPluginInstancePeer)
+  NS_INTERFACE_MAP_ENTRY(nsPIPluginInstancePeer)
+  NS_INTERFACE_MAP_ENTRY(nsIJVMPluginTagInfo)
+#endif
   NS_INTERFACE_MAP_ENTRY(nsIEventListener)
   NS_INTERFACE_MAP_ENTRY(nsITimerCallback)
   NS_INTERFACE_MAP_ENTRY(nsIDOMMouseListener)
@@ -3051,6 +3122,181 @@ NS_IMETHODIMP nsPluginInstanceOwner::GetUniqueID(PRUint32 *result)
   *result = NS_PTR_TO_INT32(mOwner);
   return NS_OK;
 }
+
+#ifdef OJI
+
+//nsIPluginInstancePeer methods not implemented elsewhere
+
+NS_IMETHODIMP
+nsPluginInstanceOwner::GetValue(nsPluginInstancePeerVariable variable,
+                                void *value)
+{
+  if (!mInstance)
+    return NS_ERROR_FAILURE;
+  return mInstance->GetValue(variable, value);
+}
+
+NS_IMETHODIMP
+nsPluginInstanceOwner::GetMIMEType(nsMIMEType *result)
+{
+  if (mInstance) {
+    const char* mime = nsnull;
+    if (NS_SUCCEEDED(mInstance->GetMIMEType(&mime)) && mime) {
+      *result = mime;
+    } else {
+      *result = "";
+    }
+  } else {
+    *result = "";
+  }
+
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+nsPluginInstanceOwner::SetWindowSize(PRUint32 width, PRUint32 height)
+{
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+nsPluginInstanceOwner::NewStream(nsMIMEType type, const char* target,
+                                 nsIOutputStream* *result)
+{
+  if (!mInstance)
+    return NS_ERROR_FAILURE;
+  return mInstance->NewStreamFromPlugin(type, target, result);
+}
+
+//nsIPluginInstancePeer2 methods
+
+NS_IMETHODIMP
+nsPluginInstanceOwner::GetJSWindow(JSObject* *outJSWindow)
+{
+  *outJSWindow = NULL;
+  nsresult rv = NS_ERROR_FAILURE;
+  nsCOMPtr<nsIDocument> document;   
+
+  rv = GetDocument(getter_AddRefs(document));
+
+  if (NS_SUCCEEDED(rv) && document) {
+    nsPIDOMWindow *win = document->GetWindow();
+
+    nsCOMPtr<nsIScriptGlobalObject> global = do_QueryInterface(win);
+    if(global) {
+      *outJSWindow = global->GetGlobalJSObject();
+    }
+  } 
+
+  return rv;
+}
+
+NS_IMETHODIMP
+nsPluginInstanceOwner::GetJSThread(PRUint32 *outThreadID)
+{
+  *outThreadID = mThreadID;
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+nsPluginInstanceOwner::GetJSContext(JSContext* *outContext)
+{
+  *outContext = NULL;
+  nsresult rv = NS_ERROR_FAILURE;
+  nsCOMPtr<nsIDocument> document;
+
+  rv = GetDocument(getter_AddRefs(document));
+
+  if (NS_SUCCEEDED(rv) && document) {
+    nsIScriptGlobalObject *global = document->GetScriptGlobalObject();
+
+    if (global) {
+      nsIScriptContext *context = global->GetContext();
+
+      if (context) {
+        *outContext = (JSContext*) context->GetNativeContext();
+      }
+    }
+  }
+
+  return rv;
+}
+
+//nsPIPluginInstancePeer methods
+
+NS_IMETHODIMP
+nsPluginInstanceOwner::GetOwner(nsIPluginInstanceOwner **aOwner)
+{
+  NS_ENSURE_ARG_POINTER(aOwner);
+  *aOwner = this;
+  NS_ADDREF_THIS();
+  return NS_OK;
+}
+
+//nsIJVMPluginTagInfo methods
+
+NS_IMETHODIMP nsPluginInstanceOwner::GetCode(const char* *result)
+{
+  nsresult rv;
+  nsPluginTagType tagType;  
+  NS_ENSURE_SUCCESS(rv = GetTagType(&tagType), rv);
+
+  rv = NS_ERROR_FAILURE;
+  if (nsPluginTagType_Object != tagType)
+    rv = GetAttribute("CODE", result);
+  if (NS_FAILED(rv))
+    rv = GetParameter("CODE", result);
+
+  return rv;
+}
+
+NS_IMETHODIMP nsPluginInstanceOwner::GetCodeBase(const char* *result)
+{
+  nsresult rv;
+  if (NS_FAILED(rv = GetAttribute("CODEBASE", result)))
+    rv = GetParameter("CODEBASE", result);
+  return rv;
+}
+
+NS_IMETHODIMP nsPluginInstanceOwner::GetArchive(const char* *result)
+{
+  nsresult rv;
+  if (NS_FAILED(rv = GetAttribute("ARCHIVE", result)))
+    rv = GetParameter("ARCHIVE", result);
+  return rv;
+}
+
+NS_IMETHODIMP nsPluginInstanceOwner::GetName(const char* *result)
+{
+  nsresult rv;
+  nsPluginTagType tagType;  
+  NS_ENSURE_SUCCESS(rv = GetTagType(&tagType), rv);
+
+  rv = NS_ERROR_FAILURE;
+  if (nsPluginTagType_Object != tagType)
+    rv = GetAttribute("NAME", result);
+  if (NS_FAILED(rv))
+    rv = GetParameter("NAME", result);
+
+  return rv;
+}
+
+NS_IMETHODIMP nsPluginInstanceOwner::GetMayScript(PRBool *result)
+{
+  NS_ENSURE_ARG_POINTER(result);
+  nsPluginTagType tagType;  
+  NS_ENSURE_SUCCESS(GetTagType(&tagType), NS_ERROR_FAILURE);
+
+  const char* unused;
+  if (nsPluginTagType_Object == tagType)
+    *result = NS_SUCCEEDED(GetParameter("MAYSCRIPT", &unused)); 
+  else
+    *result = NS_SUCCEEDED(GetAttribute("MAYSCRIPT", &unused));
+
+  return NS_OK;
+}
+
+#endif /* OJI */
 
 // Cache the attributes and/or parameters of our tag into a single set
 // of arrays to be compatible with 4.x. The attributes go first,

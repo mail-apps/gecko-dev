@@ -865,7 +865,40 @@ nsInstanceStream::~nsInstanceStream()
 {
 }
 
+#ifdef OJI
+NS_IMPL_ISUPPORTS5(nsNPAPIPluginInstance,
+                   nsIPluginInstance,
+                   nsIPluginInstanceOld,
+                   nsIScriptablePlugin,
+                   nsIPluginInstanceInternal,
+                   nsIJVMPluginInstance)
+#else
 NS_IMPL_ISUPPORTS1(nsNPAPIPluginInstance, nsIPluginInstance)
+#endif
+
+#ifdef OJI
+nsNPAPIPluginInstance::nsNPAPIPluginInstance(nsIPluginInstanceOld *aShadow)
+  : mCallbacks(nsnull),
+#ifdef XP_MACOSX
+#ifdef NP_NO_QUICKDRAW
+    mDrawingModel(NPDrawingModelCoreGraphics),
+#else
+    mDrawingModel(NPDrawingModelQuickDraw),
+#endif
+#endif
+    mWindowless(PR_FALSE),
+    mTransparent(PR_FALSE),
+    mStarted(PR_FALSE),
+    mCached(PR_FALSE),
+    mWantsAllNetworkStreams(PR_FALSE),
+    mInPluginInitCall(PR_FALSE),
+    mLibrary(nsnull),
+    mStreams(nsnull),
+    mMIMEType(nsnull),
+    mShadow(aShadow)
+{
+}
+#endif
 
 nsNPAPIPluginInstance::nsNPAPIPluginInstance(NPPluginFuncs* callbacks,
                                        PRLibrary* aLibrary)
@@ -886,6 +919,9 @@ nsNPAPIPluginInstance::nsNPAPIPluginInstance(NPPluginFuncs* callbacks,
     mLibrary(aLibrary),
     mStreams(nsnull),
     mMIMEType(nsnull)
+#ifdef OJI
+    ,mShadow(nsnull)
+#endif
 {
   NS_ASSERTION(mCallbacks != NULL, "null callbacks");
 
@@ -912,7 +948,130 @@ nsNPAPIPluginInstance::~nsNPAPIPluginInstance(void)
     PR_Free((void *)mMIMEType);
     mMIMEType = nsnull;
   }
+
+#ifdef OJI
+  NS_IF_RELEASE(mShadow);
+#endif
 }
+
+#ifdef OJI
+// nsIPluginInstanceOld methods not implemented elsewhere
+
+NS_IMETHODIMP nsNPAPIPluginInstance::Initialize(nsIPluginInstancePeer* peer)
+{
+  nsresult rv = NS_ERROR_NOT_IMPLEMENTED;
+  if (mShadow) {
+    nsCOMPtr<nsIPluginInstancePeer> peer(do_QueryInterface(mOwner));
+    if (!peer)
+      return NS_ERROR_FAILURE;
+    rv = mShadow->Initialize(peer);
+  }
+  return rv;
+}
+
+NS_IMETHODIMP nsNPAPIPluginInstance::GetPeer(nsIPluginInstancePeer* *resultingPeer)
+{
+  if (!mShadow)
+    return NS_ERROR_NOT_IMPLEMENTED;
+  if (!mOwner)
+    return NS_ERROR_FAILURE;
+  return mOwner->QueryInterface(NS_GET_IID(nsIPluginInstancePeer), (void**)resultingPeer);
+}
+
+NS_IMETHODIMP nsNPAPIPluginInstance::Destroy(void)
+{
+  nsresult rv = NS_ERROR_NOT_IMPLEMENTED;
+  if (mShadow)
+    rv = mShadow->Destroy();
+  PLUGIN_LOG(PLUGIN_LOG_NORMAL, ("nsNPAPIPluginInstance::Destroy this=%p\n", this));
+  // destruction is handled in the Stop call
+  return rv;
+}
+
+/* NOTE: the caller must free the stream listener */
+// Create a normal stream, one without a urlnotify callback
+NS_IMETHODIMP nsNPAPIPluginInstance::NewStream(nsIPluginStreamListener** listener)
+{
+  if (mShadow)
+    return mShadow->NewStream(listener);
+  return NS_ERROR_NOT_IMPLEMENTED;
+}
+
+// nsIScriptablePlugin interface
+
+NS_IMETHODIMP
+nsNPAPIPluginInstance::GetScriptablePeer(void * *aScriptablePeer)
+{
+  return NS_ERROR_NOT_IMPLEMENTED;
+}
+
+NS_IMETHODIMP
+nsNPAPIPluginInstance::GetScriptableInterface(nsIID * *aScriptableInterface)
+{
+  return NS_ERROR_NOT_IMPLEMENTED;
+}
+
+// nsIPluginInstanceInternal methods not implemented elsewhere
+
+JSObject *
+nsNPAPIPluginInstance::GetJSObject(JSContext *cx)
+{
+  JSObject *jsobj = nsnull;
+  GetJSObject(cx, &jsobj);
+  return jsobj;
+}
+
+PRUint16
+nsNPAPIPluginInstance::GetPluginAPIVersion()
+{
+  PRUint16 version = 0;
+  GetPluginAPIVersion(&version);
+  return version;
+}
+
+// nsIJVMPluginInstance interface
+
+NS_IMETHODIMP
+nsNPAPIPluginInstance::GetJavaObject(jobject *result)
+{
+  if (mShadow) {
+    nsCOMPtr<nsIJVMPluginInstance> inst(do_QueryInterface(mShadow));
+    if (!inst)
+      return NS_ERROR_NOT_IMPLEMENTED;
+    return inst->GetJavaObject(result);
+  }
+  return NS_ERROR_NOT_IMPLEMENTED;
+}
+
+NS_IMETHODIMP
+nsNPAPIPluginInstance::GetText(const char* *result)
+{
+  if (mShadow) {
+    nsCOMPtr<nsIJVMPluginInstance> inst(do_QueryInterface(mShadow));
+    if (!inst)
+      return NS_ERROR_NOT_IMPLEMENTED;
+    return inst->GetText(result);
+  }
+  return NS_ERROR_NOT_IMPLEMENTED;
+}
+
+// Helper methods
+
+void
+nsNPAPIPluginInstance::SetShadow(nsIPluginInstanceOld *shadow)
+{
+  NS_IF_RELEASE(mShadow);
+  mShadow = shadow;
+  NS_IF_ADDREF(mShadow);
+}
+
+nsIPluginInstanceOld *
+nsNPAPIPluginInstance::GetShadow()
+{
+  return mShadow;
+}
+
+#endif // OJI
 
 PRBool
 nsNPAPIPluginInstance::IsStarted(void)
@@ -940,6 +1099,11 @@ NS_IMETHODIMP nsNPAPIPluginInstance::Start(void)
 {
   PLUGIN_LOG(PLUGIN_LOG_NORMAL, ("nsNPAPIPluginInstance::Start this=%p\n",this));
 
+#ifdef OJI
+  if (mShadow)
+    return mShadow->Start();
+#endif
+
   if (mStarted)
     return NS_OK;
 
@@ -949,6 +1113,11 @@ NS_IMETHODIMP nsNPAPIPluginInstance::Start(void)
 NS_IMETHODIMP nsNPAPIPluginInstance::Stop(void)
 {
   PLUGIN_LOG(PLUGIN_LOG_NORMAL, ("nsNPAPIPluginInstance::Stop this=%p\n",this));
+
+#ifdef OJI
+  if (mShadow)
+    return mShadow->Stop();
+#endif
 
   NPError error;
 
@@ -1085,7 +1254,12 @@ nsNPAPIPluginInstance::GetMode(nsPluginMode *result)
 
 nsresult
 nsNPAPIPluginInstance::InitializePlugin()
-{ 
+{
+#ifdef OJI
+  if (mShadow)
+    return Initialize((nsIPluginInstancePeer *)nsnull);
+#endif
+
   PluginDestructionGuard guard(this);
 
   PRUint16 count = 0;
@@ -1204,6 +1378,11 @@ nsNPAPIPluginInstance::InitializePlugin()
 
 NS_IMETHODIMP nsNPAPIPluginInstance::SetWindow(nsPluginWindow* window)
 {
+#ifdef OJI
+  if (mShadow && window)
+    return mShadow->SetWindow(window);
+#endif
+
   // XXX NPAPI plugins don't want a SetWindow(NULL).
   if (!window || !mStarted)
     return NS_OK;
@@ -1297,6 +1476,11 @@ NS_IMETHODIMP nsNPAPIPluginInstance::Print(nsPluginPrint* platformPrint)
 {
   NS_ENSURE_TRUE(platformPrint, NS_ERROR_NULL_POINTER);
 
+#ifdef OJI
+  if (mShadow)
+    return mShadow->Print(platformPrint);
+#endif
+
   PluginDestructionGuard guard(this);
 
   NPPrint* thePrint = (NPPrint *)platformPrint;
@@ -1340,6 +1524,11 @@ NS_IMETHODIMP nsNPAPIPluginInstance::Print(nsPluginPrint* platformPrint)
 
 NS_IMETHODIMP nsNPAPIPluginInstance::HandleEvent(nsPluginEvent* event, PRBool* handled)
 {
+#ifdef OJI
+  if (mShadow)
+    return mShadow->HandleEvent(event, handled);
+#endif
+
   if (!mStarted)
     return NS_OK;
 
@@ -1378,6 +1567,10 @@ NS_IMETHODIMP nsNPAPIPluginInstance::HandleEvent(nsPluginEvent* event, PRBool* h
 
 nsresult nsNPAPIPluginInstance::GetValueInternal(NPPVariable variable, void* value)
 {
+#ifdef OJI
+  if (mShadow)
+    return NS_ERROR_NOT_IMPLEMENTED;
+#endif
   nsresult  res = NS_OK;
   if (mCallbacks->getvalue && mStarted) {
     PluginDestructionGuard guard(this);
@@ -1393,6 +1586,11 @@ nsresult nsNPAPIPluginInstance::GetValueInternal(NPPVariable variable, void* val
 
 NS_IMETHODIMP nsNPAPIPluginInstance::GetValue(nsPluginInstanceVariable variable, void *value)
 {
+#ifdef OJI
+  if (mShadow)
+    return mShadow->GetValue(variable, value);
+#endif
+
   nsresult  res = NS_OK;
 
   switch (variable) {
@@ -1612,6 +1810,10 @@ nsNPAPIPluginInstance::PopPopupsEnabledState()
 NS_IMETHODIMP
 nsNPAPIPluginInstance::GetPluginAPIVersion(PRUint16* version)
 {
+#ifdef OJI
+  if (mShadow)
+    return NS_ERROR_NOT_IMPLEMENTED;
+#endif
   NS_ENSURE_ARG_POINTER(version);
   *version = mCallbacks->version;
   return NS_OK;
