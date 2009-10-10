@@ -173,11 +173,11 @@ nsSVGFeatures::ElementSupportsAttributes(const nsIAtom *aTagName, PRUint16 aAttr
   return PR_FALSE;
 }
 
-const nsAdoptingString * const nsSVGFeatures::kIgnoreSystemLanguage = (nsAdoptingString *) 0x01;
+const nsString * const nsSVGFeatures::kIgnoreSystemLanguage = (nsString *) 0x01;
 
 /*static*/ PRBool
 nsSVGFeatures::PassesConditionalProcessingTests(nsIContent *aContent,
-                                                const nsAdoptingString *aAcceptLangs)
+                                                const nsString *aAcceptLangs)
 {
   if (!aContent->IsNodeOfType(nsINode::eELEMENT)) {
     return PR_FALSE;
@@ -212,7 +212,7 @@ nsSVGFeatures::PassesConditionalProcessingTests(nsIContent *aContent,
     return PR_TRUE;
   }
 
-  const nsAdoptingString& acceptLangs = aAcceptLangs ? *aAcceptLangs :
+  const nsString& acceptLangs = aAcceptLangs ? *aAcceptLangs :
     nsContentUtils::GetLocalizedStringPref("intl.accept_languages");
 
   // systemLanguage
