@@ -691,6 +691,7 @@ enum TypeConsensus
 };
 
 class TraceRecorder {
+    VMAllocator             tempAlloc;
     JSContext*              cx;
     JSTraceMonitor*         traceMonitor;
     JSObject*               globalObj;
@@ -1003,6 +1004,8 @@ public:
                   VMSideExit* expectedInnerExit, jsbytecode* outerTree,
                   uint32 outerArgc);
     ~TraceRecorder();
+
+    bool outOfMemory();
 
     static JS_REQUIRES_STACK JSRecordingStatus monitorRecording(JSContext* cx, TraceRecorder* tr,
                                                                 JSOp op);
