@@ -203,9 +203,6 @@ struct JSTraceMonitor {
      */
     CLS(VMAllocator)        reTempAlloc;
 
-    /* Keep a list of recorders we need to abort on cache flush. */
-    CLS(TraceRecorder)      abortStack;
-
 #ifdef __cplusplus /* Allow inclusion from LiveConnect C files. */
 
 #ifdef DEBUG
