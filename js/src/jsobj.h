@@ -89,9 +89,13 @@ struct JSObjectMap {
     const JSObjectOps * const   ops;    /* high level object operation vtable */
     uint32                      shape;  /* shape identifier */
 
-    explicit JSObjectMap(const JSObjectOps *ops, uint32 shape) : ops(ops), shape(shape) {}
+#ifdef __cplusplus /* Allow inclusion from LiveConnect C files. */
 
+    explicit JSObjectMap(const JSObjectOps *ops, uint32 shape) : ops(ops), shape(shape) {}
     enum { SHAPELESS = 0xffffffff };
+
+#endif
+
 };
 
 #ifndef __cplusplus /* Allow inclusion from LiveConnect C files. */
