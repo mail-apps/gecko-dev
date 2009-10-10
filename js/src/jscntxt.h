@@ -1004,7 +1004,9 @@ struct JSContext {
     size_t              scriptStackQuota;
 
     /* Data shared by threads in an address space. */
-    JSRuntime           *runtime;
+    JSRuntime * const   runtime;
+
+    explicit JSContext(JSRuntime *rt) : runtime(rt) {}
 
     /* Stack arena pool and frame pointer register. */
     JS_REQUIRES_STACK
