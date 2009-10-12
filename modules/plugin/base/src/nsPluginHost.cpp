@@ -795,7 +795,7 @@ nsPluginTag::nsPluginTag(const char* aName,
 
 nsPluginTag::~nsPluginTag()
 {
-  TryUnloadPlugin();
+  TryUnloadPlugin(PR_TRUE);
 
   // Remove mime types added to the category manager
   // only if we were made 'active' by setting the host
@@ -996,7 +996,7 @@ nsresult PostPluginUnloadEvent(PRLibrary* aLibrary)
   return NS_ERROR_FAILURE;
 }
 
-void nsPluginTag::TryUnloadPlugin()
+void nsPluginTag::TryUnloadPlugin(PRBool aForceShutdown)
 {
 #ifdef OJI
   // Don't unload any XPCOM plugins.  They don't get a call to
@@ -1005,7 +1005,7 @@ void nsPluginTag::TryUnloadPlugin()
   if (!(mFlags & NS_PLUGIN_FLAG_NPAPI))
     isXPCOM = PR_TRUE;
 
-  if (isXPCOM) return;
+  if (isXPCOM && !aForceShutdown) return;
 #endif
 
   if (mEntryPoint) {

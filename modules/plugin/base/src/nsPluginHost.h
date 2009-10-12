@@ -114,7 +114,7 @@ public:
   ~nsPluginTag();
 
   void SetHost(nsPluginHost * aHost);
-  void TryUnloadPlugin();
+  void TryUnloadPlugin(PRBool aForceShutdown = PR_FALSE);
   void Mark(PRUint32 mask);
   void UnMark(PRUint32 mask);
   PRBool HasFlag(PRUint32 flag);
