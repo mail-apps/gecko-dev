@@ -93,7 +93,7 @@ def main():
                     help = "reftest will timeout in specified number of milleseconds. [default %default ms].")
   parser.add_option("--leak-threshold",
                     action = "store", type = "int", dest = "leakThreshold",
-                    default = -1,
+                    default = 0,
                     help = "fail if the number of bytes leaked through "
                            "refcounted objects (or bytes in classes with "
                            "MOZ_COUNT_CTOR and MOZ_COUNT_DTOR) is greater "
@@ -109,13 +109,6 @@ def main():
   if len(args) != 1:
     print >>sys.stderr, "No reftest.list specified."
     sys.exit(1)
-
-  if options.leakThreshold == -1:
-    if args[0].endswith("/testing/crashtest/crashtests.list") and \
-       automation.IS_MAC:
-      options.leakThreshold = 3616
-    else:
-      options.leakThreshold = 0
 
   options.app = getFullPath(options.app)
   if not os.path.exists(options.app):
