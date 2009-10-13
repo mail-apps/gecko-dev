@@ -4471,6 +4471,7 @@ PRBool nsPluginHost::IsDuplicatePlugin(nsPluginTag * aPluginTag)
 struct pluginFileinDirectory
 {
   nsString mFilePath;
+  nsString mFileName; // Used for plugins in NS_APP_PLUGINS_DIR.
   PRInt64  mModTime;
 
   pluginFileinDirectory()
@@ -4565,6 +4566,22 @@ nsresult nsPluginHost::ScanPluginsDirectory(nsIFile * pluginsDir,
   ("nsPluginHost::ScanPluginsDirectory dir=%s\n", dirPath.get()));
 #endif
 
+  // If pluginsDir is NS_APP_PLUGINS_DIR (inside the app bundle) we need to
+  // handle the call to RemoveCachedPluginsInfo() (below) differently -- we
+  // need to make it search by file name and not file path.  Otherwise it
+  // won't find settings changes for bundled plugins made by other copies of
+  // the browser -- otherwise (for example) disabling the JEP in one FF app
+  // bundle (say FF 3.5.X) won't disable it in another FF app bundle (say
+  // FF 3.6).
+  PRBool isAppPluginsDir = PR_FALSE;
+  nsCOMPtr<nsIFile> appPluginsDir;
+  rv = NS_GetSpecialDirectory(NS_APP_PLUGINS_DIR, getter_AddRefs(appPluginsDir));
+  if (NS_SUCCEEDED(rv)) {
+    rv = appPluginsDir->Equals(pluginsDir, &isAppPluginsDir);
+    if (NS_FAILED(rv))
+      isAppPluginsDir = PR_FALSE;
+  }
+
   nsCOMPtr<nsISimpleEnumerator> iter;
   rv = pluginsDir->GetDirectoryEntries(getter_AddRefs(iter));
   if (NS_FAILED(rv))
@@ -4592,6 +4609,11 @@ nsresult nsPluginHost::ScanPluginsDirectory(nsIFile * pluginsDir,
     if (NS_FAILED(rv))
       continue;
 
+    nsAutoString fileName;
+    rv = dirEntry->GetLeafName(fileName);
+    if (NS_FAILED(rv))
+      continue;
+
     if (nsPluginsDir::IsPluginFile(dirEntry)) {
       pluginFileinDirectory * item = pluginFilesArray.AppendElement();
       if (!item)
@@ -4603,6 +4625,7 @@ nsresult nsPluginHost::ScanPluginsDirectory(nsIFile * pluginsDir,
 
       item->mModTime = fileModTime;
       item->mFilePath = filePath;
+      item->mFileName = fileName;
     }
   } // end round of up of plugin files
 
@@ -4622,7 +4645,13 @@ nsresult nsPluginHost::ScanPluginsDirectory(nsIFile * pluginsDir,
 
     // Look for it in our cache
     nsRefPtr<nsPluginTag> pluginTag;
-    RemoveCachedPluginsInfo(NS_ConvertUTF16toUTF8(pfd.mFilePath).get(),
+    nsCAutoString fileSpec;
+    if (isAppPluginsDir) {
+      AppendUTF16toUTF8(pfd.mFileName, fileSpec);
+    } else {
+      AppendUTF16toUTF8(pfd.mFilePath, fileSpec);
+    }
+    RemoveCachedPluginsInfo(fileSpec.get(), isAppPluginsDir,
                             getter_AddRefs(pluginTag));
 
     PRBool enabled = PR_TRUE;
@@ -5390,13 +5419,20 @@ nsPluginHost::ReadPluginInfo()
 }
 
 void
-nsPluginHost::RemoveCachedPluginsInfo(const char *filePath, nsPluginTag **result)
+nsPluginHost::RemoveCachedPluginsInfo(const char *fileSpec, PRBool byFileName,
+                                      nsPluginTag **result)
 {
   nsRefPtr<nsPluginTag> prev;
   nsRefPtr<nsPluginTag> tag = mCachedPlugins;
   while (tag)
   {
-    if (tag->mFullPath.Equals(filePath)) {
+    PRBool found;
+    if (byFileName) {
+      found = tag->mFileName.Equals(fileSpec);
+    } else {
+      found = tag->mFullPath.Equals(fileSpec);
+    }
+    if (found) {
       // Found it. Remove it from our list
       if (prev)
         prev->mNext = tag->mNext;
