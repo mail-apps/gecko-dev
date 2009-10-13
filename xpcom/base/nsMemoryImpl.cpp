@@ -124,7 +124,7 @@ nsMemoryImpl::IsLowMemory(PRBool *result)
     // critical code (e.g. during painting), so that's bad.
     MEMORYSTATUS stat;
     GlobalMemoryStatus(&stat);
-    *result = (stat.dwMemoryLoad >= 80);
+    *result = (stat.dwMemoryLoad >= 98);
 #elif defined(XP_WIN)
     MEMORYSTATUSEX stat;
     stat.dwLength = sizeof stat;
