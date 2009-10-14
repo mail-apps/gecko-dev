@@ -286,7 +286,6 @@ _TEST_FILES = 	test_bug5141.html \
 		file_bug498897.html \
 		file_bug498897.html^headers^ \
 		file_bug498897.css \
-		test_bug489925.xhtml \
 		$(NULL)
 
 # Disabled for now. Mochitest isn't reliable enough for these.
