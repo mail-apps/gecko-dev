@@ -2361,11 +2361,6 @@ nsDocument::ContentAppended(nsIDocument* aDocument,
 {
   NS_ASSERTION(aDocument == this, "unexpected doc");
 
-  if (aContainer->GetBindingParent()) {
-    // Anonymous node; bail out
-    return;
-  }
-
   PRUint32 count = aContainer->GetChildCount();
   for (PRUint32 i = aNewIndexInContainer; i < count; ++i) {
     RegisterNamedItems(aContainer->GetChildAt(i));
@@ -2382,11 +2377,6 @@ nsDocument::ContentInserted(nsIDocument* aDocument,
 
   NS_ABORT_IF_FALSE(aContent, "Null content!");
 
-  if (aContent->GetBindingParent()) {
-    // Anonymous node; bail out
-    return;
-  }
-
   RegisterNamedItems(aContent);
 }
 
@@ -2400,11 +2390,6 @@ nsDocument::ContentRemoved(nsIDocument* aDocument,
 
   NS_ABORT_IF_FALSE(aChild, "Null content!");
 
-  if (aChild->GetBindingParent()) {
-    // Anonymous node; bail out
-    return;
-  }
-
   UnregisterNamedItems(aChild);
 }
 
@@ -2414,11 +2399,6 @@ nsDocument::AttributeWillChange(nsIContent* aContent, PRInt32 aNameSpaceID,
 {
   NS_ABORT_IF_FALSE(aContent, "Null content!");
   NS_PRECONDITION(aAttribute, "Must have an attribute that's changing!");
-
-  if (aContent->GetBindingParent()) {
-    // Anonymous node; bail out
-    return;
-  }
 
   if (aNameSpaceID != kNameSpaceID_None)
     return;
@@ -2439,11 +2419,6 @@ nsDocument::AttributeChanged(nsIDocument* aDocument,
 
   NS_ABORT_IF_FALSE(aContent, "Null content!");
   NS_PRECONDITION(aAttribute, "Must have an attribute that's changing!");
-
-  if (aContent->GetBindingParent()) {
-    // Anonymous node; bail out
-    return;
-  }
 
   if (aNameSpaceID != kNameSpaceID_None)
     return;
