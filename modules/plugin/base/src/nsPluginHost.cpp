@@ -468,11 +468,21 @@ void nsPluginInstanceTagList::stopRunning(nsISupportsArray* aReloadDocs,
                              (void *) &doCallSetWindowAfterDestroy);
       if (doCallSetWindowAfterDestroy) {
         p->mInstance->Stop();
+#ifdef OJI
+        nsCOMPtr<nsIPluginInstanceOld> instOld(do_QueryInterface(p->mInstance));
+        if (instOld)
+          instOld->Destroy();
+#endif
         p->mInstance->SetWindow(nsnull);
       }
       else {
         p->mInstance->SetWindow(nsnull);
         p->mInstance->Stop();
+#ifdef OJI
+        nsCOMPtr<nsIPluginInstanceOld> instOld(do_QueryInterface(p->mInstance));
+        if (instOld)
+          instOld->Destroy();
+#endif
       }
       doCallSetWindowAfterDestroy = PR_FALSE;
       p->setStopped(PR_TRUE);
@@ -6526,6 +6536,11 @@ public:
                ("Doing delayed destroy of instance %p\n", instance.get()));
 
     instance->Stop();
+#ifdef OJI
+    nsCOMPtr<nsIPluginInstanceOld> instOld(do_QueryInterface(instance));
+    if (instOld)
+      instOld->Destroy();
+#endif
 
     nsRefPtr<nsPluginHost> host = nsPluginHost::GetInst();
 
