@@ -118,7 +118,7 @@ _TEST_FILES += \
 		448636.ogv \
 		beta-phrasebook.ogg \
 		bogus.ogv \
-    bug495129.ogv \
+		bug495129.ogv \
 		bug461281.ogg \
 		bug482461.ogv \
 		bug498380.ogv \
@@ -128,14 +128,16 @@ _TEST_FILES += \
 		bug499519.ogv \
 		bug500311.ogv \
 		bug500311.ogv^headers^ \
-    bug501279.ogg \
+		bug501279.ogg \
 		bug504613.ogv \
-    bug504644.ogv \
+		bug504644.ogv \
 		bug504843.ogv \
-    bug506094.ogv \
+		bug506094.ogv \
 		bug516323.ogv \
 		bug520493.ogg \
 		bug520500.ogg \
+		bug520908.ogv \
+		bug520908.ogv^headers^ \
 		chain.ogv \
 		dirac.ogg \
 		seek.ogv \
