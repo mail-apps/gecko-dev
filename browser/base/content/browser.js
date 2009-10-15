@@ -216,8 +216,13 @@ function SetClickAndHoldHandlers() {
     if (aEvent.button == 0 &&
         aEvent.target == aEvent.currentTarget &&
         !aEvent.currentTarget.open &&
-        !aEvent.currentTarget.disabled)
-      aEvent.currentTarget.doCommand();
+        !aEvent.currentTarget.disabled) {
+      let cmdEvent = document.createEvent("xulcommandevent");
+      cmdEvent.initCommandEvent("command", true, true, window, 0,
+                                aEvent.ctrlKey, aEvent.altKey, aEvent.shiftKey,
+                                aEvent.metaKey, null);
+      aEvent.currentTarget.dispatchEvent(cmdEvent);
+    }
   }
 
   function stopTimer(aEvent) {
