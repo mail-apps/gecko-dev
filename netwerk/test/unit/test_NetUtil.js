@@ -212,8 +212,8 @@ function test_asyncFetch()
   server.start(4444);
 
   // Create our channel.
-  let channel = NetUtil.ioService.
-                newChannel("http://localhost:4444/test", null, null);
+  let ios = Cc["@mozilla.org/network/io-service;1"].getService(Ci.nsIIOService);
+  let channel = ios.newChannel("http://localhost:4444/test", null, null);
 
   // Open our channel asynchronously.
   NetUtil.asyncFetch(channel, function(aInputStream, aResult) {
@@ -229,7 +229,7 @@ function test_asyncFetch()
     do_check_eq(TEST_DATA, result);
 
     server.stop(run_next_test);
- 
+
     run_next_test();
   });
 }
