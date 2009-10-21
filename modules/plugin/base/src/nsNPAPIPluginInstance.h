@@ -51,6 +51,7 @@
 #ifdef OJI
 #include "nsIPluginInstanceOld.h"
 #include "nsIPluginInstancePeer2.h"
+#include "nsPIPluginInstancePeer.h"
 #include "nsIScriptablePlugin.h"
 #include "nsIPluginInstanceInternal.h"
 #include "nsIJVMPluginInstance.h"
