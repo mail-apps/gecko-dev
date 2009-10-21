@@ -128,10 +128,10 @@ static void *
 zlibAlloc(void *opaque, uInt items, uInt size)
 {
   nsRecyclingAllocator *zallocator = (nsRecyclingAllocator *)opaque;
-  if (gZlibAllocator) {
-    return gZlibAllocator->Calloc(items, size);
+  if (zallocator) {
+    return zallocator->Malloc(items * size);
   }
-  return calloc(items, size);
+  return malloc(items * size);
 }
 
 static void
