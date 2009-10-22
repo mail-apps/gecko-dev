@@ -198,6 +198,12 @@ function LOG(module, string) {
   }
 }
 
+function getObserverService()
+{
+  return Cc["@mozilla.org/observer-service;1"].
+         getService(Ci.nsIObserverService);
+}
+
 #ifdef MOZ_UPDATER
 
 __defineGetter__("gApp", function () {
@@ -756,12 +762,6 @@ function readStringFromFile(file) {
   if (text[text.length - 1] == "\n")
     text = text.slice(0, -1);
   return text;
-}
-
-function getObserverService()
-{
-  return Cc["@mozilla.org/observer-service;1"].
-         getService(Ci.nsIObserverService);
 }
 
 function getDefaultPrefBranch()
@@ -3170,6 +3170,8 @@ UpdatePrompt.prototype = {
  * @constructor
  */
 function TimerManager() {
+  let os = getObserverService();
+  os.addObserver(this, "xpcom-shutdown", false);
 }
 TimerManager.prototype = {
   /**
@@ -3202,19 +3204,19 @@ TimerManager.prototype = {
    * See nsIObserver.idl
    */
   observe: function TM_observe(aSubject, aTopic, aData) {
-    var os = Cc["@mozilla.org/observer-service;1"].
-             getService(Ci.nsIObserverService);
     switch (aTopic) {
     case "profile-after-change":
-      os.addObserver(this, "xpcom-shutdown", false);
       this._start();
       break;
     case "xpcom-shutdown":
+      let os = getObserverService();
       os.removeObserver(this, "xpcom-shutdown");
 
       // Release everything we hold onto.
-      this._timer.cancel();
-      this._timer = null;
+      if (this._timer) {
+        this._timer.cancel();
+        this._timer = null;
+      }
       for (var timerID in this._timers)
         delete this._timers[timerID];
       this._timers = null;
