@@ -51,6 +51,7 @@ var gPlayTests = [
   { name:"bug520493.ogg", type:"audio/ogg", duration:0.458 },
   // Small file with vorbis comments with 0 length values and names.
   { name:"bug520500.ogg", type:"audio/ogg", duration:0.123 },
+  { name:"bug523816.ogv", type:"video/ogg", duration:0.5 },
 
   { name:"bogus.duh", type:"bogus/duh" }
 ];
