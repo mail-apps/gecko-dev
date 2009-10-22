@@ -34,3 +34,4 @@ handle-read-errors.patch: Make oggplay_initialise() handle closing of stream
 
 bug504843.patch: Abort when decoding video excessively large video frames.
 
+bug523816.patch: Correct CMML data buffer size calculation.
