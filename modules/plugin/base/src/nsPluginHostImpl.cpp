@@ -489,9 +489,15 @@ PRBool nsActivePluginList::remove(nsActivePlugin * plugin)
 
         delete p; // plugin instance is destroyed here
 
-        if (pluginTag)
-          pluginTag->TryUnloadPlugin();
-        else
+        nsCOMPtr<nsIPrefBranch> pref(do_GetService(NS_PREFSERVICE_CONTRACTID));
+        if (pluginTag && pref) {
+          PRBool unloadPluginsASAP = PR_FALSE;
+          nsresult rv = pref->GetBoolPref("plugins.unloadASAP",
+                                          &unloadPluginsASAP);
+          if (NS_SUCCEEDED(rv) && unloadPluginsASAP) {
+            pluginTag->TryUnloadPlugin();
+          }
+        } else
           NS_ASSERTION(pluginTag, "pluginTag was not set, plugin not shutdown");
 
       }
@@ -859,7 +865,7 @@ nsPluginTag::nsPluginTag(const char* aName,
 
 nsPluginTag::~nsPluginTag()
 {
-  TryUnloadPlugin(PR_TRUE);
+  TryUnloadPlugin();
 
   // Remove mime types added to the category manager
   // only if we were made 'active' by setting the host
@@ -1075,13 +1081,13 @@ nsresult PostPluginUnloadEvent(PRLibrary* aLibrary)
   return NS_ERROR_FAILURE;
 }
 
-void nsPluginTag::TryUnloadPlugin(PRBool aForceShutdown)
+void nsPluginTag::TryUnloadPlugin()
 {
   PRBool isXPCOM = PR_FALSE;
   if (!(mFlags & NS_PLUGIN_FLAG_NPAPI))
     isXPCOM = PR_TRUE;
 
-  if (isXPCOM && !aForceShutdown) return;
+  if (isXPCOM) return;
 
   if (mEntryPoint) {
     mEntryPoint->Shutdown();
@@ -1093,10 +1099,10 @@ void nsPluginTag::TryUnloadPlugin(PRBool aForceShutdown)
   // also, never unload an XPCOM plugin library
   if (mLibrary && mCanUnloadLibrary && !isXPCOM) {
     // NPAPI plugins can be unloaded now if they don't use XPConnect
-    if (!mXPConnected)
+    if (!mXPConnected) {
       // unload the plugin asynchronously by posting a PLEvent
       PostPluginUnloadEvent(mLibrary);
-    else {
+    } else {
       // add library to the unused library list to handle it later
       if (mPluginHost)
         mPluginHost->AddUnusedLibrary(mLibrary);
