@@ -5348,8 +5348,8 @@ PRBool nsPluginInstanceOwner::UpdateVisibility(PRBool aForce)
 
   if (aForce || mWidgetVisible != isVisible) {
     PRBool handled;
-    NPEvent pluginEvent;
-    XVisibilityEvent& visibilityEvent = pluginEvent.xvisibility;
+    nsPluginEvent pluginEvent;
+    XVisibilityEvent& visibilityEvent = pluginEvent.event.xvisibility;
     visibilityEvent.type = VisibilityNotify;
     visibilityEvent.display = 0;
     visibilityEvent.state = isVisible ? VisibilityUnobscured : VisibilityFullyObscured;
