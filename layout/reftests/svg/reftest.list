@@ -67,6 +67,7 @@ include moz-only/reftest.list
 == filter-foreignObject-01.svg pass.svg
 == filter-invalidation-01.svg pass.svg
 == filter-translated-01.svg filter-translated-01-ref.svg
+== filters-and-group-opacity.svg filters-and-group-opacity-ref.svg
 == foreignObject-01.svg pass.svg
 == foreignObject-02.svg foreignObject-02-ref.svg
 == foreignObject-ancestor-style-change-01.svg foreignObject-ancestor-style-change-01-ref.svg
@@ -86,6 +87,7 @@ fails == inline-in-xul-basic-01.xul pass.svg
 == invalid-text-01.svg pass.svg
 == linearGradient-basic-01.svg pass.svg
 == linearGradient-basic-02.svg pass.svg
+== markers-and-group-opacity.svg markers-and-group-opacity-ref.svg
 == marker-attribute-01.svg pass.svg
 == mask-containing-masked-content-01.svg pass.svg
 # Bug 456323
