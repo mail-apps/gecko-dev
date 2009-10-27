@@ -210,6 +210,12 @@ public:
   static PRBool ContentIsDescendantOf(nsINode* aPossibleDescendant,
                                       nsINode* aPossibleAncestor);
 
+  /**
+   * Similar to ContentIsDescendantOf except it crosses document boundaries.
+   */
+  static PRBool ContentIsCrossDocDescendantOf(nsINode* aPossibleDescendant,
+                                              nsINode* aPossibleAncestor);
+
   /*
    * This method fills the |aArray| with all ancestor nodes of |aNode|
    * including |aNode| at the zero index.
