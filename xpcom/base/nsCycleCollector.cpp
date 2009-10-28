@@ -749,10 +749,12 @@ public:
             if (!(PRUword(e->mObject) & PRUword(1))) {
                 // This is a real entry (rather than something on the
                 // free list).
-                nsXPCOMCycleCollectionParticipant *cp;
-                ToParticipant(e->mObject, &cp);
+                if (e->mObject) {
+                    nsXPCOMCycleCollectionParticipant *cp;
+                    ToParticipant(e->mObject, &cp);
 
-                cp->UnmarkPurple(e->mObject);
+                    cp->UnmarkPurple(e->mObject);
+                }
 
                 if (--mCount == 0)
                     break;
@@ -893,7 +895,7 @@ nsPurpleBuffer::SelectPointers(GCGraphBuilder &aBuilder)
             if (!(PRUword(e->mObject) & PRUword(1))) {
                 // This is a real entry (rather than something on the
                 // free list).
-                if (AddPurpleRoot(aBuilder, e->mObject)) {
+                if (!e->mObject || AddPurpleRoot(aBuilder, e->mObject)) {
 #ifdef DEBUG_CC
                     mNormalObjects.RemoveEntry(e->mObject);
 #endif
@@ -1122,7 +1124,7 @@ Fault(const char *msg, const void *ptr=nsnull)
     // Report to observers off an event so we don't run JS under GC
     // (which is where we might be right now).
     nsCOMPtr<nsIRunnable> ev = new CCRunnableFaultReport(str);
-    NS_DispatchToCurrentThread(ev);
+    NS_DispatchToMainThread(ev);
 }
 
 #ifdef DEBUG_CC
@@ -1156,7 +1158,15 @@ Fault(const char *msg, PtrInfo *pi)
 }
 #endif
 
-
+static inline bool
+CheckMainThreadIfFast()
+{
+#ifdef NS_TLS
+    return NS_IsMainThread();
+#else
+    return true;
+#endif
+}
 
 static nsISupports *
 canonicalize(nsISupports *in)
@@ -1575,7 +1585,7 @@ nsPurpleBuffer::NoteAll(GCGraphBuilder &builder)
         for (nsPurpleBufferEntry *e = b->mEntries,
                               *eEnd = e + NS_ARRAY_LENGTH(b->mEntries);
             e != eEnd; ++e) {
-            if (!(PRUword(e->mObject) & PRUword(1))) {
+            if (!(PRUword(e->mObject) & PRUword(1)) && e->mObject) {
                 builder.NoteXPCOMRoot(e->mObject);
             }
         }
@@ -2205,6 +2215,9 @@ nsCycleCollector_isScanSafe(nsISupports *s)
 PRBool
 nsCycleCollector::Suspect(nsISupports *n)
 {
+    if (!CheckMainThreadIfFast())
+        return PR_FALSE;
+
     // Re-entering ::Suspect during collection used to be a fault, but
     // we are canonicalizing nsISupports pointers using QI, so we will
     // see some spurious refcount traffic here. 
@@ -2214,7 +2227,6 @@ nsCycleCollector::Suspect(nsISupports *n)
 
     NS_ASSERTION(nsCycleCollector_isScanSafe(n),
                  "suspected a non-scansafe pointer");
-    NS_ASSERTION(NS_IsMainThread(), "trying to suspect from non-main thread");
 
     if (mParams.mDoNothing)
         return PR_FALSE;
@@ -2244,6 +2256,13 @@ nsCycleCollector::Suspect(nsISupports *n)
 PRBool
 nsCycleCollector::Forget(nsISupports *n)
 {
+    if (!CheckMainThreadIfFast()) {
+        if (!mParams.mDoNothing) {
+            Fault("Forget called off main thread");
+        }
+        return PR_TRUE; // it's as good as forgotten
+    }
+
     // Re-entering ::Forget during collection used to be a fault, but
     // we are canonicalizing nsISupports pointers using QI, so we will
     // see some spurious refcount traffic here. 
@@ -2251,8 +2270,6 @@ nsCycleCollector::Forget(nsISupports *n)
     if (mScanInProgress)
         return PR_FALSE;
 
-    NS_ASSERTION(NS_IsMainThread(), "trying to forget from non-main thread");
-    
     if (mParams.mDoNothing)
         return PR_TRUE; // it's as good as forgotten
 
@@ -2278,6 +2295,9 @@ nsCycleCollector::Forget(nsISupports *n)
 nsPurpleBufferEntry*
 nsCycleCollector::Suspect2(nsISupports *n)
 {
+    if (!CheckMainThreadIfFast())
+        return nsnull;
+
     // Re-entering ::Suspect during collection used to be a fault, but
     // we are canonicalizing nsISupports pointers using QI, so we will
     // see some spurious refcount traffic here. 
@@ -2287,7 +2307,6 @@ nsCycleCollector::Suspect2(nsISupports *n)
 
     NS_ASSERTION(nsCycleCollector_isScanSafe(n),
                  "suspected a non-scansafe pointer");
-    NS_ASSERTION(NS_IsMainThread(), "trying to suspect from non-main thread");
 
     if (mParams.mDoNothing)
         return nsnull;
@@ -2318,6 +2337,9 @@ nsCycleCollector::Suspect2(nsISupports *n)
 PRBool
 nsCycleCollector::Forget2(nsPurpleBufferEntry *e)
 {
+    if (!CheckMainThreadIfFast())
+        return PR_FALSE;
+
     // Re-entering ::Forget during collection used to be a fault, but
     // we are canonicalizing nsISupports pointers using QI, so we will
     // see some spurious refcount traffic here. 
@@ -2325,8 +2347,6 @@ nsCycleCollector::Forget2(nsPurpleBufferEntry *e)
     if (mScanInProgress)
         return PR_FALSE;
 
-    NS_ASSERTION(NS_IsMainThread(), "trying to forget from non-main thread");
-    
 #ifdef DEBUG_CC
     mStats.mForgetNode++;
 
