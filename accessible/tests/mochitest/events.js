@@ -134,6 +134,7 @@ function invokerChecker(aEventType, aTarget)
  *     // var checker = {
  *     //   type getter: function() {}, // DOM or a11y event type
  *     //   target getter: function() {}, // DOM node or accessible
+ *     //   phase getter: function() {}, // DOM event phase (false - bubbling)
  *     //   check: function(aEvent) {},
  *     //   getID: function() {}
  *     // };
@@ -291,26 +292,10 @@ function eventQueue(aEventType)
       // We wait for events in order specified by eventSeq variable.
       var idx = this.mEventSeqIdx + 1;
 
-      if (gA11yEventDumpID) { // debug stuff
+      var matched = this.compareEvents(idx, aEvent);
+      this.dumpEventToDOM(aEvent, idx, matched);
 
-        if (aEvent instanceof nsIDOMEvent) {
-          var info = "Event type: " + aEvent.type;
-          info += ". Target: " + prettyName(aEvent.originalTarget);
-          dumpInfoToDOM(info);
-        }
-
-        var currType = this.getEventType(idx);
-        var currTarget = this.getEventTarget(idx);
-
-        var info = "Event queue processing. Expected event type: ";
-        info += (typeof currType == "string") ?
-          currType : eventTypeToString(currType);
-        info += ". Target: " + prettyName(currTarget);
-
-        dumpInfoToDOM(info);
-      }
-
-      if (this.compareEvents(idx, aEvent)) {
+      if (matched) {
         this.checkEvent(idx, aEvent);
         invoker.wasCaught[idx] = true;
 
@@ -353,7 +338,8 @@ function eventQueue(aEventType)
         if (typeof eventType == "string") {
           // DOM event
           var target = this.getEventTarget(idx);
-          target.ownerDocument.addEventListener(eventType, this, true);
+          target.ownerDocument.addEventListener(eventType, this,
+                                                this.getEventPhase(idx));
         } else {
           // A11y event
           addA11yEventListener(eventType, this);
@@ -370,7 +356,8 @@ function eventQueue(aEventType)
         if (typeof eventType == "string") {
           // DOM event
           var target = this.getEventTarget(idx);
-          target.ownerDocument.removeEventListener(eventType, this, true);
+          target.ownerDocument.removeEventListener(eventType, this,
+                                                   this.getEventPhase(idx));
         }
         else {
           // A11y event
@@ -390,6 +377,15 @@ function eventQueue(aEventType)
   this.getEventTarget = function eventQueue_getEventTarget(aIdx)
   {
     return this.mEventSeq[aIdx].target;
+  }
+
+  this.getEventPhase = function eventQueue_getEventPhase(aIdx)
+  {
+     var eventItem = this.mEventSeq[aIdx];
+    if ("phase" in eventItem)
+      return eventItem.phase;
+
+    return true;
   }
 
   this.compareEvents = function eventQueue_compareEvents(aIdx, aEvent)
@@ -436,6 +432,32 @@ function eventQueue(aEventType)
 
     var invoker = this.getInvoker();
     return invoker.getID();
+  }
+
+  this.dumpEventToDOM = function eventQueue_dumpEventToDOM(aOrigEvent,
+                                                           aExpectedEventIdx,
+                                                           aMatch)
+  {
+    if (!gA11yEventDumpID) // debug stuff
+      return;
+
+    // Dump DOM event information. Skip a11y event since it is dumped by
+    // gA11yEventObserver.
+    if (aOrigEvent instanceof nsIDOMEvent) {
+      var info = "Event type: " + aOrigEvent.type;
+      info += ". Target: " + prettyName(aOrigEvent.originalTarget);
+      dumpInfoToDOM(info);
+    }
+
+    var currType = this.getEventType(aExpectedEventIdx);
+    var currTarget = this.getEventTarget(aExpectedEventIdx);
+
+    var info = "EQ: " + (aMatch ? "matched" : "expected") + " event, type: ";
+    info += (typeof currType == "string") ?
+      currType : eventTypeToString(currType);
+    info += ". Target: " + prettyName(currTarget);
+
+    dumpInfoToDOM(info);
   }
 
   this.mDefEventType = aEventType;
