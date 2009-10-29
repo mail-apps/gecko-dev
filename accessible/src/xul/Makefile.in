@@ -70,9 +70,10 @@ endif
 CPPSRCS = \
   nsXULAlertAccessible.cpp \
   nsXULColorPickerAccessible.cpp \
+  nsXULComboboxAccessible.cpp \
   nsXULFormControlAccessible.cpp \
   nsXULMenuAccessible.cpp \
-  nsXULSelectAccessible.cpp \
+  nsXULListboxAccessible.cpp \
   nsXULSliderAccessible.cpp \
   nsXULTabAccessible.cpp \
   nsXULTextAccessible.cpp \
