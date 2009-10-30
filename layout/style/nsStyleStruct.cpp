@@ -1098,14 +1098,27 @@ nsChangeHint nsStylePosition::CalcDifference(const nsStylePosition& aOther) cons
     // FIXME: Bug 507764.  Why do we need reflow here?
     return NS_STYLE_HINT_REFLOW;
   }
-  
+
+  if (mBoxSizing != aOther.mBoxSizing) {
+    // Can afect both widths and heights; just a bad scene.
+    return nsChangeHint_ReflowFrame;
+  }
+
+  if (mHeight != aOther.mHeight ||
+      mMinHeight != aOther.mMinHeight ||
+      mMaxHeight != aOther.mMaxHeight) {
+    // Height changes can't affect descendant intrinsic sizes, but due to our
+    // not-so-great computation of mVResize in nsHTMLReflowState, do need to
+    // force reflow of the whole subtree.
+    // XXXbz due to XUL caching heights as well, height changes _do_
+    // need to clear ancestor intrinsics!
+    return NS_SubtractHint(nsChangeHint_ReflowFrame,
+                           nsChangeHint_ClearDescendantIntrinsics);
+  }
+
   if ((mWidth == aOther.mWidth) &&
       (mMinWidth == aOther.mMinWidth) &&
-      (mMaxWidth == aOther.mMaxWidth) &&
-      (mHeight == aOther.mHeight) &&
-      (mMinHeight == aOther.mMinHeight) &&
-      (mMaxHeight == aOther.mMaxHeight) &&
-      (mBoxSizing == aOther.mBoxSizing)) {
+      (mMaxWidth == aOther.mMaxWidth)) {
     if (mOffset == aOther.mOffset) {
       return NS_STYLE_HINT_NONE;
     } else {
