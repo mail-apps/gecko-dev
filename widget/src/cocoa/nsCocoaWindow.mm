@@ -385,7 +385,7 @@ nsresult nsCocoaWindow::CreateNativeWindow(const NSRect &aRect,
   // NSLog(@"Top-level window being created at Cocoa rect: %f, %f, %f, %f\n",
   //       rect.origin.x, rect.origin.y, rect.size.width, rect.size.height);
 
-  Class windowClass = [NSWindow class];
+  Class windowClass = [BaseWindow class];
   // If we have a titlebar on a top-level window, we want to be able to control the 
   // titlebar color (for unified windows), so use the special ToolbarWindow class. 
   // Note that we need to check the window type because we mark sheets as 
@@ -987,11 +987,17 @@ NS_IMETHODIMP nsCocoaWindow::HideWindowChrome(PRBool aShouldHide)
   [contentView retain];
   [contentView removeFromSuperviewWithoutNeedingDisplay];
 
+  // Save state (like window title).
+  NSMutableDictionary* state = [mWindow exportState];
+
   // Recreate the window with the right border style.
   NSRect frameRect = [mWindow frame];
   DestroyNativeWindow();
   nsresult rv = CreateNativeWindow(frameRect, aShouldHide ? eBorderStyle_none : mBorderStyle, PR_TRUE);
   NS_ENSURE_SUCCESS(rv, rv);
+
+  // Re-import state.
+  [mWindow importState:state];
 
   // Reparent the content view.
   [mWindow setContentView:contentView];
@@ -1419,18 +1425,10 @@ NS_IMETHODIMP nsCocoaWindow::SetWindowTitlebarColor(nscolor aColor, PRBool aActi
 {
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK_NSRESULT;
 
-  // If our cocoa window isn't a ToolbarWindow, something is wrong.
-  if (![mWindow isKindOfClass:[ToolbarWindow class]]) {
-    // Don't output a warning for the hidden window.
-    NS_WARN_IF_FALSE(SameCOMIdentity(nsCocoaUtils::GetHiddenWindowWidget(), (nsIWidget*)this),
-                     "Calling SetWindowTitlebarColor on window that isn't of the ToolbarWindow class.");
-    return NS_ERROR_FAILURE;
-  }
-
   // If they pass a color with a complete transparent alpha component, use the
   // native titlebar appearance.
   if (NS_GET_A(aColor) == 0) {
-    [(ToolbarWindow*)mWindow setTitlebarColor:nil forActiveWindow:(BOOL)aActive]; 
+    [mWindow setTitlebarColor:nil forActiveWindow:(BOOL)aActive]; 
   } else {
     // Transform from sRGBA to monitor RGBA. This seems like it would make trying
     // to match the system appearance lame, so probably we just shouldn't color 
@@ -1447,11 +1445,11 @@ NS_IMETHODIMP nsCocoaWindow::SetWindowTitlebarColor(nscolor aColor, PRBool aActi
       }
     }
 
-    [(ToolbarWindow*)mWindow setTitlebarColor:[NSColor colorWithDeviceRed:NS_GET_R(aColor)/255.0
-                                                                    green:NS_GET_G(aColor)/255.0
-                                                                     blue:NS_GET_B(aColor)/255.0
-                                                                    alpha:NS_GET_A(aColor)/255.0]
-                              forActiveWindow:(BOOL)aActive];
+    [mWindow setTitlebarColor:[NSColor colorWithDeviceRed:NS_GET_R(aColor)/255.0
+                                                    green:NS_GET_G(aColor)/255.0
+                                                     blue:NS_GET_B(aColor)/255.0
+                                                    alpha:NS_GET_A(aColor)/255.0]
+              forActiveWindow:(BOOL)aActive];
   }
   return NS_OK;
 
@@ -1761,17 +1759,66 @@ nsCocoaWindow::UnifiedShading(void* aInfo, const float* aIn, float* aOut)
 
 @end
 
-// Category on NSWindow so callers can use the same method on both ToolbarWindows
-// and NSWindows for accessing the background color.
-@implementation NSWindow(ToolbarWindowCompat)
+@implementation BaseWindow
 
-- (NSColor*)windowBackgroundColor
+- (id)initWithContentRect:(NSRect)aContentRect styleMask:(NSUInteger)aStyle backing:(NSBackingStoreType)aBufferingType defer:(BOOL)aFlag
 {
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK_NIL;
+  [super initWithContentRect:aContentRect styleMask:aStyle backing:aBufferingType defer:aFlag];
+  mState = nil;
+  mActiveTitlebarColor = nil;
+  mInactiveTitlebarColor = nil;
+  return self;
+}
 
-  return [self backgroundColor];
+- (void)dealloc
+{
+  [mActiveTitlebarColor release];
+  [mInactiveTitlebarColor release];
+  [super dealloc];
+}
 
-  NS_OBJC_END_TRY_ABORT_BLOCK_NIL;
+static const NSString* kStateTitleKey = @"title";
+static const NSString* kStateActiveTitlebarColorKey = @"activeTitlebarColor";
+static const NSString* kStateInactiveTitlebarColorKey = @"inactiveTitlebarColor";
+
+- (void)importState:(NSDictionary*)aState
+{
+  [self setTitle:[aState objectForKey:kStateTitleKey]];
+  [self setTitlebarColor:[aState objectForKey:kStateActiveTitlebarColorKey] forActiveWindow:YES];
+  [self setTitlebarColor:[aState objectForKey:kStateInactiveTitlebarColorKey] forActiveWindow:NO];
+}
+
+- (NSMutableDictionary*)exportState
+{
+  NSMutableDictionary* state = [NSMutableDictionary dictionaryWithCapacity:10];
+  [state setObject:[self title] forKey:kStateTitleKey];
+  NSColor* activeTitlebarColor = [self titlebarColorForActiveWindow:YES];
+  if (activeTitlebarColor) {
+    [state setObject:activeTitlebarColor forKey:kStateActiveTitlebarColorKey];
+  }
+  NSColor* inactiveTitlebarColor = [self titlebarColorForActiveWindow:NO];
+  if (inactiveTitlebarColor) {
+    [state setObject:inactiveTitlebarColor forKey:kStateInactiveTitlebarColorKey];
+  }
+  return state;
+}
+
+// Pass nil here to get the default appearance.
+- (void)setTitlebarColor:(NSColor*)aColor forActiveWindow:(BOOL)aActive
+{
+  [aColor retain];
+  if (aActive) {
+    [mActiveTitlebarColor release];
+    mActiveTitlebarColor = aColor;
+  } else {
+    [mInactiveTitlebarColor release];
+    mInactiveTitlebarColor = aColor;
+  }
+}
+
+- (NSColor*)titlebarColorForActiveWindow:(BOOL)aActive
+{
+  return aActive ? mActiveTitlebarColor : mInactiveTitlebarColor;
 }
 
 @end
@@ -1822,12 +1869,10 @@ nsCocoaWindow::UnifiedShading(void* aInfo, const float* aIn, float* aOut)
 
   aStyle = aStyle | NSTexturedBackgroundWindowMask;
   if ((self = [super initWithContentRect:aContentRect styleMask:aStyle backing:aBufferingType defer:aFlag])) {
-    mColor = [[TitlebarAndBackgroundColor alloc] initWithActiveTitlebarColor:nil
-                                                       inactiveTitlebarColor:nil
-                                                             backgroundColor:[NSColor whiteColor]
-                                                                   forWindow:self];
+    mColor = [[TitlebarAndBackgroundColor alloc] initWithWindow:self];
     // Call the superclass's implementation, to avoid our guard method below.
     [super setBackgroundColor:mColor];
+    mBackgroundColor = [NSColor whiteColor];
 
     mUnifiedToolbarHeight = 0.0f;
 
@@ -1846,43 +1891,28 @@ nsCocoaWindow::UnifiedShading(void* aInfo, const float* aIn, float* aOut)
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
 
   [mColor release];
+  [mBackgroundColor release];
   [super dealloc];
 
   NS_OBJC_END_TRY_ABORT_BLOCK;
 }
 
-// We don't provide our own implementation of -backgroundColor because NSWindow
-// looks at it, apparently. This is here to keep someone from messing with our
-// custom NSColor subclass.
-- (void)setBackgroundColor:(NSColor*)aColor
-{
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
-
-  [mColor setBackgroundColor:aColor];
-
-  NS_OBJC_END_TRY_ABORT_BLOCK;
-}
-
-// If you need to get at the background color of the window (in the traditional
-// sense) use this method instead.
-- (NSColor*)windowBackgroundColor
-{
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK_NIL;
-
-  return [mColor backgroundColor];
-
-  NS_OBJC_END_TRY_ABORT_BLOCK_NIL;
-}
-
-// Pass nil here to get the default appearance.
 - (void)setTitlebarColor:(NSColor*)aColor forActiveWindow:(BOOL)aActive
 {
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
-
-  [mColor setTitlebarColor:aColor forActiveWindow:aActive];
+  [super setTitlebarColor:aColor forActiveWindow:aActive];
   [self redrawTitlebar];
+}
 
-  NS_OBJC_END_TRY_ABORT_BLOCK;
+- (void)setBackgroundColor:(NSColor*)aColor
+{
+  [aColor retain];
+  [mBackgroundColor release];
+  mBackgroundColor = aColor;
+}
+
+- (NSColor*)windowBackgroundColor
+{
+  return mBackgroundColor;
 }
 
 // This is called by nsNativeThemeCocoa.mm's DrawUnifiedToolbar.
@@ -2007,34 +2037,16 @@ nsCocoaWindow::UnifiedShading(void* aInfo, const float* aIn, float* aOut)
 // the titlebar area.
 @implementation TitlebarAndBackgroundColor
 
-- (id)initWithActiveTitlebarColor:(NSColor*)aActiveTitlebarColor
-            inactiveTitlebarColor:(NSColor*)aInactiveTitlebarColor
-                  backgroundColor:(NSColor*)aBackgroundColor
-                        forWindow:(NSWindow*)aWindow
+- (id)initWithWindow:(ToolbarWindow*)aWindow
 {
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK_NIL;
 
   if ((self = [super init])) {
-    mActiveTitlebarColor = [aActiveTitlebarColor retain];
-    mInactiveTitlebarColor = [aInactiveTitlebarColor retain];
-    mBackgroundColor = [aBackgroundColor retain];
     mWindow = aWindow; // weak ref to avoid a cycle
   }
   return self;
 
   NS_OBJC_END_TRY_ABORT_BLOCK_NIL;
-}
-
-- (void)dealloc
-{
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
-
-  [mActiveTitlebarColor release];
-  [mInactiveTitlebarColor release];
-  [mBackgroundColor release];
-  [super dealloc];
-
-  NS_OBJC_END_TRY_ABORT_BLOCK;
 }
 
 // Our pattern width is 1 pixel. CoreGraphics can cache and tile for us.
@@ -2045,11 +2057,9 @@ void patternDraw(void* aInfo, CGContextRef aContext)
 {
   NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
 
-  TitlebarAndBackgroundColor *color = (TitlebarAndBackgroundColor*)aInfo;
-  NSColor *backgroundColor = [color backgroundColor];
-  ToolbarWindow *window = (ToolbarWindow*)[color window];
+  ToolbarWindow *window = (ToolbarWindow*)aInfo;
   BOOL isMain = [window isMainWindow];
-  NSColor *titlebarColor = isMain ? [color activeTitlebarColor] : [color inactiveTitlebarColor];
+  NSColor *titlebarColor = [window titlebarColorForActiveWindow:isMain];
 
   // Remember: this context is NOT flipped, so the origin is in the bottom left.
   float titlebarHeight = [window titlebarHeight];
@@ -2087,7 +2097,7 @@ void patternDraw(void* aInfo, CGContextRef aContext)
   }
 
   // Draw the background color of the window everywhere but where the titlebar is.
-  [backgroundColor set];
+  [[window windowBackgroundColor] set];
   NSRectFill(NSMakeRect(0.0f, 0.0f, 1.0f, titlebarOrigin));
 
   [NSGraphicsContext restoreGraphicsState];
@@ -2097,14 +2107,12 @@ void patternDraw(void* aInfo, CGContextRef aContext)
 
 - (void)setFill
 {
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
-
   CGContextRef context = (CGContextRef)[[NSGraphicsContext currentContext] graphicsPort];
 
   // Set up the pattern to be as tall as our window, and one pixel wide.
   // CoreGraphics can cache and tile us quickly.
   CGPatternCallbacks callbacks = {0, &patternDraw, NULL};
-  CGPatternRef pattern = CGPatternCreate(self, CGRectMake(0.0f, 0.0f, sPatternWidth, [mWindow frame].size.height), 
+  CGPatternRef pattern = CGPatternCreate(mWindow, CGRectMake(0.0f, 0.0f, sPatternWidth, [mWindow frame].size.height), 
                                          CGAffineTransformIdentity, 1, [mWindow frame].size.height,
                                          kCGPatternTilingConstantSpacing, true, &callbacks);
 
@@ -2116,68 +2124,16 @@ void patternDraw(void* aInfo, CGContextRef aContext)
   float component = 1.0f;
   CGContextSetFillPattern(context, pattern, &component);
   CGPatternRelease(pattern);
-
-  NS_OBJC_END_TRY_ABORT_BLOCK;
 }
 
-// Pass nil here to get the default appearance.
-- (void)setTitlebarColor:(NSColor*)aColor forActiveWindow:(BOOL)aActive
+- (void)set
 {
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
-
-  if (aActive) {
-    [mActiveTitlebarColor autorelease];
-    mActiveTitlebarColor = [aColor retain];
-  } else {
-    [mInactiveTitlebarColor autorelease];
-    mInactiveTitlebarColor = [aColor retain];
-  }
-
-  NS_OBJC_END_TRY_ABORT_BLOCK;
-}
-
-- (NSColor*)activeTitlebarColor
-{
-  return mActiveTitlebarColor;
-}
-
-- (NSColor*)inactiveTitlebarColor
-{
-  return mInactiveTitlebarColor;
-}
-
-- (void)setBackgroundColor:(NSColor*)aColor
-{
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
-
-  [mBackgroundColor autorelease];
-  mBackgroundColor = [aColor retain];
-
-  NS_OBJC_END_TRY_ABORT_BLOCK;
-}
-
-- (NSColor*)backgroundColor
-{
-  return mBackgroundColor;
-}
-
-- (NSWindow*)window
-{
-  return mWindow;
+  [self setFill];
 }
 
 - (NSString*)colorSpaceName
 {
   return NSDeviceRGBColorSpace;
-}
-
-- (void)set
-{
-  NS_OBJC_BEGIN_TRY_ABORT_BLOCK;
-
-  [self setFill];
-
-  NS_OBJC_END_TRY_ABORT_BLOCK;
 }
 
 @end
