@@ -1255,8 +1255,12 @@ NS_METHOD nsWindow::ConstrainPosition(PRBool aAllowSlop,
 //-------------------------------------------------------------------------
 NS_METHOD nsWindow::Move(PRInt32 aX, PRInt32 aY)
 {
-   Resize( aX, aY, mBounds.width, mBounds.height, PR_FALSE);
-   return NS_OK;
+  if (mWindowType == eWindowType_toplevel ||
+      mWindowType == eWindowType_dialog) {
+    SetSizeMode(nsSizeMode_Normal);
+  }
+  Resize(aX, aY, mBounds.width, mBounds.height, PR_FALSE);
+  return NS_OK;
 }
 
 //-------------------------------------------------------------------------
