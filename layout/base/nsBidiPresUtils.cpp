@@ -234,7 +234,7 @@ CreateBidiContinuation(nsIFrame*       aFrame,
     }
 
     // The list name nsGkAtoms::nextBidi would indicate we don't want reflow
-    nsFrameList temp(*aNewFrame, *aNewFrame);
+    nsFrameList temp(*aNewFrame);
     rv = parent->InsertFrames(nsGkAtoms::nextBidi, placeholderFrame, temp);
     return rv;
   }
