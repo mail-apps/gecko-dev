@@ -67,8 +67,13 @@ _TEST_FILES =	test_bug343416.xul \
 		window_wheeltransaction.xul \
 		test_imestate.html \
 		test_plugin_scroll_consistency.html \
-		test_windowed_invalidate.html \
 		$(NULL)
+
+ifeq ($(OS_ARCH),WINNT)
+_MOCHITEST_FILES += \
+ 		test_windowed_invalidate.html \
+        $(NULL)
+endif
 
 ifeq ($(MOZ_WIDGET_TOOLKIT),cocoa)
 _TEST_FILES += native_menus_window.xul \
