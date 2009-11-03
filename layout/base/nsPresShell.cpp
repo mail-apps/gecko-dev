@@ -642,7 +642,8 @@ class nsAutoCauseReflowNotifier;
 class PresShell : public nsIPresShell, public nsIViewObserver,
                   public nsStubDocumentObserver,
                   public nsISelectionController, public nsIObserver,
-                  public nsSupportsWeakReference
+                  public nsSupportsWeakReference, 
+                  public nsIPresShell_MOZILLA_1_9_2
 {
 public:
   PresShell();
@@ -906,6 +907,7 @@ public:
                                                 nsRect* aBounds,
                                                 nscolor aBackstopColor);
 
+  virtual nsIScrollableFrame* GetRootScrollFrameAsScrollableExternal() const;
 protected:
   virtual ~PresShell();
 
@@ -1631,10 +1633,10 @@ PresShell::PresShell()
   new (this) nsFrameManager();
 }
 
-NS_IMPL_ISUPPORTS8(PresShell, nsIPresShell, nsIDocumentObserver,
+NS_IMPL_ISUPPORTS9(PresShell, nsIPresShell, nsIDocumentObserver,
                    nsIViewObserver, nsISelectionController,
                    nsISelectionDisplay, nsIObserver, nsISupportsWeakReference,
-                   nsIMutationObserver)
+                   nsIMutationObserver, nsIPresShell_MOZILLA_1_9_2)
 
 PresShell::~PresShell()
 {
@@ -3196,6 +3198,12 @@ nsIFrame*
 nsIPresShell::GetRootFrame() const
 {
   return FrameManager()->GetRootFrame();
+}
+
+nsIScrollableFrame*
+PresShell::GetRootScrollFrameAsScrollableExternal() const
+{
+  return GetRootScrollFrameAsScrollable();
 }
 
 nsIFrame*

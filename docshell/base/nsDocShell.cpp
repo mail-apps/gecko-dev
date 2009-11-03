@@ -6935,9 +6935,14 @@ nsDocShell::RestoreFromHistory()
 #endif
             mContentViewer->SetBounds(newBounds);
         } else {
-            nsIScrollableFrame *rootScrollFrame = do_QueryFrame(shell->GetRootScrollFrame());
-            if (rootScrollFrame) {
-                rootScrollFrame->PostScrolledAreaEventForCurrentArea();
+            nsCOMPtr<nsIPresShell_MOZILLA_1_9_2> shell_1_9_2 = 
+                do_QueryInterface(shell);
+            if (shell_1_9_2) {
+                nsIScrollableFrame *rootScrollFrame = do_QueryFrame(
+                    shell_1_9_2->GetRootScrollFrameAsScrollableExternal());
+                if (rootScrollFrame) {
+                    rootScrollFrame->PostScrolledAreaEventForCurrentArea();
+                }
             }
         }
     }
