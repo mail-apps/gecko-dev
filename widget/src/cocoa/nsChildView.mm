@@ -3961,7 +3961,6 @@ static PRBool IsNormalCharInputtingEvent(const nsKeyEvent& aEvent)
 
   outGeckoEvent->widget = [self widget];
   outGeckoEvent->time = PR_IntervalNow();
-  outGeckoEvent->nativeMsg = inEvent;
 
   if (inEvent) {
     unsigned int modifiers = nsCocoaUtils::GetCocoaEventModifierFlags(inEvent);
