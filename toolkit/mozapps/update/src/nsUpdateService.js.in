@@ -129,16 +129,11 @@ const UPDATE_WINDOW_NAME      = "Update:Wizard";
 var gLocale     = null;
 var gCanUpdate  = null;
 
-// shared code for suppressing bad cert dialogs
-#include ../../shared/src/badCertHandler.js
-
 #endif /* MOZ_UPDATER */
 
-__defineGetter__("gPref", function () {
-  delete this.gPref;
-  return this.gPref = Cc["@mozilla.org/preferences-service;1"].
-                      getService(Ci.nsIPrefBranch2);
-});
+XPCOMUtils.defineLazyServiceGetter(this, "gPref",
+                                   "@mozilla.org/preferences-service;1",
+                                   "nsIPrefBranch2");
 
 /**
  * Gets a preference value, handling the case where there is no default.
@@ -161,9 +156,8 @@ function getPref(func, preference, defaultValue) {
   return defaultValue;
 }
 
-__defineGetter__("gLogEnabled", function () {
-  delete this.gLogEnabled;
-  this.gLogEnabled = { };
+XPCOMUtils.defineLazyGetter(this, "gLogEnabled", function() {
+  let logEnabled = { };
   try {
     let ps = Cc["@mozilla.org/preferences-service;1"].
              getService(Ci.nsIPrefService);
@@ -171,19 +165,17 @@ __defineGetter__("gLogEnabled", function () {
     let modules = logBranch.getChildList("", { value: 0 });
     for (let i = 0; i < modules.length; ++i) {
       if (logBranch.prefHasUserValue(modules[i]))
-        this.gLogEnabled[modules[i]] = logBranch.getBoolPref(modules[i]);
+        logEnabled[modules[i]] = logBranch.getBoolPref(modules[i]);
     }
   }
   catch (e) {
   }
-  return this.gLogEnabled;
+  return logEnabled;
 });
 
-__defineGetter__("gConsole", function () {
-  delete this.gConsole;
-  return this.gConsole = Cc["@mozilla.org/consoleservice;1"].
-                         getService(Ci.nsIConsoleService);
-});
+XPCOMUtils.defineLazyServiceGetter(this, "gConsole",
+                                   "@mozilla.org/consoleservice;1",
+                                   "nsIConsoleService");
 
 /**
  * Logs a string to the error console.
@@ -205,17 +197,22 @@ function getObserverService()
 
 #ifdef MOZ_UPDATER
 
-__defineGetter__("gApp", function () {
-  delete this.gApp;
-  return this.gApp = Cc["@mozilla.org/xre/app-info;1"].
-                     getService(Ci.nsIXULAppInfo).
-                     QueryInterface(Ci.nsIXULRuntime);
+// shared code for suppressing bad cert dialogs
+XPCOMUtils.defineLazyGetter(this, "gCertUtils", function() {
+  let temp = { };
+  Components.utils.import("resource://gre/modules/CertUtils.jsm", temp);
+  return temp;
 });
 
-__defineGetter__("gABI", function () {
-  delete this.gABI;
+XPCOMUtils.defineLazyGetter(this, "gApp", function() {
+  return Cc["@mozilla.org/xre/app-info;1"].getService(Ci.nsIXULAppInfo).
+         QueryInterface(Ci.nsIXULRuntime);
+});
+
+XPCOMUtils.defineLazyGetter(this, "gABI", function() {
+  let abi = null;
   try {
-    this.gABI = gApp.XPCOMABI;
+    abi = gApp.XPCOMABI;
   }
   catch (e) {
     LOG("General", "gABI - XPCOM ABI unknown: updates are not possible.");
@@ -223,18 +220,17 @@ __defineGetter__("gABI", function () {
 #ifdef XP_MACOSX
   // Mac universal build should report a different ABI than either macppc
   // or mactel.
-  var macutils = Cc["@mozilla.org/xpcom/mac-utils;1"].
+  let macutils = Cc["@mozilla.org/xpcom/mac-utils;1"].
                  getService(Ci.nsIMacUtils);
 
   if (macutils.isUniversalBinary)
-    this.gABI = "Universal-gcc3";
+    abi = "Universal-gcc3";
 #endif
-  return this.gABI;
+  return abi;
 });
 
 
-__defineGetter__("gOSVersion", function () {
-  delete this.gOSVersion;
+XPCOMUtils.defineLazyGetter(this, "gOSVersion", function() {
   let osVersion;
   let sysInfo = Cc["@mozilla.org/system-info;1"].
                 getService(Ci.nsIPropertyBag2);
@@ -252,9 +248,9 @@ __defineGetter__("gOSVersion", function () {
     catch (e) {
       // Not all platforms have a secondary widget library, so an error is nothing to worry about.
     }
-    this.gOSVersion = encodeURIComponent(osVersion);
+    osVersion = encodeURIComponent(osVersion);
   }
-  return this.gOSVersion;
+  return osVersion;
 });
 
 /**
@@ -2135,7 +2131,7 @@ Checker.prototype = {
     this._request = Cc["@mozilla.org/xmlextras/xmlhttprequest;1"].
                     createInstance(Ci.nsIXMLHttpRequest);
     this._request.open("GET", url, true);
-    this._request.channel.notificationCallbacks = new BadCertHandler();
+    this._request.channel.notificationCallbacks = new gCertUtils.BadCertHandler();
     this._request.overrideMimeType("text/xml");
     this._request.setRequestHeader("Cache-Control", "no-cache");
 
@@ -2223,7 +2219,7 @@ Checker.prototype = {
     LOG("Checker", "onLoad - request completed downloading document");
 
     try {
-      checkCert(this._request.channel);
+      gCertUtils.checkCert(this._request.channel);
       // Analyze the resulting DOM and determine the set of updates to install
       var updates = this._updates;
 
