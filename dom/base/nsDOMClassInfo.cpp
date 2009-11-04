@@ -474,6 +474,8 @@
 
 #include "nsIDOMNSMouseEvent.h"
 
+#include "nsIEventListenerService.h"
+
 static NS_DEFINE_CID(kDOMSOF_CID, NS_DOM_SCRIPT_OBJECT_FACTORY_CID);
 
 static const char kDOMStringBundleURL[] =
@@ -1342,6 +1344,8 @@ static nsDOMClassInfoData sClassInfoData[] = {
 #endif
 
   NS_DEFINE_CLASSINFO_DATA(ScrollAreaEvent, nsDOMGenericSH,
+                           DOM_DEFAULT_SCRIPTABLE_FLAGS)
+  NS_DEFINE_CLASSINFO_DATA(EventListenerInfo, nsDOMGenericSH,
                            DOM_DEFAULT_SCRIPTABLE_FLAGS)
 };
 
@@ -3697,6 +3701,10 @@ nsDOMClassInfo::Init()
   DOM_CLASSINFO_MAP_BEGIN(ScrollAreaEvent, nsIDOMScrollAreaEvent)
     DOM_CLASSINFO_MAP_ENTRY(nsIDOMScrollAreaEvent)
     DOM_CLASSINFO_UI_EVENT_MAP_ENTRIES
+  DOM_CLASSINFO_MAP_END
+
+  DOM_CLASSINFO_MAP_BEGIN(EventListenerInfo, nsIEventListenerInfo)
+    DOM_CLASSINFO_MAP_ENTRY(nsIEventListenerInfo)
   DOM_CLASSINFO_MAP_END
 
 #ifdef NS_DEBUG
