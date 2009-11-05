@@ -107,6 +107,8 @@
 #define VARIANT_NORMAL          0x080000  // M
 #define VARIANT_SYSFONT         0x100000  // eCSSUnit_System_Font
 #define VARIANT_GRADIENT        0x200000  // eCSSUnit_Gradient
+// This is an extra bit that says that a VARIANT_ANGLE allows unitless zero:
+#define VARIANT_ZERO_ANGLE    0x02000000  // unitless zero for angles
 
 // Common combinations of variants
 #define VARIANT_AL   (VARIANT_AUTO | VARIANT_LENGTH)
@@ -142,6 +144,7 @@
 #define VARIANT_HN   (VARIANT_INHERIT | VARIANT_NUMBER)
 #define VARIANT_HON  (VARIANT_HN | VARIANT_NONE)
 #define VARIANT_HOS  (VARIANT_INHERIT | VARIANT_NONE | VARIANT_STRING)
+#define VARIANT_ANGLE_OR_ZERO (VARIANT_ANGLE | VARIANT_ZERO_ANGLE)
 
 //----------------------------------------------------------------------
 
@@ -1796,12 +1799,12 @@ CSSParserImpl::ParseMediaQueryExpression(nsMediaQuery* aQuery)
       }
       break;
     case nsMediaFeature::eResolution:
-      rv = GetToken(PR_TRUE) && mToken.IsDimension() &&
+      rv = GetToken(PR_TRUE) && mToken.mType == eCSSToken_Dimension &&
            mToken.mIntegerValid && mToken.mNumber > 0.0f;
       if (rv) {
         // No worries about whether unitless zero is allowed, since the
         // value must be positive (and we checked that above).
-        NS_ASSERTION(!mToken.mIdent.IsEmpty(), "IsDimension lied");
+        NS_ASSERTION(!mToken.mIdent.IsEmpty(), "unit lied");
         if (mToken.mIdent.LowerCaseEqualsLiteral("dpi")) {
           expr->mValue.SetFloatValue(mToken.mNumber, eCSSUnit_Inch);
         } else if (mToken.mIdent.LowerCaseEqualsLiteral("dpcm")) {
@@ -4306,16 +4309,10 @@ CSSParserImpl::TranslateDimension(nsCSSValue& aValue,
       type = VARIANT_LENGTH;
     }
     else if ((VARIANT_ANGLE & aVariantMask) != 0) {
+      NS_ASSERTION(aVariantMask & VARIANT_ZERO_ANGLE,
+                   "must have allowed zero angle");
       units = eCSSUnit_Degree;
       type = VARIANT_ANGLE;
-    }
-    else if ((VARIANT_FREQUENCY & aVariantMask) != 0) {
-      units = eCSSUnit_Hertz;
-      type = VARIANT_FREQUENCY;
-    }
-    else if ((VARIANT_TIME & aVariantMask) != 0) {
-      units = eCSSUnit_Seconds;
-      type = VARIANT_TIME;
     }
     else {
       NS_ERROR("Variant mask does not include dimension; why were we called?");
@@ -4469,8 +4466,12 @@ CSSParserImpl::ParseVariant(nsCSSValue& aValue,
       }
     }
   }
-  if (((aVariantMask & (VARIANT_LENGTH | VARIANT_ANGLE | VARIANT_FREQUENCY | VARIANT_TIME)) != 0) &&
-      tk->IsDimension()) {
+  if (((aVariantMask & (VARIANT_LENGTH | VARIANT_ANGLE |
+                        VARIANT_FREQUENCY | VARIANT_TIME)) != 0 &&
+       eCSSToken_Dimension == tk->mType) ||
+      ((aVariantMask & (VARIANT_LENGTH | VARIANT_ZERO_ANGLE)) != 0 &&
+       eCSSToken_Number == tk->mType &&
+       tk->mNumber == 0.0f)) {
     if (TranslateDimension(aValue, aVariantMask, tk->mNumber, tk->mIdent)) {
       return PR_TRUE;
     }
@@ -6401,7 +6402,8 @@ CSSParserImpl::ParseBackgroundItem(CSSParserImpl::BackgroundItem& aItem,
                                     eCSSProperty_background_image)) {
         return PR_FALSE;
       }
-    } else if (mToken.IsDimension() || tt == eCSSToken_Percentage) {
+    } else if (tt == eCSSToken_Dimension || tt == eCSSToken_Number ||
+               tt == eCSSToken_Percentage) {
       if (havePosition)
         return PR_FALSE;
       havePosition = PR_TRUE;
@@ -7557,8 +7559,8 @@ static PRBool GetFunctionParseInformation(nsCSSKeyword aToken,
   static const PRInt32 kVariantMasks[eNumVariantMasks][kMaxElemsPerFunction] = {
     {VARIANT_LENGTH | VARIANT_PERCENT},
     {VARIANT_LENGTH | VARIANT_PERCENT, VARIANT_LENGTH | VARIANT_PERCENT},
-    {VARIANT_ANGLE},
-    {VARIANT_ANGLE, VARIANT_ANGLE},
+    {VARIANT_ANGLE_OR_ZERO},
+    {VARIANT_ANGLE_OR_ZERO, VARIANT_ANGLE_OR_ZERO},
     {VARIANT_NUMBER},
     {VARIANT_NUMBER, VARIANT_NUMBER},
     {VARIANT_NUMBER, VARIANT_NUMBER, VARIANT_NUMBER, VARIANT_NUMBER,

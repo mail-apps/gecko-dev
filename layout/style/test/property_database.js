@@ -1737,27 +1737,27 @@ var gCSSProperties = {
 		backend_only: true,
 		type: CSS_TYPE_TRUE_SHORTHAND,
 		subproperties: [ "pause-before", "pause-after" ],
-		initial_values: [ "0", "0s", "0ms", "0 0", "0s 0ms", "0ms 0" ],
+		initial_values: [ "0s", "0ms", "0s 0ms" ],
 		other_values: [ "1s", "200ms", "-2s", "50%", "-10%", "10% 200ms", "-3s -5%" ],
-		invalid_values: [ "0px" ]
+		invalid_values: [ "0", "0px", "0 0", "0ms 0" ]
 	},
 	"pause-after": {
 		domProp: "pauseAfter",
 		inherited: false,
 		backend_only: true,
 		type: CSS_TYPE_LONGHAND,
-		initial_values: [ "0", "0s", "0ms" ],
+		initial_values: [ "0s", "0ms" ],
 		other_values: [ "1s", "200ms", "-2s", "50%", "-10%" ],
-		invalid_values: [ "0px" ]
+		invalid_values: [ "0", "0px" ]
 	},
 	"pause-before": {
 		domProp: "pauseBefore",
 		inherited: false,
 		backend_only: true,
 		type: CSS_TYPE_LONGHAND,
-		initial_values: [ "0", "0s", "0ms" ],
+		initial_values: [ "0s", "0ms" ],
 		other_values: [ "1s", "200ms", "-2s", "50%", "-10%" ],
-		invalid_values: [ "0px" ]
+		invalid_values: [ "0", "0px" ]
 	},
 	"pitch": {
 		domProp: "pitch",
