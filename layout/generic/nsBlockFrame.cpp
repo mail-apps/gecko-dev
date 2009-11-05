@@ -2852,6 +2852,7 @@ nsBlockFrame::ReflowBlockFrame(nsBlockReflowState& aState,
       if (!*aState.mReflowState.mDiscoveredClearance) {
         *aState.mReflowState.mDiscoveredClearance = frame;
       }
+      aState.mPrevChild = frame;
       // Exactly what we do now is flexible since we'll definitely be
       // reflowed.
       return NS_OK;
