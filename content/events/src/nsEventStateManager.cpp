@@ -3148,8 +3148,9 @@ nsEventStateManager::PostHandleEvent(nsPresContext* aPresContext,
           drag192->SetOnlyChromeDrop(
             !(aEvent->flags & NS_EVENT_FLAG_NO_DEFAULT_CALLED_IN_CONTENT));
         }
-      } else if (aEvent->message == NS_DRAGDROP_OVER && !isChromeDoc) {
-        dragSession->SetCanDrop(PR_FALSE);
+      } else if (aEvent->message == NS_DRAGDROP_OVER && !isChromeDoc && drag192) {
+        // No one called preventDefault(), so handle drop only in chrome.
+        drag192->SetOnlyChromeDrop(PR_TRUE);
       }
 
       // now set the drop effect in the initial dataTransfer. This ensures
