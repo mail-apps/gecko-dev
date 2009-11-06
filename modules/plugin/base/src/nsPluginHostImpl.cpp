@@ -865,7 +865,7 @@ nsPluginTag::nsPluginTag(const char* aName,
 
 nsPluginTag::~nsPluginTag()
 {
-  TryUnloadPlugin();
+  TryUnloadPlugin(PR_TRUE);
 
   // Remove mime types added to the category manager
   // only if we were made 'active' by setting the host
@@ -1081,13 +1081,13 @@ nsresult PostPluginUnloadEvent(PRLibrary* aLibrary)
   return NS_ERROR_FAILURE;
 }
 
-void nsPluginTag::TryUnloadPlugin()
+void nsPluginTag::TryUnloadPlugin(PRBool aForceShutdown)
 {
   PRBool isXPCOM = PR_FALSE;
   if (!(mFlags & NS_PLUGIN_FLAG_NPAPI))
     isXPCOM = PR_TRUE;
 
-  if (isXPCOM) return;
+  if (isXPCOM && !aForceShutdown) return;
 
   if (mEntryPoint) {
     mEntryPoint->Shutdown();
