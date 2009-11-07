@@ -88,7 +88,7 @@ patched_LdrLoadDll (PWCHAR filePath, PULONG flags, PUNICODE_STRING moduleFileNam
     count++;
 
   printf_stderr("LdrLoadDll: Length %d Buffer '%S' count %d\n", moduleFileName->Length, moduleFileName->Buffer, count);
-  
+
 #if 0
   len = count;
 
