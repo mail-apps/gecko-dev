@@ -145,7 +145,7 @@ patched_LdrLoadDll (PWCHAR filePath, PULONG flags, PUNICODE_STRING moduleFileNam
     printf_stderr("LdrLoadDll: info->name: '%s'\n", info->name);
 #endif
 
-#if 0
+#if 1
     if (info->maxVersion != ALL_VERSIONS) {
       // figure out the length of the string that we need
       DWORD pathlen = SearchPathW(filePath, fname, L".dll", 0, NULL, NULL);
