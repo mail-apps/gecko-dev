@@ -87,15 +87,20 @@ patched_LdrLoadDll (PWCHAR filePath, PULONG flags, PUNICODE_STRING moduleFileNam
   while (count < len && fn_buf[count] != 0)
     count++;
 
+#ifdef DEBUG
   printf_stderr("LdrLoadDll: Length %d Buffer '%S' count %d\n", moduleFileName->Length, moduleFileName->Buffer, count);
+#endif
 
-#if 0
   len = count;
 
   // copy it into fname, which will then be guaranteed null-terminated
   nsAutoArrayPtr<wchar_t> fname = new wchar_t[len+1];
   wcsncpy(fname, moduleFileName->Buffer, len);
   fname[len] = 0; // *ncpy considered harmful
+
+#ifdef DEBUG
+  printf_stderr("LdrLoadDll: fname '%S'\n", fname);
+#endif
 
   wchar_t *dll_part = wcsrchr(fname, L'\\');
   if (dll_part) {
@@ -104,6 +109,10 @@ patched_LdrLoadDll (PWCHAR filePath, PULONG flags, PUNICODE_STRING moduleFileNam
   } else {
     dll_part = fname;
   }
+
+#ifdef DEBUG
+  printf_stderr("LdrLoadDll: dll_part '%S' %d\n", dll_part, len);
+#endif
 
   // if it's too long, then, we assume we won't want to block it,
   // since DLLNAME_MAX should be at least long enough to hold the longest
@@ -146,8 +155,11 @@ patched_LdrLoadDll (PWCHAR filePath, PULONG flags, PUNICODE_STRING moduleFileNam
   }
 
   if (info->name) {
-    BOOL load_ok = FALSE;
+#ifdef DEBUG
+    printf_stderr("LdrLoadDll: info->name: '%s'\n", info->name);
+#endif
 
+#if 0
     if (info->maxVersion != ALL_VERSIONS) {
       // figure out the length of the string that we need
       DWORD pathlen = SearchPathW(filePath, fname, L".dll", 0, NULL, NULL);
@@ -186,6 +198,7 @@ patched_LdrLoadDll (PWCHAR filePath, PULONG flags, PUNICODE_STRING moduleFileNam
         }
       }
     }
+#endif
 
     printf_stderr("LdrLoadDll: Blocking load of '%s'\n", dllName);
     return STATUS_DLL_NOT_FOUND;
@@ -194,7 +207,6 @@ patched_LdrLoadDll (PWCHAR filePath, PULONG flags, PUNICODE_STRING moduleFileNam
 continue_loading:
 #ifdef DEBUG
   printf_stderr("LdrLoadDll: continuing load...\n");
-#endif
 #endif
 
   return stub_LdrLoadDll(filePath, flags, moduleFileName, handle);
@@ -212,7 +224,3 @@ SetupDllBlocklist()
   if (!ok)
     printf_stderr ("LdrLoadDll hook failed, no dll blocklisting active\n");
 }
-
-
-
-
