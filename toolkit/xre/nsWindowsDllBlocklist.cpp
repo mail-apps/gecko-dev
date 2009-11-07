@@ -98,8 +98,12 @@ patched_LdrLoadDll (PWCHAR filePath, PULONG flags, PUNICODE_STRING moduleFileNam
   // if it's too long, then, we assume we won't want to block it,
   // since DLLNAME_MAX should be at least long enough to hold the longest
   // entry in our blocklist.
-  if (len > DLLNAME_MAX)
+  if (len > DLLNAME_MAX) {
+#ifdef DEBUG
+  printf_stderr("LdrLoadDll: len too long! %d\n", len);
+#endif
     goto continue_loading;
+  }
 
   // copy over to our char byte buffer, lowercasing ASCII as we go
   for (int i = 0; i < len; i++) {
@@ -118,6 +122,10 @@ patched_LdrLoadDll (PWCHAR filePath, PULONG flags, PUNICODE_STRING moduleFileNam
 
   dllName[len] = 0;
 
+#ifdef DEBUG
+  printf_stderr("LdrLoadDll: dll name '%s'\n", dllName);
+#endif
+
   // then compare to everything on the blocklist
   DllBlockInfo *info = &sWindowsDllBlocklist[0];
   while (info->name) {
@@ -135,6 +143,7 @@ patched_LdrLoadDll (PWCHAR filePath, PULONG flags, PUNICODE_STRING moduleFileNam
       DWORD pathlen = SearchPathW(filePath, fname, L".dll", 0, NULL, NULL);
       if (pathlen == 0) {
         // uh, we couldn't find the DLL at all, so...
+        printf_stderr("LdrLoadDll: Blocking load of '%s' (SearchPathW didn't find it?)\n", dllName);
         return STATUS_DLL_NOT_FOUND;
       }
 
@@ -168,11 +177,15 @@ patched_LdrLoadDll (PWCHAR filePath, PULONG flags, PUNICODE_STRING moduleFileNam
       }
     }
 
-    PR_LogPrint("LdrLoadDll: Blocking load of '%s'", dllName);
+    printf_stderr("LdrLoadDll: Blocking load of '%s'\n", dllName);
     return STATUS_DLL_NOT_FOUND;
   }
 
 continue_loading:
+#ifdef DEBUG
+  printf_stderr("LdrLoadDll: continuing load...\n");
+#endif
+
   return stub_LdrLoadDll(filePath, flags, moduleFileName, handle);
 }
 
@@ -186,7 +199,7 @@ SetupDllBlocklist()
   bool ok = NtDllIntercept.AddHook("LdrLoadDll", patched_LdrLoadDll, (void**) &stub_LdrLoadDll);
 
   if (!ok)
-    PR_LogPrint ("LdrLoadDll hook failed, no dll blocklisting active");
+    printf_stderr ("LdrLoadDll hook failed, no dll blocklisting active\n");
 }
 
 
