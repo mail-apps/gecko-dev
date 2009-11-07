@@ -2126,11 +2126,25 @@ function BrowserViewSourceOfDocument(aDocument)
 // imageElement - image to load in the Media Tab of the Page Info window; can be null/omitted
 function BrowserPageInfo(doc, initialTab, imageElement) {
   var args = {doc: doc, initialTab: initialTab, imageElement: imageElement};
-  return toOpenDialogByTypeAndUrl("Browser:page-info",
-                                  doc ? doc.location : window.content.document.location,
-                                  "chrome://browser/content/pageinfo/pageInfo.xul",
-                                  "chrome,toolbar,dialog=no,resizable",
-                                  args);
+  var windows = Cc['@mozilla.org/appshell/window-mediator;1']
+                  .getService(Ci.nsIWindowMediator)
+                  .getEnumerator("Browser:page-info");
+
+  var documentURL = doc ? doc.location : window.content.document.location;
+
+  // Check for windows matching the url
+  while (windows.hasMoreElements()) {
+    var currentWindow = windows.getNext();
+    if (currentWindow.document.documentElement.getAttribute("relatedUrl") == documentURL) {
+      currentWindow.focus();
+      currentWindow.resetPageInfo(args);
+      return currentWindow;
+    }
+  }
+
+  // We didn't find a matching window, so open a new one.
+  return openDialog("chrome://browser/content/pageinfo/pageInfo.xul", "",
+                    "chrome,toolbar,dialog=no,resizable", args);
 }
 
 #ifdef DEBUG
