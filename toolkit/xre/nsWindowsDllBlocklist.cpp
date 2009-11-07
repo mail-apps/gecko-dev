@@ -67,7 +67,7 @@ static LdrLoadDll_func stub_LdrLoadDll = 0;
 static NTSTATUS NTAPI
 patched_LdrLoadDll (PWCHAR filePath, PULONG flags, PUNICODE_STRING moduleFileName, PHANDLE handle)
 {
-  // this is for testing
+  // this is for testing -- poke
 #if 0
   // We have UCS2 (UTF16?), we want ASCII, but we also just want the filename portion
 #define DLLNAME_MAX 128
