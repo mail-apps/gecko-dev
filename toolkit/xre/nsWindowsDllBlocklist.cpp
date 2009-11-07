@@ -54,6 +54,12 @@
 #define STATUS_DLL_NOT_FOUND ((DWORD)0xC0000135L)
 #endif
 
+// The signature for LdrLoadDll changed at some point, with the second arg
+// becoming a PULONG instead of a ULONG.  This should only matter on 64-bit
+// systems, for which there was no support earlier -- on 32-bit systems,
+// they should be the same size.
+PR_STATIC_ASSERT(sizeof(PULONG) == sizeof(ULONG));
+
 typedef NTSTATUS (NTAPI *LdrLoadDll_func) (PWCHAR filePath, PULONG flags, PUNICODE_STRING moduleFileName, PHANDLE handle);
 
 static LdrLoadDll_func stub_LdrLoadDll = 0;
@@ -61,6 +67,8 @@ static LdrLoadDll_func stub_LdrLoadDll = 0;
 static NTSTATUS NTAPI
 patched_LdrLoadDll (PWCHAR filePath, PULONG flags, PUNICODE_STRING moduleFileName, PHANDLE handle)
 {
+  // this is for testing
+#if 0
   // We have UCS2 (UTF16?), we want ASCII, but we also just want the filename portion
 #define DLLNAME_MAX 128
   char dllName[DLLNAME_MAX+1];
@@ -184,6 +192,7 @@ patched_LdrLoadDll (PWCHAR filePath, PULONG flags, PUNICODE_STRING moduleFileNam
 continue_loading:
 #ifdef DEBUG
   printf_stderr("LdrLoadDll: continuing load...\n");
+#endif
 #endif
 
   return stub_LdrLoadDll(filePath, flags, moduleFileName, handle);
