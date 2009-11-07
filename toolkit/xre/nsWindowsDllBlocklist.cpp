@@ -68,7 +68,6 @@ static NTSTATUS NTAPI
 patched_LdrLoadDll (PWCHAR filePath, PULONG flags, PUNICODE_STRING moduleFileName, PHANDLE handle)
 {
   // this is for testing -- poke
-#if 0
   // We have UCS2 (UTF16?), we want ASCII, but we also just want the filename portion
 #define DLLNAME_MAX 128
   char dllName[DLLNAME_MAX+1];
@@ -88,6 +87,9 @@ patched_LdrLoadDll (PWCHAR filePath, PULONG flags, PUNICODE_STRING moduleFileNam
   while (count < len && fn_buf[count] != 0)
     count++;
 
+  printf_stderr("LdrLoadDll: Length %d Buffer '%S' count %d\n", moduleFileName->Length, moduleFileName->Buffer, count);
+  
+#if 0
   len = count;
 
   // copy it into fname, which will then be guaranteed null-terminated
