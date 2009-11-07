@@ -72,26 +72,12 @@ patched_LdrLoadDll (PWCHAR filePath, PULONG flags, PUNICODE_STRING moduleFileNam
 #define DLLNAME_MAX 128
   char dllName[DLLNAME_MAX+1];
 
-  // Dirty secret about this UNICODE_STRING: it's not guaranteed to be
-  // null-terminated, and Length is supposed to contain the number of
-  // characters.  But in the UNICODE_STRING passed to this function,
-  // that doesn't seem to be true -- Length is often much bigger than
-  // the actual valid characters of the string, which seems to always
-  // be null terminated.  So, we take the minimum of len or the length
-  // to the first null byte, if any, but we still can't assume the null
-  // termination.
-  int len = moduleFileName->Length;
+  int len = moduleFileName->Length / 2;
   wchar_t *fn_buf = moduleFileName->Buffer;
 
-  int count = 0;
-  while (count < len && fn_buf[count] != 0)
-    count++;
-
 #ifdef DEBUG
-  printf_stderr("LdrLoadDll: Length %d Buffer '%S' count %d\n", moduleFileName->Length, moduleFileName->Buffer, count);
+  printf_stderr("LdrLoadDll: Length %d Buffer '%S'\n", moduleFileName->Length, moduleFileName->Buffer);
 #endif
-
-  len = count;
 
   // copy it into fname, which will then be guaranteed null-terminated
   nsAutoArrayPtr<wchar_t> fname = new wchar_t[len+1];
