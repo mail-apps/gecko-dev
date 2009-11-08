@@ -73,10 +73,9 @@ patched_LdrLoadDll (PWCHAR filePath, PULONG flags, PUNICODE_STRING moduleFileNam
   char dllName[DLLNAME_MAX+1];
 
   int len = moduleFileName->Length / 2;
-  wchar_t *fn_buf = moduleFileName->Buffer;
 
 #ifdef DEBUG
-  printf_stderr("LdrLoadDll: Length %d Buffer '%S'\n", moduleFileName->Length, moduleFileName->Buffer);
+  printf_stderr("LdrLoadDll: Length %d Buffer %p '%S'\n", moduleFileName->Length, moduleFileName->Buffer, moduleFileName->Buffer);
 #endif
 
   // copy it into fname, which will then be guaranteed null-terminated
@@ -85,7 +84,7 @@ patched_LdrLoadDll (PWCHAR filePath, PULONG flags, PUNICODE_STRING moduleFileNam
   fname[len] = 0; // *ncpy considered harmful
 
 #ifdef DEBUG
-  printf_stderr("LdrLoadDll: fname '%S'\n", fname);
+  printf_stderr("LdrLoadDll: fname %p '%S' buffer %p '%S'\n", fname.get(), fname, moduleFileName->Buffer, moduleFileName->Buffer);
 #endif
 
   wchar_t *dll_part = wcsrchr(fname, L'\\');
@@ -192,7 +191,7 @@ patched_LdrLoadDll (PWCHAR filePath, PULONG flags, PUNICODE_STRING moduleFileNam
 
 continue_loading:
 #ifdef DEBUG
-  printf_stderr("LdrLoadDll: continuing load...\n");
+  printf_stderr("LdrLoadDll: continuing load... ('%S')\n", moduleFileName->Buffer);
 #endif
 
   return stub_LdrLoadDll(filePath, flags, moduleFileName, handle);
