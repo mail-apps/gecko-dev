@@ -73,24 +73,23 @@ patched_LdrLoadDll (PWCHAR filePath, PULONG flags, PUNICODE_STRING moduleFileNam
   char dllName[DLLNAME_MAX+1];
 
   int len = moduleFileName->Length / 2;
+  wchar_t *fname = moduleFileName->Buffer;
 
-#ifdef DEBUG
-  printf_stderr("LdrLoadDll: Length %d Buffer %p '%S'\n", moduleFileName->Length, moduleFileName->Buffer, moduleFileName->Buffer);
-#endif
-
-  // copy it into fname, which will then be guaranteed null-terminated
-  nsAutoArrayPtr<wchar_t> fname = new wchar_t[len+1];
-  wcsncpy(fname, moduleFileName->Buffer, len);
-  fname[len] = 0; // *ncpy considered harmful
-
-#ifdef DEBUG
-  printf_stderr("LdrLoadDll: fname %p '%S' buffer %p '%S'\n", fname.get(), fname, moduleFileName->Buffer, moduleFileName->Buffer);
-#endif
+  // The filename isn't guaranteed to be null terminated, but in practice
+  // it always will be; ensure that this is so, and bail if not.
+  // This is done instead of the more robust approach because of bug 527122,
+  // where lots of weird things were happening when we tried to make a copy.
+  if (moduleFileName->MaximumLength < moduleFileName->Length+2 ||
+      fname[len] != 0)
+  {
+    printf_stderr("LdrLoadDll: non-null terminated string found!\n");
+    goto continue_loading;
+  }
 
   wchar_t *dll_part = wcsrchr(fname, L'\\');
   if (dll_part) {
     dll_part = dll_part + 1;
-    len = (fname+len) - dll_part;
+    len -= dll_part - fname;
   } else {
     dll_part = fname;
   }
@@ -104,7 +103,7 @@ patched_LdrLoadDll (PWCHAR filePath, PULONG flags, PUNICODE_STRING moduleFileNam
   // entry in our blocklist.
   if (len > DLLNAME_MAX) {
 #ifdef DEBUG
-  printf_stderr("LdrLoadDll: len too long! %d\n", len);
+    printf_stderr("LdrLoadDll: len too long! %d\n", len);
 #endif
     goto continue_loading;
   }
@@ -112,14 +111,15 @@ patched_LdrLoadDll (PWCHAR filePath, PULONG flags, PUNICODE_STRING moduleFileNam
   // copy over to our char byte buffer, lowercasing ASCII as we go
   for (int i = 0; i < len; i++) {
     wchar_t c = dll_part[i];
-    if (c >= 'A' && c <= 'Z')
-      c += 'a' - 'A';
 
     if (c > 0x7f) {
       // welp, it's not ascii; if we need to add non-ascii things to
       // our blocklist, we'll have to remove this limitation.
       goto continue_loading;
     }
+
+    if (c >= 'A' && c <= 'Z')
+      c += 'a' - 'A';
 
     dllName[i] = (char) c;
   }
@@ -140,11 +140,12 @@ patched_LdrLoadDll (PWCHAR filePath, PULONG flags, PUNICODE_STRING moduleFileNam
   }
 
   if (info->name) {
+    bool load_ok = false;
+
 #ifdef DEBUG
     printf_stderr("LdrLoadDll: info->name: '%s'\n", info->name);
 #endif
 
-#if 1
     if (info->maxVersion != ALL_VERSIONS) {
       // figure out the length of the string that we need
       DWORD pathlen = SearchPathW(filePath, fname, L".dll", 0, NULL, NULL);
@@ -154,7 +155,11 @@ patched_LdrLoadDll (PWCHAR filePath, PULONG flags, PUNICODE_STRING moduleFileNam
         return STATUS_DLL_NOT_FOUND;
       }
 
-      nsAutoArrayPtr<wchar_t> full_fname = new wchar_t[pathlen+1];
+      wchar_t *full_fname = (wchar_t*) malloc(sizeof(wchar_t)*(pathlen+1));
+      if (!full_fname) {
+        // couldn't allocate memory?
+        return STATUS_DLL_NOT_FOUND;
+      }
 
       // now actually grab it
       SearchPathW(filePath, fname, L".dll", pathlen+1, full_fname, NULL);
@@ -179,14 +184,17 @@ patched_LdrLoadDll (PWCHAR filePath, PULONG flags, PUNICODE_STRING moduleFileNam
           // finally do the version check, and if it's greater than our block
           // version, keep loading
           if (fVersion > info->maxVersion)
-            goto continue_loading;
+            load_ok = true;
         }
       }
-    }
-#endif
 
-    printf_stderr("LdrLoadDll: Blocking load of '%s'\n", dllName);
-    return STATUS_DLL_NOT_FOUND;
+      free(full_fname);
+    }
+
+    if (!load_ok) {
+      printf_stderr("LdrLoadDll: Blocking load of '%s'\n", dllName);
+      return STATUS_DLL_NOT_FOUND;
+    }
   }
 
 continue_loading:
