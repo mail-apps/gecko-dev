@@ -1896,6 +1896,9 @@ nsAccessible::GetState(PRUint32 *aState, PRUint32 *aExtraState)
 {
   NS_ENSURE_ARG_POINTER(aState);
 
+/* Commenting out as a stop gap fix for bug 525579
+ * We should not flush layout and potentially cause frames deallocation
+ * while tree walking (nsAccessibleTreeWalker)
   if (!IsDefunct()) {
     // Flush layout so that all the frame construction, reflow, and styles are
     // up-to-date since we rely on frames, and styles when calculating state.
@@ -1903,6 +1906,7 @@ nsAccessible::GetState(PRUint32 *aState, PRUint32 *aExtraState)
     nsCOMPtr<nsIPresShell> presShell = GetPresShell();
     presShell->FlushPendingNotifications(Flush_Layout);
   }
+*/
 
   nsresult rv = GetStateInternal(aState, aExtraState);
   NS_ENSURE_A11Y_SUCCESS(rv, rv);

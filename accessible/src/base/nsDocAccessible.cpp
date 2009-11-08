@@ -1636,12 +1636,16 @@ nsDocAccessible::FlushPendingEvents()
   if (!presShell)
     length = 0; // The doc is now shut down, don't fire events in it anymore
   else {
+/* Commenting out as a stop gap fix for bug 525579
+ * We should not flush layout and potentially cause frames deallocation
+ * while tree walking (nsAccessibleTreeWalker)
     // Flush layout so that all the frame construction, reflow, and styles are
     // up-to-date. This will ensure we can get frames for the related nodes, as
     // well as get the most current information for calculating things like
     // visibility. We don't flush the display because we don't care about
     // painting. If no flush is necessary the method will simple return.
     presShell->FlushPendingNotifications(Flush_Layout);
+*/
 
     // filter events
     nsAccEvent::ApplyEventRules(mEventsToFire);
