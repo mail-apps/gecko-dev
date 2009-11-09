@@ -640,7 +640,7 @@ class TraceRecorder : public avmplus::GCObject {
     JS_REQUIRES_STACK JSRecordingStatus interpretedFunctionCall(jsval& fval, JSFunction* fun,
                                                                 uintN argc, bool constructing);
     JS_REQUIRES_STACK JSRecordingStatus emitNativeCall(JSTraceableNative* known, uintN argc,
-                                                       nanojit::LIns* args[]);
+                                                       nanojit::LIns* args[], bool rooted);
     JS_REQUIRES_STACK JSRecordingStatus callTraceableNative(JSFunction* fun, uintN argc,
                                                             bool constructing);
     JS_REQUIRES_STACK JSRecordingStatus callNative(uintN argc, JSOp mode);
