@@ -3815,7 +3815,7 @@ js_SynthesizeFrame(JSContext* cx, const FrameInfo& fi)
 }
 
 static void
-SynthesizeSlowNativeFrame(JSContext *cx, VMSideExit *exit)
+SynthesizeSlowNativeFrame(InterpState& state, JSContext *cx, VMSideExit *exit)
 {
     void *mark;
     JSInlineFrame *ifp;
@@ -3836,9 +3836,9 @@ SynthesizeSlowNativeFrame(JSContext *cx, VMSideExit *exit)
     fp->script = NULL;
     fp->fun = GET_FUNCTION_PRIVATE(cx, fp->callee);
     // fp->thisp is really a jsval, so reinterpret_cast here, not JSVAL_TO_OBJECT.
-    fp->thisp = (JSObject *) cx->nativeVp[1];
-    fp->argc = cx->nativeVpLen - 2;
-    fp->argv = cx->nativeVp + 2;
+    fp->thisp = (JSObject *) state.nativeVp[1];
+    fp->argc = state.nativeVpLen - 2;
+    fp->argv = state.nativeVp + 2;
     fp->rval = JSVAL_VOID;
     fp->down = cx->fp;
     fp->annotation = NULL;
@@ -4517,6 +4517,7 @@ js_ExecuteTree(JSContext* cx, Fragment* f, uintN& inlineCallCount,
     state->lastTreeExitGuard = NULL;
     state->lastTreeCallGuard = NULL;
     state->rpAtLastTreeCall = NULL;
+    state->nativeVp = NULL;
     state->builtinStatus = 0;
 
     /* Setup the native global frame. */
@@ -4579,6 +4580,9 @@ js_ExecuteTree(JSContext* cx, Fragment* f, uintN& inlineCallCount,
 #else
     rec = u.func(state, NULL);
 #endif
+
+    JS_ASSERT(!state->nativeVp);
+
     VMSideExit* lr = (VMSideExit*)rec->exit;
 
     AUDIT(traceTriggered);
@@ -4817,7 +4821,7 @@ LeaveTree(InterpState& state, VMSideExit* lr)
     JS_ASSERT(unsigned(slots) == innermost->numStackSlots);
 
     if (innermost->nativeCalleeWord)
-        SynthesizeSlowNativeFrame(cx, innermost);
+        SynthesizeSlowNativeFrame(state, cx, innermost);
 
     /* write back interned globals */
     double* global = (double*)(&state + 1);
@@ -7651,7 +7655,7 @@ TraceRecorder::emitNativeCall(JSTraceableNative* known, uintN argc, LIns* args[]
 
     // Immediately unroot the vp as soon we return since we might deep bail next.
     if (rooted)
-        lir->insStorei(INS_CONSTPTR(NULL), cx_ins, offsetof(JSContext, nativeVp));
+        lir->insStorei(INS_CONSTPTR(NULL), lirbuf->state, offsetof(InterpState, nativeVp));
 
     rval_ins = res_ins;
     switch (JSTN_ERRTYPE(known)) {
@@ -7819,9 +7823,7 @@ TraceRecorder::callNative(uintN argc, JSOp mode)
     uintN vplen = 2 + JS_MAX(argc, FUN_MINARGS(fun)) + fun->u.n.extra;
     if (!(fun->flags & JSFUN_FAST_NATIVE))
         vplen++;  // slow native return value slot
-    lir->insStorei(INS_CONST(vplen), cx_ins, offsetof(JSContext, nativeVpLen));
     LIns* invokevp_ins = lir->insAlloc(vplen * sizeof(jsval));
-    lir->insStorei(invokevp_ins, cx_ins, offsetof(JSContext, nativeVp));
 
     // vp[0] is the callee.
     lir->insStorei(INS_CONSTWORD(OBJECT_TO_JSVAL(funobj)), invokevp_ins, 0);
@@ -7946,6 +7948,14 @@ TraceRecorder::callNative(uintN argc, JSOp mode)
                                                      : JSTN_UNBOX_AFTER);
 
     generatedTraceableNative->prefix = generatedTraceableNative->argtypes = NULL;
+
+    // We only have to ensure that the values we wrote into the stack buffer
+    // are rooted if we actually make it to the call, so only set nativeVp and
+    // nativeVpLen immediately before emitting the call code. This way we avoid
+    // leaving trace with a bogus nativeVp because we fall off trace while unboxing
+    // values into the stack buffer.
+    lir->insStorei(INS_CONST(vplen), lirbuf->state, offsetof(InterpState, nativeVpLen));
+    lir->insStorei(invokevp_ins, lirbuf->state, offsetof(InterpState, nativeVp));
 
     // argc is the original argc here. It is used to calculate where to place
     // the return value.
