@@ -62,7 +62,10 @@ class Queue : public avmplus::GCObject {
     unsigned _len;
     unsigned _max;
 
+public:
     void ensure(unsigned size) {
+        if (!_max)
+            _max = 16;
         while (_max < size)
             _max <<= 1;
         _data = (T*)realloc(_data, _max * sizeof(T));
@@ -70,11 +73,14 @@ class Queue : public avmplus::GCObject {
         memset(&_data[_len], 0xcd, _max - _len);
 #endif
     }
-public:
+
     Queue(unsigned max = 16) {
         this->_max = max;
         this->_len = 0;
-        this->_data = (T*)malloc(max * sizeof(T));
+        if (max)
+            this->_data = (T*)malloc(max * sizeof(T));
+        else
+            this->_data = NULL;
     }
 
     ~Queue() {
