@@ -2006,6 +2006,7 @@ Assembler::asm_cmpi(Register r, int32_t imm)
         if (imm > -256) {
             ALUi(AL, cmn, 1, 0, r, -imm);
         } else {
+            underrunProtect(4 + LD32_size);
             CMP(r, IP);
             asm_ld_imm(IP, imm);
         }
@@ -2013,6 +2014,7 @@ Assembler::asm_cmpi(Register r, int32_t imm)
         if (imm < 256) {
             ALUi(AL, cmp, 1, 0, r, imm);
         } else {
+            underrunProtect(4 + LD32_size);
             CMP(r, IP);
             asm_ld_imm(IP, imm);
         }
