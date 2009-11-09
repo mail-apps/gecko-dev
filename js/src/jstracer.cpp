@@ -2586,6 +2586,8 @@ JSTraceMonitor::flush()
 
     dataAlloc->reset();
     codeAlloc->reset();
+    tempAlloc->reset();
+    reTempAlloc->reset();
 
     Allocator& alloc = *dataAlloc;
 
