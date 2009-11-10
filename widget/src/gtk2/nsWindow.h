@@ -434,6 +434,7 @@ protected:
     PRPackedBool        mPlaced;
 
 private:
+    void               DestroyChildWindows();
     void               GetToplevelWidget(GtkWidget **aWidget);
     GtkWidget         *GetMozContainerWidget();
     nsWindow          *GetContainerWindow();
