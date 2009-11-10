@@ -5984,6 +5984,7 @@ missingPluginInstaller.prototype.newMissingPlugin = function(aEvent){
   }
   
   function showOutdatedPluginsInfo() {
+    gPrefService.setBoolPref("plugins.update.notifyUser", false);
     var formatter = Cc["@mozilla.org/toolkit/URLFormatterService;1"].
                     getService(Ci.nsIURLFormatter);
     var url = formatter.formatURLPref("plugins.update.url");
