@@ -82,14 +82,20 @@ function test() {
       if (this.pass++ == 1) {  
         is(browserWindowsCount(), 2, "Two windows should exist at this point");
 
-        // executeSoon is needed here in order to let the first window be focused
-        // (see above)
-        executeSoon(function() {
-          ss.setBrowserState(oldState);
-        });
+        // let the first window be focused (see above)
+        function pollMostRecentWindow() {
+          if (wm.getMostRecentWindow("navigator:browser") == window) {
+            ss.setBrowserState(oldState);
+          } else {
+            info("waiting for the current window to become active");
+            setTimeout(pollMostRecentWindow, 0);
+          }
+        }
+        pollMostRecentWindow();
       }
       else {
         is(browserWindowsCount(), 1, "Only one window should exist after cleanup");
+        ok(!window.closed, "Restoring the old state should have left this window open");
         os.removeObserver(this, "sessionstore-browser-state-restored");
         finish();
       }
