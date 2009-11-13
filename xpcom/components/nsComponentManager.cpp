@@ -2933,6 +2933,8 @@ nsComponentManagerImpl::AutoRegisterDirectory(nsIFile *inDirSpec,
 {
     nsresult rv;
 
+    // Don't do this on Linux, because it causes a strange bug 528630
+#if !(defined(XP_UNIX) && (defined(MOZ_X11) || defined(MOZ_WIDGET_GTK2)))
     nsCOMPtr<nsIFile> componentsList;
     inDirSpec->Clone(getter_AddRefs(componentsList));
     if (componentsList) {
@@ -2949,6 +2951,7 @@ nsComponentManagerImpl::AutoRegisterDirectory(nsIFile *inDirSpec,
             return rv;
         }
     }
+#endif
 
     nsCOMPtr<nsISimpleEnumerator> entries;
     rv = inDirSpec->GetDirectoryEntries(getter_AddRefs(entries));
