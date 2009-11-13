@@ -2933,8 +2933,8 @@ nsComponentManagerImpl::AutoRegisterDirectory(nsIFile *inDirSpec,
 {
     nsresult rv;
 
-    // Don't do this on Linux, because it causes a strange bug 528630
-#if !(defined(XP_UNIX) && (defined(MOZ_X11) || defined(MOZ_WIDGET_GTK2)))
+    // Disabled on 1.9.2 as it causes bug 528630
+#if 0
     nsCOMPtr<nsIFile> componentsList;
     inDirSpec->Clone(getter_AddRefs(componentsList));
     if (componentsList) {
