@@ -3,9 +3,12 @@ be
 bn-BD
 ca
 cs
+cy
 de
 el
+en-GB
 en-US
+eo
 es-AR
 es-CL
 es-ES
@@ -17,6 +20,7 @@ fr
 fy-NL
 ga-IE
 gl
+gu-IN
 he
 hi-IN
 hu
@@ -25,10 +29,17 @@ is
 it
 ja linux win32
 ja-JP-mac osx
+kk
+kn
+ko
 lt
 lv
+mk
+ml
 mr
+nb-NO
 nl
+nn-NO
 or
 pa-IN
 pl
@@ -37,10 +48,13 @@ pt-PT
 rm
 ro
 ru
+si
 sk
+sl
 sq
 sv-SE
 ta
+ta-LK
 te
 tr
 uk
