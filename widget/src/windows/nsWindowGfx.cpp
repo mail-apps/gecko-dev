@@ -308,6 +308,9 @@ nsCOMPtr<nsIRegion> nsWindow::GetRegionToPaint(PRBool aForceFullRepaint,
 
 PRBool nsWindow::OnPaint(HDC aDC)
 {
+  nsPaintEvent willPaintEvent(PR_TRUE, NS_WILL_PAINT, this);
+  DispatchWindowEvent(&willPaintEvent);
+
 #ifdef CAIRO_HAS_DDRAW_SURFACE
   if (IsRenderMode(gfxWindowsPlatform::RENDER_IMAGE_DDRAW16)) {
     return OnPaintImageDDraw16();
