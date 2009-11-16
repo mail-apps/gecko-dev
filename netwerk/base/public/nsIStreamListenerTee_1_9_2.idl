@@ -35,33 +35,36 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-#ifndef nsStreamListenerTee_h__
-#define nsStreamListenerTee_h__
+#include "nsISupports.idl"
 
-#include "nsIStreamListenerTee.h"
-#include "nsIStreamListenerTee_1_9_2.h"
-#include "nsIInputStreamTee.h"
-#include "nsIOutputStream.h"
-#include "nsCOMPtr.h"
+interface nsIOutputStream;
+interface nsIRequestObserver;
+interface nsIStreamListener;
 
-class nsStreamListenerTee : public nsIStreamListenerTee,
-                            public nsIStreamListenerTee_1_9_2
+/**
+ * As data "flows" into a stream listener tee, it is copied to the output stream
+ * and then forwarded to the real listener.
+ */
+[scriptable, uuid(18B1E3D7-8083-4b19-A077-82CEEA6FD296)]
+interface nsIStreamListenerTee_1_9_2 : nsISupports
 {
-public:
-    NS_DECL_ISUPPORTS
-    NS_DECL_NSIREQUESTOBSERVER
-    NS_DECL_NSISTREAMLISTENER
-    NS_DECL_NSISTREAMLISTENERTEE
-    NS_DECL_NSISTREAMLISTENERTEE_1_9_2
-
-    nsStreamListenerTee() { }
-    virtual ~nsStreamListenerTee() { }
-
-private:
-    nsCOMPtr<nsIInputStreamTee> mInputTee;
-    nsCOMPtr<nsIStreamListener> mListener;
-    nsCOMPtr<nsIOutputStream>   mSink;
-    nsCOMPtr<nsIRequestObserver> mObserver;
+    /** 
+     * Initalize the tee.
+     *
+     * @param listener
+     *    the original listener the tee will propagate onStartRequest,
+     *    onDataAvailable and onStopRequest notifications to, exceptions from 
+     *    the listener will be propagated back to the channel
+     * @param sink
+     *    the stream the data coming from the channel will be written to,
+     *    should be blocking
+     * @param requestObserver
+     *    optional parameter, listener that gets only onStartRequest and
+     *    onStopRequest notifications; exceptions threw within this optional
+     *    observer are also propagated to the channel, but exceptions from
+     *    the original listener (listener parameter) are privileged 
+     */
+    void initWithObserver(in nsIStreamListener listener,
+                          in nsIOutputStream sink,
+                          [optional] in nsIRequestObserver requestObserver);
 };
-
-#endif
