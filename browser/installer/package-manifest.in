@@ -223,7 +223,7 @@
 @BINPATH@/components/loginmgr.xpt
 #ifdef MOZ_OJI
 @BINPATH@/components/oji.xpt
-#ifdef
+#endif
 @BINPATH@/components/places.xpt
 @BINPATH@/components/plugin.xpt
 @BINPATH@/components/pref.xpt
