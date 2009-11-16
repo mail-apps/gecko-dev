@@ -221,6 +221,9 @@
 @BINPATH@/components/necko_wifi.xpt
 @BINPATH@/components/necko.xpt
 @BINPATH@/components/loginmgr.xpt
+#ifdef MOZ_OJI
+@BINPATH@/components/oji.xpt
+#ifdef
 @BINPATH@/components/places.xpt
 @BINPATH@/components/plugin.xpt
 @BINPATH@/components/pref.xpt
