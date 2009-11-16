@@ -736,6 +736,7 @@ class TraceRecorder {
     bool                    loop;
     nanojit::LIns*          loopLabel;
 
+    nanojit::LIns* insImmVal(jsval val);
     nanojit::LIns* insImmObj(JSObject* obj);
     nanojit::LIns* insImmFun(JSFunction* fun);
     nanojit::LIns* insImmStr(JSString* str);
