@@ -1308,15 +1308,19 @@ void imgContainer::ClearFrame(imgFrame *aFrame)
   if (!aFrame)
     return;
 
-  aFrame->LockImageData();
+  nsresult rv = aFrame->LockImageData();
+  if (NS_FAILED(rv))
+    return;
 
   nsRefPtr<gfxASurface> surf;
   aFrame->GetSurface(getter_AddRefs(surf));
 
-  // Erase the surface to transparent
-  gfxContext ctx(surf);
-  ctx.SetOperator(gfxContext::OPERATOR_CLEAR);
-  ctx.Paint();
+  if (surf) {
+    // Erase the surface to transparent
+    gfxContext ctx(surf);
+    ctx.SetOperator(gfxContext::OPERATOR_CLEAR);
+    ctx.Paint();
+  }
 
   aFrame->UnlockImageData();
 }
@@ -1327,16 +1331,20 @@ void imgContainer::ClearFrame(imgFrame *aFrame, nsIntRect &aRect)
   if (!aFrame || aRect.width <= 0 || aRect.height <= 0)
     return;
 
-  aFrame->LockImageData();
+  nsresult rv = aFrame->LockImageData();
+  if (NS_FAILED(rv))
+    return;
 
   nsRefPtr<gfxASurface> surf;
   aFrame->GetSurface(getter_AddRefs(surf));
 
-  // Erase the destination rectangle to transparent
-  gfxContext ctx(surf);
-  ctx.SetOperator(gfxContext::OPERATOR_CLEAR);
-  ctx.Rectangle(gfxRect(aRect.x, aRect.y, aRect.width, aRect.height));
-  ctx.Fill();
+  if (surf) {
+    // Erase the destination rectangle to transparent
+    gfxContext ctx(surf);
+    ctx.SetOperator(gfxContext::OPERATOR_CLEAR);
+    ctx.Rectangle(gfxRect(aRect.x, aRect.y, aRect.width, aRect.height));
+    ctx.Fill();
+  }
 
   aFrame->UnlockImageData();
 }
