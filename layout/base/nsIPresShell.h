@@ -143,6 +143,12 @@ public:
    * Can be called by code not linked into gklayout.
    */
   virtual nsIScrollableFrame* GetRootScrollFrameAsScrollableExternal() const = 0;
+
+  /*
+   *  The same as Add/RemoveWeakFrame but allows use outside gklayout linkage.
+   */
+  virtual void RemoveWeakFrameExternal(nsWeakFrame* aWeakFrame) = 0;
+  virtual void AddWeakFrameExternal(nsWeakFrame* aWeakFrame) = 0;
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(nsIPresShell_MOZILLA_1_9_2, 
@@ -822,8 +828,29 @@ public:
                                                         nsIntPoint& aPoint,
                                                         nsIntRect* aScreenRect) = 0;
 
-  void AddWeakFrame(nsWeakFrame* aWeakFrame);
-  void RemoveWeakFrame(nsWeakFrame* aWeakFrame);
+  void AddWeakFrameInternal(nsWeakFrame* aWeakFrame);
+
+  void AddWeakFrame(nsWeakFrame* aWeakFrame)
+  {
+#ifdef _IMPL_NS_LAYOUT
+    AddWeakFrameInternal(aWeakFrame);
+#else
+    nsCOMPtr<nsIPresShell_MOZILLA_1_9_2> shell_1_9_2 = do_QueryInterface(this);
+    shell_1_9_2->AddWeakFrameExternal(aWeakFrame);
+#endif
+  }
+
+  void RemoveWeakFrameInternal(nsWeakFrame* aWeakFrame);
+
+  void RemoveWeakFrame(nsWeakFrame* aWeakFrame)
+  {
+#ifdef _IMPL_NS_LAYOUT
+    RemoveWeakFrameInternal(aWeakFrame);
+#else
+    nsCOMPtr<nsIPresShell_MOZILLA_1_9_2> shell_1_9_2 = do_QueryInterface(this);
+    shell_1_9_2->RemoveWeakFrameExternal(aWeakFrame);
+#endif
+  }
 
 #ifdef NS_DEBUG
   nsIFrame* GetDrawEventTargetFrame() { return mDrawEventTargetFrame; }

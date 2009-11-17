@@ -91,6 +91,7 @@ function test() {
             setTimeout(pollMostRecentWindow, 0);
           }
         }
+        window.focus(); //XXX Why is this needed?
         pollMostRecentWindow();
       }
       else {

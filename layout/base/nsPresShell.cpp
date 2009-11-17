@@ -908,6 +908,8 @@ public:
                                                 nscolor aBackstopColor);
 
   virtual nsIScrollableFrame* GetRootScrollFrameAsScrollableExternal() const;
+  virtual void RemoveWeakFrameExternal(nsWeakFrame* aWeakFrame);
+  virtual void AddWeakFrameExternal(nsWeakFrame* aWeakFrame);
 protected:
   virtual ~PresShell();
 
@@ -1563,7 +1565,7 @@ nsIPresShell::GetVerifyReflowFlags()
 }
 
 void
-nsIPresShell::AddWeakFrame(nsWeakFrame* aWeakFrame)
+nsIPresShell::AddWeakFrameInternal(nsWeakFrame* aWeakFrame)
 {
   if (aWeakFrame->GetFrame()) {
     aWeakFrame->GetFrame()->AddStateBits(NS_FRAME_EXTERNAL_REFERENCE);
@@ -1573,7 +1575,7 @@ nsIPresShell::AddWeakFrame(nsWeakFrame* aWeakFrame)
 }
 
 void
-nsIPresShell::RemoveWeakFrame(nsWeakFrame* aWeakFrame)
+nsIPresShell::RemoveWeakFrameInternal(nsWeakFrame* aWeakFrame)
 {
   if (mWeakFrames == aWeakFrame) {
     mWeakFrames = aWeakFrame->GetPreviousWeakFrame();
@@ -3204,6 +3206,18 @@ nsIScrollableFrame*
 PresShell::GetRootScrollFrameAsScrollableExternal() const
 {
   return GetRootScrollFrameAsScrollable();
+}
+
+void
+PresShell::AddWeakFrameExternal(nsWeakFrame* aWeakFrame)
+{
+  AddWeakFrameInternal(aWeakFrame);
+}
+
+void
+PresShell::RemoveWeakFrameExternal(nsWeakFrame* aWeakFrame)
+{
+  RemoveWeakFrameInternal(aWeakFrame);
 }
 
 nsIFrame*

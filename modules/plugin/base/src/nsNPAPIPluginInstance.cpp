@@ -912,6 +912,7 @@ nsNPAPIPluginInstance::nsNPAPIPluginInstance(NPPluginFuncs* callbacks,
 #endif
 #endif
     mWindowless(PR_FALSE),
+    mWindowlessLocal(PR_FALSE),
     mTransparent(PR_FALSE),
     mStarted(PR_FALSE),
     mCached(PR_FALSE),

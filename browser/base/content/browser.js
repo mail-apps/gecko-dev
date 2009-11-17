@@ -1286,6 +1286,10 @@ function delayedStartup(isLoadingBlank, mustLoadSidebar) {
     Components.utils.reportError("Failed to init content pref service:\n" + ex);
   }
 
+  let NP = {};
+  Cu.import("resource://gre/modules/NetworkPrioritizer.jsm", NP);
+  NP.trackBrowserWindow(window);
+
   // initialize the session-restore service (in case it's not already running)
   if (document.documentElement.getAttribute("windowtype") == "navigator:browser") {
     try {
@@ -7290,44 +7294,7 @@ var LightWeightThemeWebInstaller = {
   },
 
   _getThemeFromNode: function (node) {
-    const MANDATORY = ["id", "name", "headerURL"];
-    const OPTIONAL = ["footerURL", "textcolor", "accentcolor", "iconURL",
-                      "previewURL", "author", "description", "homepageURL"];
-
-    try {
-      var data = JSON.parse(node.getAttribute("data-browsertheme"));
-    } catch (e) {
-      return null;
-    }
-
-    if (!data || typeof data != "object")
-      return null;
-
-    for (let prop in data) {
-      if (!data[prop] ||
-          typeof data[prop] != "string" ||
-          MANDATORY.indexOf(prop) == -1 && OPTIONAL.indexOf(prop) == -1) {
-        delete data[prop];
-        continue;
-      }
-
-      if (/URL$/.test(prop)) {
-        try {
-          data[prop] = makeURLAbsolute(node.baseURI, data[prop]);
-
-          if (/^https?:/.test(data[prop]))
-            continue;
-        } catch (e) {}
-
-        delete data[prop];
-      }
-    }
-
-    for (let i = 0; i < MANDATORY.length; i++) {
-      if (!(MANDATORY[i] in data)) 
-        return null;
-    }
-
-    return data;
+    return this._manager.parseTheme(node.getAttribute("data-browsertheme"),
+                                    node.baseURI);
   }
 }

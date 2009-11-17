@@ -111,13 +111,6 @@ nsDOMGeoPositionError::GetCode(PRInt16 *aCode)
   return NS_OK;
 }
 
-NS_IMETHODIMP
-nsDOMGeoPositionError::GetMessage(nsAString & aMessage)
-{
-  aMessage.Truncate();
-  return NS_OK;
-}
-
 void
 nsDOMGeoPositionError::NotifyCallback(nsIDOMGeoPositionErrorCallback* aCallback)
 {
@@ -925,7 +918,7 @@ nsGeolocation::ClearWatch(PRInt32 aWatchId)
 {
   PRUint32 count = mWatchingCallbacks.Length();
   if (aWatchId < 0 || count == 0 || aWatchId > count)
-    return NS_ERROR_FAILURE;
+    return NS_OK;
 
   mWatchingCallbacks[aWatchId]->MarkCleared();
   return NS_OK;
