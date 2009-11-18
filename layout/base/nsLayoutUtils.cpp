@@ -1182,7 +1182,12 @@ AddItemsToRegion(nsDisplayListBuilder* aBuilder, nsDisplayList* aList,
         // If the clipping frame is moving, then it isn't clipping any
         // non-moving content (see ApplyAbsPosClipping), so we don't need
         // to do anything special, but we should not restrict aClipRect.
-        if (!aBuilder->IsMovingFrame(clipItem->GetClippingFrame())) {
+        // If the clipping frame is not moving, but the moving frames
+        // are not in its descendants, then again we don't need to
+        // do anything special.
+        nsIFrame* clipFrame = clipItem->GetClippingFrame();
+        if (!aBuilder->IsMovingFrame(clipFrame) &&
+            nsLayoutUtils::IsProperAncestorFrame(clipFrame, aBuilder->GetRootMovingFrame())) {
           clip.IntersectRect(clip, clipItem->GetClipRect());
 
           // Invalidate the translation of the source area that was clipped out
