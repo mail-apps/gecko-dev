@@ -48,6 +48,7 @@
 #   Paul O’Shannessy <paul@oshannessy.com>
 #   Nils Maier <maierman@web.de>
 #   Rob Arnold <robarnold@cmu.edu>
+#   Dietrich Ayala <dietrich@mozilla.com>
 #
 # Alternatively, the contents of this file may be used under the terms of
 # either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -128,6 +129,14 @@ __defineSetter__("PluralForm", function (val) {
   delete this.PluralForm;
   return this.PluralForm = val;
 });
+
+#ifdef MOZ_CRASHREPORTER
+__defineGetter__("gCrashReporter", function() {
+  delete this.gCrashReporter;
+  return this.gCrashReporter = Cc["@mozilla.org/xre/app-info;1"].
+                               getService("nsICrashReporter");
+});
+#endif
 
 let gInitialPages = [
   "about:blank",
@@ -4339,6 +4348,12 @@ var TabsProgressListener = {
   },
 
   onStateChange: function (aBrowser, aWebProgress, aRequest, aStateFlags, aStatus) {
+    if (!aRequest.URI)
+      aRequest.QueryInterface(Ci.nsIChannel);
+    if (aStateFlags & Ci.nsIWebProgressListener.STATE_START &&
+        aStateFlags & Ci.nsIWebProgressListener.STATE_IS_DOCUMENT) {
+      gCrashReporter.annotateCrashReport("URL", aRequest.URI.spec);
+    }
   },
 
   onLocationChange: function (aBrowser, aWebProgress, aRequest, aLocationURI) {

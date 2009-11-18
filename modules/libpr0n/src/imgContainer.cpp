@@ -1156,7 +1156,10 @@ nsresult imgContainer::DoComposite(imgFrame** aFrameToUse,
     }
     nsresult rv = mAnim->compositingFrame->Init(0, 0, mSize.width, mSize.height,
                                                 gfxASurface::ImageFormatARGB32);
-    NS_ENSURE_SUCCESS(rv, rv);
+    if (NS_FAILED(rv)) {
+      mAnim->compositingFrame = nsnull;
+      return rv;
+    }
     needToBlankComposite = PR_TRUE;
   } else if (aNextFrameIndex == 1) {
     // When we are looping the compositing frame needs to be cleared.
@@ -1259,7 +1262,10 @@ nsresult imgContainer::DoComposite(imgFrame** aFrameToUse,
       }
       nsresult rv = mAnim->compositingPrevFrame->Init(0, 0, mSize.width, mSize.height,
                                                       gfxASurface::ImageFormatARGB32);
-      NS_ENSURE_SUCCESS(rv, rv);
+      if (NS_FAILED(rv)) {
+        mAnim->compositingPrevFrame = nsnull;
+        return rv;
+      }
     }
 
     CopyFrameImage(mAnim->compositingFrame, mAnim->compositingPrevFrame);
@@ -1308,15 +1314,19 @@ void imgContainer::ClearFrame(imgFrame *aFrame)
   if (!aFrame)
     return;
 
-  aFrame->LockImageData();
+  nsresult rv = aFrame->LockImageData();
+  if (NS_FAILED(rv))
+    return;
 
   nsRefPtr<gfxASurface> surf;
   aFrame->GetSurface(getter_AddRefs(surf));
 
-  // Erase the surface to transparent
-  gfxContext ctx(surf);
-  ctx.SetOperator(gfxContext::OPERATOR_CLEAR);
-  ctx.Paint();
+  if (surf) {
+    // Erase the surface to transparent
+    gfxContext ctx(surf);
+    ctx.SetOperator(gfxContext::OPERATOR_CLEAR);
+    ctx.Paint();
+  }
 
   aFrame->UnlockImageData();
 }
@@ -1327,16 +1337,20 @@ void imgContainer::ClearFrame(imgFrame *aFrame, nsIntRect &aRect)
   if (!aFrame || aRect.width <= 0 || aRect.height <= 0)
     return;
 
-  aFrame->LockImageData();
+  nsresult rv = aFrame->LockImageData();
+  if (NS_FAILED(rv))
+    return;
 
   nsRefPtr<gfxASurface> surf;
   aFrame->GetSurface(getter_AddRefs(surf));
 
-  // Erase the destination rectangle to transparent
-  gfxContext ctx(surf);
-  ctx.SetOperator(gfxContext::OPERATOR_CLEAR);
-  ctx.Rectangle(gfxRect(aRect.x, aRect.y, aRect.width, aRect.height));
-  ctx.Fill();
+  if (surf) {
+    // Erase the destination rectangle to transparent
+    gfxContext ctx(surf);
+    ctx.SetOperator(gfxContext::OPERATOR_CLEAR);
+    ctx.Rectangle(gfxRect(aRect.x, aRect.y, aRect.width, aRect.height));
+    ctx.Fill();
+  }
 
   aFrame->UnlockImageData();
 }
