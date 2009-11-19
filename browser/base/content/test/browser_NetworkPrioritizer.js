@@ -35,6 +35,12 @@
  * ***** END LICENSE BLOCK ***** */
 
 function test() {
+  /* Permaorange on Linux right now, so disable there. */
+  let osString = Components.classes["@mozilla.org/xre/app-info;1"].
+                 getService(Components.interfaces.nsIXULRuntime).OS;
+  if (osString == "Linux")
+    return;
+
   /** Tests for NetworkPrioritizer.jsm (Bug 514490) **/
 
   waitForExplicitFinish();
