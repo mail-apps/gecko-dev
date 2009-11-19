@@ -577,7 +577,8 @@ class nsDocument : public nsIDocument,
                    public nsIDOMNodeSelector,
                    public nsIApplicationCacheContainer,
                    public nsIDOMXPathNSResolver,
-                   public nsStubMutationObserver
+                   public nsStubMutationObserver,
+                   public nsIDocument_MOZILLA_1_9_2_BRANCH
 {
 public:
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
@@ -1010,6 +1011,9 @@ public:
   void MaybeEndOutermostXBLUpdate();
 
   virtual void MaybePreLoadImage(nsIURI* uri);
+
+  virtual nsISupports* GetCurrentContentSink();
+
 protected:
 
   void RegisterNamedItems(nsIContent *aContent);
