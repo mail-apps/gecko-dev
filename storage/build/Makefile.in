@@ -61,6 +61,10 @@ REQUIRES = \
         locale \
         $(NULL)
 
+ifdef NS_TRACE_MALLOC
+REQUIRES += tracemalloc
+endif
+
 EXPORTS = mozStorageCID.h
 
 CPPSRCS = mozStorageModule.cpp
