@@ -75,6 +75,10 @@ REQUIRES = \
         storage \
         $(NULL)
 
+ifdef NS_TRACE_MALLOC
+REQUIRES += tracemalloc
+endif
+
 LOCAL_INCLUDES = \
   -I$(srcdir)/../src \
   $(NULL)
