@@ -882,7 +882,6 @@ nsObjectLoadingContent::GetInterface(const nsIID & aIID, void **aResult)
     NS_ADDREF(sink);
     return NS_OK;
   }
-
   return NS_NOINTERFACE;
 }
 
@@ -1864,3 +1863,17 @@ nsObjectLoadingContent::GetPluginDisabledState(const nsCString& aContentType)
     return ePluginBlocklisted;
   return ePluginUnsupported;
 }
+
+NS_IMETHODIMP
+nsObjectLoadingContent::SetAbsoluteScreenPosition(nsIDOMElement* element,
+                                                  nsIDOMClientRect* position,
+                                                  nsIDOMClientRect* clip)
+{
+  nsIObjectFrame* frame = GetExistingFrame(eFlushLayout);
+  if (!frame)
+    return NS_ERROR_NOT_AVAILABLE;
+
+  return frame->SetAbsoluteScreenPosition(element, position, clip);
+}
+
+
