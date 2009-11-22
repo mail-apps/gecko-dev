@@ -558,8 +558,6 @@ nsAppShellService::Observe(nsISupports* aSubject, const char *aTopic,
 {
   if (!strcmp(aTopic, "xpcom-will-shutdown")) {
     mXPCOMWillShutDown = PR_TRUE;
-
-    printf("XPCOM will shut down\n");
   } else if (!strcmp(aTopic, "xpcom-shutdown")) {
     mXPCOMShuttingDown = PR_TRUE;
     if (mHiddenWindow) {
