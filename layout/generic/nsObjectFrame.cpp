@@ -615,6 +615,7 @@ private:
   // The clip region that we should draw into.
   nsIntRect mAbsolutePositionClip;
 
+  GC mXlibSurfGC;
   Window mBlitWindow;
   XImage *mSharedXImage;
   XShmSegmentInfo mSharedSegmentInfo;
@@ -2525,6 +2526,7 @@ nsPluginInstanceOwner::nsPluginInstanceOwner()
 #ifdef MOZ_PLATFORM_HILDON
   mPluginSize = nsIntSize(0,0);
   mPluginScale = 1.0;
+  mXlibSurfGC = None;
   mSharedXImage = nsnull;
   mSharedSegmentInfo.shmaddr = nsnull;
 #endif
@@ -5035,7 +5037,12 @@ static GdkWindow* GetClosestWindow(nsIDOMElement *element)
 void
 nsPluginInstanceOwner::ReleaseXShm()
 {
-  if (mSharedSegmentInfo.shmaddr) {
+  if (mXlibSurfGC) {
+    XFreeGC(gdk_x11_get_default_xdisplay(), mXlibSurfGC);
+    mXlibSurfGC = None;
+  }
+ 
+ if (mSharedSegmentInfo.shmaddr) {
     XShmDetach(gdk_x11_get_default_xdisplay(), &mSharedSegmentInfo);
     shmdt(mSharedSegmentInfo.shmaddr);
     mSharedSegmentInfo.shmaddr = nsnull;
@@ -5055,6 +5062,13 @@ nsPluginInstanceOwner::SetupXShm()
     return PR_FALSE;
 
   ReleaseXShm();
+
+  mXlibSurfGC = XCreateGC(gdk_x11_get_default_xdisplay(),
+                          mBlitWindow,
+                          0,
+                          0);
+  if (!mXlibSurfGC)
+    return PR_FALSE;
 
   // we use 16 as the default depth because that is the value of the
   // screen, but not the default X default depth.
@@ -5224,15 +5238,8 @@ nsPluginInstanceOwner::NativeImageDraw()
   rect.width = mAbsolutePositionClip.width;
   rect.height = mAbsolutePositionClip.height;
 
-  GC gc = XCreateGC(gdk_x11_get_default_xdisplay(),
-                    mBlitWindow,
-                    0,
-                    0);
-  if (!gc)
-    return NS_ERROR_FAILURE;
-
   XSetClipRectangles(gdk_x11_get_default_xdisplay(),
-                     gc,
+                     mXlibSurfGC,
                      mAbsolutePosition.x,
                      mAbsolutePosition.y, 
                      &rect, 1,
@@ -5240,7 +5247,7 @@ nsPluginInstanceOwner::NativeImageDraw()
 
   XShmPutImage(gdk_x11_get_default_xdisplay(),
                mBlitWindow,
-               gc,
+               mXlibSurfGC,
                mSharedXImage,
                0,
                0,
@@ -5250,9 +5257,8 @@ nsPluginInstanceOwner::NativeImageDraw()
                mPluginSize.height,
                PR_FALSE);
   
-  XSetClipRectangles(gdk_x11_get_default_xdisplay(), gc, 0, 0, nsnull, 0, Unsorted);  
+  XSetClipRectangles(gdk_x11_get_default_xdisplay(), mXlibSurfGC, 0, 0, nsnull, 0, Unsorted);  
 
-  XFreeGC(gdk_x11_get_default_xdisplay(), gc);
   XFlush(gdk_x11_get_default_xdisplay());
   return NS_OK;
 }
