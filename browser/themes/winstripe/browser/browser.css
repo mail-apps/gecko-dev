@@ -50,16 +50,12 @@
   -moz-box-orient: vertical; /* for flex hack */
 }
 
-#menubar-items > menubar {
+#main-menubar {
   -moz-box-flex: 1; /* make menu items expand to fill toolbar height */
 }
 
 #personal-bookmarks {
   min-height: 24px;
-}
-
-#wrapper-search-container #searchbar html|*.textbox-input {
-  visibility: hidden;
 }
 
 #navigator-toolbox:-moz-system-metric(windows-default-theme):not(:-moz-lwtheme) {
@@ -1755,14 +1751,13 @@ toolbarbutton.bookmark-item[dragover="true"][open="true"] {
 }
 
 /* Popup Body Text */
-#identity-popup-content-box > description,
-#identity-popup-encryption-label {
+.identity-popup-description {
   white-space: pre-wrap;
   -moz-padding-start: 15px;
   margin: 2px 0 4px;
 }
 
-#identity-popup-content-box > label {
+.identity-popup-label {
   white-space: pre-wrap;
   -moz-padding-start: 15px;
   margin: 0;
@@ -1824,7 +1819,6 @@ toolbarbutton.bookmark-item[dragover="true"][open="true"] {
 }
 
 #identity-popup-container {
-  background-image: none;
   min-width: 280px;
   padding: 9px;
 }
