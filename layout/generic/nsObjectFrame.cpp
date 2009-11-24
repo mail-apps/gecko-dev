@@ -4931,6 +4931,7 @@ void nsPluginInstanceOwner::Paint(gfxContext* aContext,
     gfxMatrix matrix = aContext->CurrentMatrix();
     if (!matrix.HasNonAxisAlignedTransform())
       NativeImageDraw();
+    return;
   }   
 #endif
 
@@ -5892,6 +5893,15 @@ nsPluginInstanceOwner::SetAbsoluteScreenPosition(nsIDOMElement* element,
   mBlitParentElement = element;
     
   UpdateVisibility();
+
+  if (!mInstance)
+    return NS_OK;
+
+  PRBool simpleImageRender = PR_FALSE;
+  mInstance->GetValue(nsPluginInstanceVariable_WindowlessLocalBool,
+                      &simpleImageRender);
+  if (simpleImageRender)
+    NativeImageDraw();
   return NS_OK;
 }
 #endif
