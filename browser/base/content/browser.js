@@ -134,7 +134,7 @@ __defineSetter__("PluralForm", function (val) {
 __defineGetter__("gCrashReporter", function() {
   delete this.gCrashReporter;
   return this.gCrashReporter = Cc["@mozilla.org/xre/app-info;1"].
-                               getService("nsICrashReporter");
+                               getService(Ci.nsICrashReporter);
 });
 #endif
 
