@@ -552,10 +552,6 @@
   list-style-image: url("chrome://browser/skin/places/expander-open-active.png") !important;
 }
 
-.no-margin-button {
-  min-width:0em;
-}
-
 /**
  * info pane
  */
@@ -583,6 +579,6 @@
   color: GrayText;
 }
 
-#editBookmarkPanelGrid > rows > row > label {
+.editBMPanel_rowLabel {
   text-align: right !important;
 }

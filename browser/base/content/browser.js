@@ -134,7 +134,7 @@ __defineSetter__("PluralForm", function (val) {
 __defineGetter__("gCrashReporter", function() {
   delete this.gCrashReporter;
   return this.gCrashReporter = Cc["@mozilla.org/xre/app-info;1"].
-                               getService("nsICrashReporter");
+                               getService(Ci.nsICrashReporter);
 });
 #endif
 
@@ -4363,9 +4363,8 @@ var TabsProgressListener = {
 
   onStateChange: function (aBrowser, aWebProgress, aRequest, aStateFlags, aStatus) {
 #ifdef MOZ_CRASHREPORTER
-    if (!aRequest.URI)
-      aRequest.QueryInterface(Ci.nsIChannel);
-    if (aStateFlags & Ci.nsIWebProgressListener.STATE_START &&
+    if (aRequest instanceof Ci.nsIChannel &&
+        aStateFlags & Ci.nsIWebProgressListener.STATE_START &&
         aStateFlags & Ci.nsIWebProgressListener.STATE_IS_DOCUMENT) {
       gCrashReporter.annotateCrashReport("URL", aRequest.URI.spec);
     }
@@ -6198,6 +6197,7 @@ var FeedHandler = {
       var menuItem = document.createElement("menuitem");
       var baseTitle = feedInfo.title || feedInfo.href;
       var labelStr = gNavigatorBundle.getFormattedString("feedShowFeedNew", [baseTitle]);
+      menuItem.setAttribute("class", "feed-menuitem");
       menuItem.setAttribute("label", labelStr);
       menuItem.setAttribute("feed", feedInfo.href);
       menuItem.setAttribute("tooltiptext", feedInfo.href);
