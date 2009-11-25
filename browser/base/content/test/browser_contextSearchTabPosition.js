@@ -1,4 +1,3 @@
-/* -*- Mode: IDL; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
 /* ***** BEGIN LICENSE BLOCK *****
  * Version: MPL 1.1/GPL 2.0/LGPL 2.1
  *
@@ -12,11 +11,11 @@
  * for the specific language governing rights and limitations under the
  * License.
  *
- * The Original Code is mozilla.org code.
+ * The Original Code is browser test code.
  *
  * The Initial Developer of the Original Code is
- * Mozilla Corporation
- * Portions created by the Initial Developer are Copyright (C) 2007
+ * John Morkel <jmorkel@gmail.com>.
+ * Portions created by the Initial Developer are Copyright (C) 2008
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
@@ -35,18 +34,25 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-#include "domstubs.idl"
+function test() {
+  function tabAdded(event) {
+    let tab = event.target;
+    tabs.push(tab);
+  }
 
-[scriptable, uuid(4BDAFB64-15E2-49C1-A090-4315A7884A56)]
-interface nsIDOMFileError : nsISupports
-{
-  //File error codes
-  const unsigned short NOT_FOUND_ERR = 8;
-  const unsigned short NOT_READABLE_ERR = 24;
-  const unsigned short SECURITY_ERR = 18;
-  const unsigned short ABORT_ERR = 20;
-  const unsigned short ENCODING_ERR = 26;
+  let tabs = [];
 
-  readonly attribute unsigned short code;
-};
+  let container = gBrowser.tabContainer;
+  container.addEventListener("TabOpen", tabAdded, false);
 
+  gBrowser.addTab("about:blank");
+  BrowserSearch.loadSearch("mozilla", true);
+  BrowserSearch.loadSearch("firefox", true);
+  
+  is(tabs[0], gBrowser.mTabs[3], "blank tab has been pushed to the end");
+  is(tabs[1], gBrowser.mTabs[1], "first search tab opens next to the current tab");
+  is(tabs[2], gBrowser.mTabs[2], "second search tab opens next to the first search tab");
+
+  container.removeEventListener("TabOpen", tabAdded, false);
+  tabs.forEach(gBrowser.removeTab, gBrowser);
+}
