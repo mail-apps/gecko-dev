@@ -35,7 +35,9 @@ function WifiGeoAddressObject(streetNumber, street, premises, city, county, regi
 
 WifiGeoAddressObject.prototype = {
 
-    QueryInterface:   XPCOMUtils.generateQI([Ci.nsIDOMGeoPositionAddress, Ci.nsIClassInfo]),
+    QueryInterface:   XPCOMUtils.generateQI([Ci.nsIDOMGeoPositionAddress,
+                                             Ci.nsIDOMGeoPositionAddress_MOZILLA_1_9_2_BRANCH,
+                                             Ci.nsIClassInfo]),
 
     getInterfaces: function(countRef) {
         var interfaces = [Ci.nsIDOMGeoPositionAddress, Ci.nsIClassInfo, Ci.nsISupports];
