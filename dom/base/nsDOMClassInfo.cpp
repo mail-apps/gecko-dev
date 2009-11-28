@@ -1784,6 +1784,8 @@ nsDOMClassInfo::~nsDOMClassInfo()
   }
 }
 
+NS_DEFINE_STATIC_IID_ACCESSOR(nsDOMClassInfo, NS_DOMCLASSINFO_IID)
+
 NS_IMPL_ADDREF(nsDOMClassInfo)
 NS_IMPL_RELEASE(nsDOMClassInfo)
 
@@ -1791,6 +1793,11 @@ NS_INTERFACE_MAP_BEGIN(nsDOMClassInfo)
   NS_INTERFACE_MAP_ENTRY(nsIXPCScriptable)
   NS_INTERFACE_MAP_ENTRY(nsIClassInfo)
   NS_INTERFACE_MAP_ENTRY_AMBIGUOUS(nsISupports, nsIXPCScriptable)
+  if (aIID.Equals(NS_GET_IID(nsDOMClassInfo))) {
+    *aInstancePtr = static_cast<nsIXPCScriptable*>(this);
+    return NS_OK;
+  }
+  else
 NS_INTERFACE_MAP_END
 
 
@@ -4387,10 +4394,13 @@ nsDOMClassInfo::GetClassInfoInstance(nsDOMClassInfoData* aData)
 void
 nsDOMClassInfo::PreserveNodeWrapper(nsIXPConnectWrappedNative *aWrapper)
 {
-  nsWrapperCache* cache = nsnull;
-  CallQueryInterface(aWrapper->Native(), &cache);
-  if (cache) {
-    nsContentUtils::PreserveWrapper(aWrapper->Native(), cache);
+  nsCOMPtr<nsIClassInfo> ci = do_QueryInterface(aWrapper);
+  if (ci) {
+    nsDOMClassInfo* domci = nsnull;
+    CallQueryInterface(ci, &domci);
+    if (domci) {
+      domci->PreserveWrapper(aWrapper->Native());
+    }
   }
 }
 
@@ -7185,8 +7195,7 @@ NS_IMETHODIMP
 nsNodeSH::AddProperty(nsIXPConnectWrappedNative *wrapper, JSContext *cx,
                       JSObject *obj, jsval id, jsval *vp, PRBool *_retval)
 {
-  nsINode* node = static_cast<nsINode*>(GetNative(wrapper, obj));
-  nsContentUtils::PreserveWrapper(node, node);
+  nsNodeSH::PreserveWrapper(GetNative(wrapper, obj));
   return nsEventReceiverSH::AddProperty(wrapper, cx, obj, id, vp, _retval);
 }
 
@@ -7203,8 +7212,7 @@ nsNodeSH::NewResolve(nsIXPConnectWrappedNative *wrapper, JSContext *cx,
   if (id == sOnload_id || id == sOnerror_id) {
     // Make sure that this node can't go away while waiting for a
     // network load that could fire an event handler.
-    nsINode* node = static_cast<nsINode*>(GetNative(wrapper, obj));
-    nsContentUtils::PreserveWrapper(node, node);
+    nsNodeSH::PreserveWrapper(GetNative(wrapper, obj));
   }
 
   return nsEventReceiverSH::NewResolve(wrapper, cx, obj, id, flags, objp,
@@ -7273,6 +7281,13 @@ nsNodeSH::GetFlags(PRUint32 *aFlags)
   *aFlags = DOMCLASSINFO_STANDARD_FLAGS | nsIClassInfo::CONTENT_NODE;
 
   return NS_OK;
+}
+
+void
+nsNodeSH::PreserveWrapper(nsISupports *aNative)
+{
+  nsINode *node = static_cast<nsINode*>(aNative);
+  nsContentUtils::PreserveWrapper(aNative, node);
 }
 
 // EventReceiver helper
@@ -7643,11 +7658,16 @@ nsEventTargetSH::AddProperty(nsIXPConnectWrappedNative *wrapper, JSContext *cx,
     return NS_OK;
   }
 
-  nsISupports *target = GetNative(wrapper, obj);
-  nsContentUtils::PreserveWrapper(target,
-                                  nsXHREventTarget::FromSupports(target));
+  nsEventTargetSH::PreserveWrapper(GetNative(wrapper, obj));
 
   return NS_OK;
+}
+
+void
+nsEventTargetSH::PreserveWrapper(nsISupports *aNative)
+{
+  nsXHREventTarget *target = nsXHREventTarget::FromSupports(aNative);
+  nsContentUtils::PreserveWrapper(aNative, target);
 }
 
 
