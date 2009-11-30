@@ -1135,6 +1135,29 @@ nsLayoutUtils::PaintFrame(nsIRenderingContext* aRenderingContext, nsIFrame* aFra
   return NS_OK;
 }
 
+#ifdef DEBUG
+static void
+PrintAddedRegion(const char* aFormat, nsIFrame* aFrame,
+                 const nsRegion& aRegion)
+{
+  if (!gDumpRepaintRegionForCopy)
+    return;
+  fprintf(stderr, aFormat, (void*)aFrame);
+  fprintf(stderr, " : [");
+  nsRegionRectIterator iter(aRegion);
+  PRBool first = PR_TRUE;
+  const nsRect* r;
+  while ((r = iter.Next()) != nsnull) {
+    if (!first) {
+      fprintf(stderr, ",");
+    }
+    fprintf(stderr, "(%d,%d,%d,%d)",
+            r->x, r->y, r->XMost(), r->YMost());
+  }
+  fprintf(stderr, "]\n");
+}
+#endif
+
 static void
 AccumulateItemInRegion(nsRegion* aRegion, const nsRect& aUpdateRect,
                        const nsRect& aItemRect, const nsRect& aExclude,
@@ -1145,12 +1168,8 @@ AccumulateItemInRegion(nsRegion* aRegion, const nsRect& aUpdateRect,
     nsRegion r;
     r.Sub(damageRect, aExclude);
 #ifdef DEBUG
-    if (gDumpRepaintRegionForCopy) {
-      nsRect bounds = r.GetBounds();
-      fprintf(stderr, "Adding rect %d,%d,%d,%d for frame %p\n",
-              bounds.x, bounds.y, bounds.width, bounds.height,
-              (void*)aItem->GetUnderlyingFrame());
-    }
+    PrintAddedRegion("Adding rect for frame %p",
+                     aItem->GetUnderlyingFrame(), r);
 #endif
     aRegion->Or(*aRegion, r);
   }
@@ -1172,6 +1191,10 @@ AddItemsToRegion(nsDisplayListBuilder* aBuilder, nsDisplayList* aList,
           // Invalidate the whole thing
           nsRect r;
           r.IntersectRect(aClipRect, effectsItem->GetBounds(aBuilder));
+ #ifdef DEBUG
+          PrintAddedRegion("Adding region for SVG effects frame %p",
+                           effectsItem->GetEffectsFrame(), nsRegion(r));
+ #endif
           aRegion->Or(*aRegion, r);
         }
       } else
@@ -1187,18 +1210,26 @@ AddItemsToRegion(nsDisplayListBuilder* aBuilder, nsDisplayList* aList,
         // do anything special.
         nsIFrame* clipFrame = clipItem->GetClippingFrame();
         if (!aBuilder->IsMovingFrame(clipFrame) &&
-            nsLayoutUtils::IsProperAncestorFrame(clipFrame, aBuilder->GetRootMovingFrame())) {
+            nsLayoutUtils::IsProperAncestorFrameCrossDoc(clipFrame, aBuilder->GetRootMovingFrame())) {
           clip.IntersectRect(clip, clipItem->GetClipRect());
 
           // Invalidate the translation of the source area that was clipped out
           nsRegion clippedOutSource;
           clippedOutSource.Sub(aUpdateRect - aDelta, clip);
           clippedOutSource.MoveBy(aDelta);
+ #ifdef DEBUG
+          PrintAddedRegion("Adding region for clipped out source frame %p",
+                           clipFrame, clippedOutSource);
+ #endif
           aRegion->Or(*aRegion, clippedOutSource);
 
           // Invalidate the destination area that is clipped out
           nsRegion clippedOutDestination;
           clippedOutDestination.Sub(aUpdateRect, clip);
+ #ifdef DEBUG
+          PrintAddedRegion("Adding region for clipped out source frame %p",
+                           clipFrame, clippedOutDestination);
+ #endif
           aRegion->Or(*aRegion, clippedOutDestination);
         }
         AddItemsToRegion(aBuilder, sublist, aUpdateRect, clip, aDelta, aRegion);
