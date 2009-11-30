@@ -678,6 +678,10 @@ nsThebesDeviceContext::SetDPI()
         dpi = gfxPlatform::GetDPI();        
         if (prefDPI > 0 && !mPrintingSurface)
             dpi = prefDPI;
+#ifdef MOZ_ENABLE_GTK2
+        else // Otherwise, the minimum DPI is 96
+            dpi = PR_MAX(dpi, 96);
+#endif
     }
 
     NS_ASSERTION(dpi != -1, "no dpi set");
