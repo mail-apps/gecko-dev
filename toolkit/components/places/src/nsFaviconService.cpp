@@ -70,6 +70,7 @@
 #include "mozIStorageError.h"
 #include "nsPlacesTables.h"
 #include "nsIPrefService.h"
+#include "nsPlacesMacros.h"
 
 // For favicon optimization
 #include "imgITools.h"
@@ -137,7 +138,7 @@ private:
   bool *mExpirationRunning;
 };
 
-nsFaviconService* nsFaviconService::gFaviconService;
+PLACES_FACTORY_SINGLETON_IMPLEMENTATION(nsFaviconService, gFaviconService)
 
 NS_IMPL_ISUPPORTS1(
   nsFaviconService
@@ -150,7 +151,8 @@ nsFaviconService::nsFaviconService() : mExpirationRunning(false)
                                      , mOptimizedIconDimension(OPTIMIZED_FAVICON_DIMENSION)
                                      , mFailedFaviconSerial(0)
 {
-  NS_ASSERTION(! gFaviconService, "ATTEMPTING TO CREATE TWO FAVICON SERVICES!");
+  NS_ASSERTION(!gFaviconService,
+               "Attempting to create two instances of the service!");
   gFaviconService = this;
 }
 
@@ -159,8 +161,8 @@ nsFaviconService::nsFaviconService() : mExpirationRunning(false)
 
 nsFaviconService::~nsFaviconService()
 {
-  NS_ASSERTION(gFaviconService == this, "Deleting a non-singleton favicon service");
-
+  NS_ASSERTION(gFaviconService == this,
+               "Deleting a non-singleton instance of the service");
   if (gFaviconService == this)
     gFaviconService = nsnull;
 }
@@ -460,7 +462,7 @@ nsFaviconService::UpdateBookmarkRedirectFavicon(nsIURI* aPageURI,
   NS_ENSURE_ARG_POINTER(aFaviconURI);
 
   nsNavBookmarks* bookmarks = nsNavBookmarks::GetBookmarksService();
-  NS_ENSURE_TRUE(bookmarks, NS_ERROR_UNEXPECTED);
+  NS_ENSURE_TRUE(bookmarks, NS_ERROR_OUT_OF_MEMORY);
 
   nsCOMPtr<nsIURI> bookmarkURI;
   nsresult rv = bookmarks->GetBookmarkedURIFor(aPageURI,
@@ -544,8 +546,8 @@ nsFaviconService::DoSetAndLoadFaviconForPage(nsIURI* aPageURI,
 
   nsCOMPtr<nsIURI> page(aPageURI);
 
-  nsNavHistory* history = nsNavHistory::GetHistoryService();
-  NS_ENSURE_TRUE(history, NS_ERROR_FAILURE);
+  nsNavHistory *history = nsNavHistory::GetHistoryService();
+  NS_ENSURE_TRUE(history, NS_ERROR_OUT_OF_MEMORY);
 
   PRBool canAdd;
   nsresult rv = history->CanAddURI(page, &canAdd);
@@ -556,7 +558,7 @@ nsFaviconService::DoSetAndLoadFaviconForPage(nsIURI* aPageURI,
   if (!canAdd || history->IsHistoryDisabled()) {
     // Check to see whether this favicon is for a bookmark.
     nsNavBookmarks* bookmarks = nsNavBookmarks::GetBookmarksService();
-    NS_ENSURE_TRUE(bookmarks, NS_ERROR_UNEXPECTED);
+    NS_ENSURE_TRUE(bookmarks, NS_ERROR_OUT_OF_MEMORY);
 
     nsCOMPtr<nsIURI> bookmarkURI;
     rv = bookmarks->GetBookmarkedURIFor(aPageURI,
