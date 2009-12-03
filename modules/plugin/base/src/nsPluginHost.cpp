@@ -2640,7 +2640,7 @@ nsresult nsPluginHost::ReloadPlugins(PRBool reloadPages)
       p->mNext = nsnull;
 
       // attempt to unload plugins whenever they are removed from the list
-      p->TryUnloadPlugin();
+      p->TryUnloadPlugin(PR_TRUE);
 
       p = next;
       continue;
@@ -2988,7 +2988,7 @@ NS_IMETHODIMP nsPluginHost::Destroy()
 
   nsPluginTag *pluginTag;
   for (pluginTag = mPlugins; pluginTag; pluginTag = pluginTag->mNext) {
-    pluginTag->TryUnloadPlugin();
+    pluginTag->TryUnloadPlugin(PR_TRUE);
   }
 
   while (mPlugins) {
