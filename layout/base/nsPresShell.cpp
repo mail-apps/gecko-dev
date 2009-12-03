@@ -907,6 +907,13 @@ public:
                                                 nsRect* aBounds,
                                                 nscolor aBackstopColor);
 
+  virtual nsresult AddCanvasBackgroundColorItem2(nsDisplayListBuilder& aBuilder,
+                                                 nsDisplayList& aList,
+                                                 nsIFrame* aFrame,
+                                                 nsRect* aBounds,
+                                                 nscolor aBackstopColor,
+                                                 PRBool aForceDraw);
+
   virtual nsIScrollableFrame* GetRootScrollFrameAsScrollableExternal() const;
   virtual void RemoveWeakFrameExternal(nsWeakFrame* aWeakFrame);
   virtual void AddWeakFrameExternal(nsWeakFrame* aWeakFrame);
@@ -5743,13 +5750,24 @@ nsresult PresShell::AddCanvasBackgroundColorItem(nsDisplayListBuilder& aBuilder,
                                                  nsRect*               aBounds,
                                                  nscolor               aBackstopColor)
 {
+  return AddCanvasBackgroundColorItem2(aBuilder, aList, aFrame, aBounds,
+                                       aBackstopColor, PR_FALSE);
+}
+
+nsresult PresShell::AddCanvasBackgroundColorItem2(nsDisplayListBuilder& aBuilder,
+                                                  nsDisplayList&        aList,
+                                                  nsIFrame*             aFrame,
+                                                  nsRect*               aBounds,
+                                                  nscolor               aBackstopColor,
+                                                  PRBool                aForceDraw)
+{
   // We don't want to add an item for the canvas background color if the frame
   // (sub)tree we are painting doesn't include any canvas frames. There isn't
   // an easy way to check this directly, but if we check if the root of the
   // (sub)tree we are painting is a canvas frame that should cover us in all
   // cases (it will usually be a viewport frame when we have a canvas frame in
   // the (sub)tree).
-  if (!nsCSSRendering::IsCanvasFrame(aFrame))
+  if (!aForceDraw && !nsCSSRendering::IsCanvasFrame(aFrame))
     return NS_OK;
 
   nscolor bgcolor = NS_ComposeColors(aBackstopColor, mCanvasBackgroundColor);
