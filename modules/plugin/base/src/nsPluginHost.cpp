@@ -638,7 +638,6 @@ nsPluginTag::nsPluginTag(nsPluginTag* aPluginTag)
     mMimeDescriptionArray(aPluginTag->mMimeDescriptionArray),
     mExtensionsArray(nsnull),
     mLibrary(nsnull),
-    mEntryPoint(nsnull),
     mCanUnloadLibrary(PR_TRUE),
     mXPConnected(PR_FALSE),
     mIsJavaPlugin(aPluginTag->mIsJavaPlugin),
@@ -670,7 +669,6 @@ nsPluginTag::nsPluginTag(nsPluginInfo* aPluginInfo)
     mMimeTypeArray(nsnull),
     mExtensionsArray(nsnull),
     mLibrary(nsnull),
-    mEntryPoint(nsnull),
 #ifdef XP_MACOSX
     mCanUnloadLibrary(!aPluginInfo->fBundle),
 #else
@@ -765,7 +763,6 @@ nsPluginTag::nsPluginTag(const char* aName,
     mMimeTypeArray(nsnull),
     mExtensionsArray(nsnull),
     mLibrary(nsnull),
-    mEntryPoint(nsnull),
     mCanUnloadLibrary(aCanUnload),
     mXPConnected(PR_FALSE),
     mIsJavaPlugin(PR_FALSE),
@@ -806,14 +803,6 @@ nsPluginTag::nsPluginTag(const char* aName,
 
 nsPluginTag::~nsPluginTag()
 {
-  TryUnloadPlugin(PR_TRUE);
-
-  // Remove mime types added to the category manager
-  // only if we were made 'active' by setting the host
-  if (mPluginHost) {
-    RegisterWithCategoryManager(PR_FALSE, nsPluginTag::ePluginUnregister);
-  }
-
   if (mMimeTypeArray) {
     for (int i = 0; i < mVariants; i++)
       delete[] mMimeTypeArray[i];
@@ -1021,7 +1010,6 @@ void nsPluginTag::TryUnloadPlugin(PRBool aForceShutdown)
 
   if (mEntryPoint) {
     mEntryPoint->Shutdown();
-    mEntryPoint->Release();
     mEntryPoint = nsnull;
   }
 
@@ -1044,6 +1032,12 @@ void nsPluginTag::TryUnloadPlugin(PRBool aForceShutdown)
   // again so the calling code should not be fooled and reload
   // the library fresh
   mLibrary = nsnull;
+
+  // Remove mime types added to the category manager
+  // only if we were made 'active' by setting the host
+  if (mPluginHost) {
+    RegisterWithCategoryManager(PR_FALSE, nsPluginTag::ePluginUnregister);
+  }
 }
 
 void nsPluginTag::Mark(PRUint32 mask)
@@ -2644,6 +2638,10 @@ nsresult nsPluginHost::ReloadPlugins(PRBool reloadPages)
         prev->mNext = next;
 
       p->mNext = nsnull;
+
+      // attempt to unload plugins whenever they are removed from the list
+      p->TryUnloadPlugin();
+
       p = next;
       continue;
     }
@@ -2988,9 +2986,9 @@ NS_IMETHODIMP nsPluginHost::Destroy()
   // at this point nsIPlugin::Shutdown calls will be performed if needed
   mPluginInstanceTagList.shutdown();
 
-  if (mPluginPath) {
-    PR_Free(mPluginPath);
-    mPluginPath = nsnull;
+  nsPluginTag *pluginTag;
+  for (pluginTag = mPlugins; pluginTag; pluginTag = pluginTag->mNext) {
+    pluginTag->TryUnloadPlugin();
   }
 
   while (mPlugins) {
@@ -4136,11 +4134,11 @@ NS_IMETHODIMP nsPluginHost::GetPlugin(const char *aMimeType, nsIPlugin** aPlugin
       pluginTag->mLibrary = pluginLibrary;
     }
 
-    nsIPlugin* plugin = pluginTag->mEntryPoint;
+    nsCOMPtr<nsIPlugin> plugin = pluginTag->mEntryPoint;
 #ifdef OJI
     if (!plugin) {
       // First try to get the entry point from an NPAPI plugin.
-      rv = CreateNPAPIPlugin(pluginTag, &plugin);
+      rv = CreateNPAPIPlugin(pluginTag, getter_AddRefs(plugin));
       if (NS_SUCCEEDED(rv)) {
         pluginTag->mEntryPoint = plugin;
         pluginTag->Mark(NS_PLUGIN_FLAG_NPAPI);
@@ -4163,7 +4161,6 @@ NS_IMETHODIMP nsPluginHost::GetPlugin(const char *aMimeType, nsIPlugin** aPlugin
             plugin = static_cast<nsIPlugin*>(new nsNPAPIPlugin(shadow));
             if (!plugin)
               return NS_ERROR_OUT_OF_MEMORY;
-            NS_ADDREF(plugin);
             plugin->Initialize();
             pluginTag->mEntryPoint = plugin;
           }
@@ -4173,15 +4170,15 @@ NS_IMETHODIMP nsPluginHost::GetPlugin(const char *aMimeType, nsIPlugin** aPlugin
 #else
     if (!plugin) {
       // Now lets try to get the entry point from an NPAPI plugin
-      rv = CreateNPAPIPlugin(pluginTag, &plugin);
+      rv = CreateNPAPIPlugin(pluginTag, getter_AddRefs(plugin));
       if (NS_SUCCEEDED(rv))
         pluginTag->mEntryPoint = plugin;
     }
 #endif
 
     if (plugin) {
-      *aPlugin = plugin;
-      plugin->AddRef();
+      NS_ADDREF(*aPlugin = plugin);
+
       return NS_OK;
     }
   }
