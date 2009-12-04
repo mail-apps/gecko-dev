@@ -790,6 +790,12 @@ nsFocusManager::ContentRemoved(nsIDocument* aDocument, nsIContent* aContent)
 NS_IMETHODIMP
 nsFocusManager::WindowShown(nsIDOMWindow* aWindow)
 {
+  return WindowShownInner(aWindow, PR_TRUE);
+}
+
+nsresult
+nsFocusManager::WindowShownInner(nsIDOMWindow* aWindow, PRBool aNeedsFocus)
+{
   nsCOMPtr<nsPIDOMWindow> window = do_QueryInterface(aWindow);
   NS_ENSURE_TRUE(window, NS_ERROR_INVALID_ARG);
 
@@ -816,6 +822,20 @@ nsFocusManager::WindowShown(nsIDOMWindow* aWindow)
 
   if (mFocusedWindow != window)
     return NS_OK;
+
+  if (aNeedsFocus) {
+    nsCOMPtr<nsPIDOMWindow> currentWindow;
+    nsCOMPtr<nsIContent> currentFocus =
+      GetFocusedDescendant(window, PR_TRUE, getter_AddRefs(currentWindow));
+    if (currentWindow)
+      Focus(currentWindow, currentFocus, 0, PR_TRUE, PR_FALSE, PR_FALSE);
+  }
+  else {
+    // Sometimes, an element in a window can be focused before the window is
+    // visible, which would mean that the widget may not be properly focused.
+    // When the window becomes visible, make sure the right widget is focused.
+    EnsureCurrentWidgetFocused();
+  }
 
   nsCOMPtr<nsPIDOMWindow> currentWindow;
   nsCOMPtr<nsIContent> currentFocus =

@@ -107,6 +107,9 @@ public:
    */
   static nsIContent* GetRedirectedFocus(nsIContent* aContent);
 
+  // helper function to avoid changing interfaces on 1.9.2
+  nsresult WindowShownInner(nsIDOMWindow* aWindow, PRBool aNeedsFocus);
+
 protected:
 
   nsFocusManager();
