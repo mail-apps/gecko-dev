@@ -10969,7 +10969,7 @@ GetPropertyWithNativeGetter(JSContext* cx, JSObject* obj, JSScopeProperty* sprop
     JSObject* pobj;
     JS_ASSERT(obj->lookupProperty(cx, sprop->id, &pobj, &prop));
     JS_ASSERT(prop == (JSProperty*) sprop);
-    obj->dropProperty(cx, prop);
+    pobj->dropProperty(cx, prop);
 #endif
 
     // js_GetSprop contains a special case for With objects. We can elide it
