@@ -2204,9 +2204,10 @@ TraceRecorder::TraceRecorder(JSContext* cx, VMSideExit* _anchor, Fragment* _frag
                                     &js_LogController);
         }
     )
+    // CseFilter must be downstream of SoftFloatFilter (see bug 527754 for why).
+    lir = cse_filter = new CseFilter(lir, tempAlloc);
     if (nanojit::AvmCore::config.soft_float)
         lir = float_filter = new SoftFloatFilter(lir);
-    lir = cse_filter = new CseFilter(lir, tempAlloc);
     lir = expr_filter = new ExprFilter(lir);
     lir = func_filter = new FuncFilter(lir);
 #ifdef DEBUG
