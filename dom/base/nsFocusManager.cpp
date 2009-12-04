@@ -837,12 +837,6 @@ nsFocusManager::WindowShownInner(nsIDOMWindow* aWindow, PRBool aNeedsFocus)
     EnsureCurrentWidgetFocused();
   }
 
-  nsCOMPtr<nsPIDOMWindow> currentWindow;
-  nsCOMPtr<nsIContent> currentFocus =
-    GetFocusedDescendant(window, PR_TRUE, getter_AddRefs(currentWindow));
-  if (currentWindow)
-    Focus(currentWindow, currentFocus, 0, PR_TRUE, PR_FALSE, PR_FALSE);
-
   return NS_OK;
 }
 
