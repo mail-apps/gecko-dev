@@ -67,6 +67,10 @@ INSTALLER_DIR   = os2
 else
 ifneq (,$(filter WINNT WINCE,$(OS_ARCH)))
 INSTALLER_DIR   = windows
+define REBASE
+@echo "Rebasing $1"
+/bin/find $1 -name "*.dll" -a -not -name "MSVC*" | sort | xargs rebase -b 60000000
+endef
 else
 ifneq (cocoa,$(MOZ_WIDGET_TOOLKIT))
 INSTALLER_DIR   = unix
@@ -82,6 +86,20 @@ SDK_SUFFIX    = $(PKG_SUFFIX)
 SDK           = $(PKG_PATH)$(PKG_BASENAME).sdk$(SDK_SUFFIX)
 
 MAKE_PACKAGE	= $(error What is a $(MOZ_PKG_FORMAT) package format?);
+MAKE_CAB	= $(error Don't know how to make a CAB!);
+
+ifdef WINCE
+ifndef WINCE_WINDOWS_MOBILE
+CABARGS += -s
+endif
+ifdef MOZ_FASTSTART
+CABARGS += -faststart
+endif
+VSINSTALLDIR ?= $(error VSINSTALLDIR not set, must be set to the Visual Studio install directory)
+MAKE_CAB	= $(PYTHON) $(topsrcdir)/build/package/wince/make_wince_cab.py \
+	$(CABARGS) "$(VSINSTALLDIR)/SmartDevices/SDK/SDKTools/cabwiz.exe" \
+	"$(MOZ_PKG_DIR)" "$(MOZ_APP_DISPLAYNAME)" "$(PKG_BASENAME).cab"
+endif
 
 CREATE_FINAL_TAR = $(TAR) -c --owner=0 --group=0 --numeric-owner \
   --mode="go-w" -f
@@ -113,16 +131,7 @@ MAKE_SDK = $(ZIP) -r9D $(SDK) $(MOZ_APP_NAME)-sdk
 endif
 ifeq ($(MOZ_PKG_FORMAT),CAB)
 PKG_SUFFIX	= .cab
-ifndef WINCE_WINDOWS_MOBILE
-CABARGS += -s
-endif
-ifdef MOZ_FASTSTART
-CABARGS += -faststart
-endif
-VSINSTALLDIR ?= $(error VSINSTALLDIR not set, must be set to the Visual Studio install directory)
-MAKE_PACKAGE	= $(PYTHON) $(topsrcdir)/build/package/wince/make_wince_cab.py \
-	$(CABARGS) "$(VSINSTALLDIR)/SmartDevices/SDK/SDKTools/cabwiz.exe" \
-	"$(MOZ_PKG_DIR)" "$(MOZ_APP_DISPLAYNAME)" "$(PACKAGE)"
+MAKE_PACKAGE	= $(MAKE_CAB)
 UNMAKE_PACKAGE	= $(error Unpacking CAB files is not supported)
 endif
 ifeq ($(MOZ_PKG_FORMAT),DMG)
@@ -351,6 +360,7 @@ ifdef MOZ_OPTIONAL_PKG_LIST
 		$(foreach pkg,$(MOZ_OPTIONAL_PKG_LIST),$(PKG_ARG)) )
 endif
 	$(PERL) $(MOZILLA_DIR)/xpinstall/packager/xptlink.pl -s $(DIST) -d $(DIST)/xpt -f $(DEPTH)/installer-stage/nonlocalized/components -v -x "$(XPIDL_LINK)"
+	$(call REBASE, $(DEPTH)/installer-stage/nonlocalized)
 
 stage-package: $(MOZ_PKG_MANIFEST) $(MOZ_PKG_REMOVALS_GEN)
 	@rm -rf $(DIST)/$(MOZ_PKG_DIR) $(DIST)/$(PKG_PATH)$(PKG_BASENAME).tar $(DIST)/$(PKG_PATH)$(PKG_BASENAME).dmg $@ $(EXCLUDE_LIST)
@@ -417,6 +427,7 @@ ifdef UNIVERSAL_BINARY
 	$(SIGN_NSS)
 endif # UNIVERSAL_BINARY
 endif # PKG_SKIP_STRIP
+	$(call REBASE, $(DIST)/$(STAGEPATH)$(MOZ_PKG_DIR))
 	@echo "Removing unpackaged files..."
 ifdef NO_PKG_FILES
 	cd $(DIST)/$(STAGEPATH)$(MOZ_PKG_DIR)$(_BINPATH); rm -rf $(NO_PKG_FILES)

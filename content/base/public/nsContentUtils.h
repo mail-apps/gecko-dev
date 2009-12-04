@@ -1162,6 +1162,11 @@ public:
    */
   static nsresult DropJSObjects(void* aScriptObjectHolder);
 
+#ifdef DEBUG
+  static void CheckCCWrapperTraversal(nsISupports* aScriptObjectHolder,
+                                      nsWrapperCache* aCache);
+#endif
+
   static void PreserveWrapper(nsISupports* aScriptObjectHolder,
                               nsWrapperCache* aCache)
   {
@@ -1170,6 +1175,10 @@ public:
       CallQueryInterface(aScriptObjectHolder, &participant);
       HoldJSObjects(aScriptObjectHolder, participant);
       aCache->SetPreservingWrapper(PR_TRUE);
+#ifdef DEBUG
+      // Make sure the cycle collector will be able to traverse to the wrapper.
+      CheckCCWrapperTraversal(aScriptObjectHolder, aCache);
+#endif
     }
   }
   static void ReleaseWrapper(nsISupports* aScriptObjectHolder,

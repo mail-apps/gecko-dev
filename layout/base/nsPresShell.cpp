@@ -907,6 +907,13 @@ public:
                                                 nsRect* aBounds,
                                                 nscolor aBackstopColor);
 
+  virtual nsresult AddCanvasBackgroundColorItem2(nsDisplayListBuilder& aBuilder,
+                                                 nsDisplayList& aList,
+                                                 nsIFrame* aFrame,
+                                                 nsRect* aBounds,
+                                                 nscolor aBackstopColor,
+                                                 PRBool aForceDraw);
+
   virtual nsIScrollableFrame* GetRootScrollFrameAsScrollableExternal() const;
   virtual void RemoveWeakFrameExternal(nsWeakFrame* aWeakFrame);
   virtual void AddWeakFrameExternal(nsWeakFrame* aWeakFrame);
@@ -1902,6 +1909,8 @@ PresShell::Destroy()
     mCurrentEventFrameStack[i] = nsnull;
   }
 
+  mFramesToDirty.Clear();
+
   if (mViewManager) {
     // Clear the view manager's weak pointer back to |this| in case it
     // was leaked.
@@ -2872,6 +2881,29 @@ PresShell::NotifyDestroyingFrame(nsIFrame* aFrame)
 
     // Remove frame properties
     mPresContext->PropertyTable()->DeleteAllPropertiesFor(aFrame);
+
+    if (aFrame == mCurrentEventFrame) {
+      mCurrentEventContent = aFrame->GetContent();
+      mCurrentEventFrame = nsnull;
+    }
+  
+  #ifdef NS_DEBUG
+    if (aFrame == mDrawEventTargetFrame) {
+      mDrawEventTargetFrame = nsnull;
+    }
+  #endif
+  
+    for (unsigned int i=0; i < mCurrentEventFrameStack.Length(); i++) {
+      if (aFrame == mCurrentEventFrameStack.ElementAt(i)) {
+        //One of our stack frames was deleted.  Get its content so that when we
+        //pop it we can still get its new frame from its content
+        nsIContent *currentEventContent = aFrame->GetContent();
+        mCurrentEventContentStack.ReplaceObjectAt(currentEventContent, i);
+        mCurrentEventFrameStack[i] = nsnull;
+      }
+    }
+  
+    mFramesToDirty.RemoveEntry(aFrame);
   }
 
   return NS_OK;
@@ -3667,29 +3699,6 @@ NS_IMETHODIMP
 PresShell::ClearFrameRefs(nsIFrame* aFrame)
 {
   mPresContext->EventStateManager()->ClearFrameRefs(aFrame);
-  
-  if (aFrame == mCurrentEventFrame) {
-    mCurrentEventContent = aFrame->GetContent();
-    mCurrentEventFrame = nsnull;
-  }
-
-#ifdef NS_DEBUG
-  if (aFrame == mDrawEventTargetFrame) {
-    mDrawEventTargetFrame = nsnull;
-  }
-#endif
-
-  for (unsigned int i=0; i < mCurrentEventFrameStack.Length(); i++) {
-    if (aFrame == mCurrentEventFrameStack.ElementAt(i)) {
-      //One of our stack frames was deleted.  Get its content so that when we
-      //pop it we can still get its new frame from its content
-      nsIContent *currentEventContent = aFrame->GetContent();
-      mCurrentEventContentStack.ReplaceObjectAt(currentEventContent, i);
-      mCurrentEventFrameStack[i] = nsnull;
-    }
-  }
-
-  mFramesToDirty.RemoveEntry(aFrame);
 
   nsWeakFrame* weakFrame = mWeakFrames;
   while (weakFrame) {
@@ -5741,13 +5750,24 @@ nsresult PresShell::AddCanvasBackgroundColorItem(nsDisplayListBuilder& aBuilder,
                                                  nsRect*               aBounds,
                                                  nscolor               aBackstopColor)
 {
+  return AddCanvasBackgroundColorItem2(aBuilder, aList, aFrame, aBounds,
+                                       aBackstopColor, PR_FALSE);
+}
+
+nsresult PresShell::AddCanvasBackgroundColorItem2(nsDisplayListBuilder& aBuilder,
+                                                  nsDisplayList&        aList,
+                                                  nsIFrame*             aFrame,
+                                                  nsRect*               aBounds,
+                                                  nscolor               aBackstopColor,
+                                                  PRBool                aForceDraw)
+{
   // We don't want to add an item for the canvas background color if the frame
   // (sub)tree we are painting doesn't include any canvas frames. There isn't
   // an easy way to check this directly, but if we check if the root of the
   // (sub)tree we are painting is a canvas frame that should cover us in all
   // cases (it will usually be a viewport frame when we have a canvas frame in
   // the (sub)tree).
-  if (!nsCSSRendering::IsCanvasFrame(aFrame))
+  if (!aForceDraw && !nsCSSRendering::IsCanvasFrame(aFrame))
     return NS_OK;
 
   nscolor bgcolor = NS_ComposeColors(aBackstopColor, mCanvasBackgroundColor);
