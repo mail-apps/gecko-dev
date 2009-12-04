@@ -1869,9 +1869,12 @@ Assembler::asm_fcmp(LInsp ins)
 
     NanoAssert(op >= LIR_feq && op <= LIR_fge);
 
+    Reservation *rA, *rB;
+    findRegFor2(FpRegs, lhs, rA, rhs, rB);
+    Register ra = rA->reg;
+    Register rb = rB->reg;
+
     int e_bit = (op != LIR_feq);
-    Register ra = findRegFor(lhs, FpRegs);
-    Register rb = findRegFor(rhs, FpRegs);
 
     // do the comparison and get results loaded in ARM status register
     FMSTAT();
