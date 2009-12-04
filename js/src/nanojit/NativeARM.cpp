@@ -933,7 +933,7 @@ Assembler::nRegisterResetAll(RegAlloc& a)
     a.free =
         rmask(R0) | rmask(R1) | rmask(R2) | rmask(R3) | rmask(R4) |
         rmask(R5) | rmask(R6) | rmask(R7) | rmask(R8) | rmask(R9) |
-        rmask(R10);
+        rmask(R10) | rmask(LR);
     if (ARM_VFP)
         a.free |= FpRegs;
 
@@ -1357,7 +1357,7 @@ Assembler::asm_mmq(Register rd, int dd, Register rs, int ds)
     // Find the list of free registers from the allocator's free list and the
     // GpRegs mask. This excludes any floating-point registers that may be on
     // the free list.
-    RegisterMask    free = _allocator.free & GpRegs;
+    RegisterMask    free = _allocator.free & AllowableFlagRegs;
 
     if (free) {
         // There is at least one register on the free list, so grab one for
