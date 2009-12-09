@@ -5446,7 +5446,7 @@ private:
 
   static PRBool IsConstructable(const nsDOMClassInfoData *aData)
   {
-    if (IS_EXTERNAL(aData)) {
+    if (IS_EXTERNAL(aData->mCachedClassInfo)) {
       const nsExternalDOMClassInfoData* data =
         static_cast<const nsExternalDOMClassInfoData*>(aData);
       return data->mConstructorCID != nsnull;
