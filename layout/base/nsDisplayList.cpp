@@ -1471,7 +1471,9 @@ PRBool nsDisplayTransform::ComputeVisibility(nsDisplayListBuilder *aBuilder,
     untransformedVisibleBeforeMove = untransformedVisible;
   }
   mStoredList.ComputeVisibility(aBuilder, &untransformedVisible,
-                                &untransformedVisibleBeforeMove);
+                                aVisibleRegionBeforeMove
+                                  ? &untransformedVisibleBeforeMove
+                                  : nsnull);
   return PR_TRUE;
 }
 
