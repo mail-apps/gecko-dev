@@ -933,7 +933,7 @@ nsIFrame::DisplayCaret(nsDisplayListBuilder* aBuilder,
 }
 
 PRBool
-nsFrame::HasBorder() const
+nsIFrame::HasBorder() const
 {
   // Border images contribute to the background of the content area
   // even if there's no border proper.
