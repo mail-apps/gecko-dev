@@ -5348,7 +5348,7 @@ case "${target}" in
 *-apple-darwin*)
     MOZ_IPC=
     ;;
-*wince)
+*-wince*)
     MOZ_IPC=
     ;;
 esac
