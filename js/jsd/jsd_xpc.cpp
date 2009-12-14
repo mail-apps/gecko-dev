@@ -2656,7 +2656,6 @@ jsdService::Pause(PRUint32 *_rval)
         JSD_ClearDebugBreakHook (mCx);
         JSD_ClearTopLevelHook (mCx);
         JSD_ClearFunctionHook (mCx);
-        JSD_DebuggerPause (mCx);
     }
 
     if (_rval)
@@ -2678,7 +2677,6 @@ jsdService::UnPause(PRUint32 *_rval)
      * was turned off while we were paused.
      */
     if (--mPauseLevel == 0 && mOn) {
-        JSD_DebuggerUnpause (mCx);
         if (mErrorHook)
             JSD_SetErrorReporter (mCx, jsds_ErrorHookProc, NULL);
         if (mThrowHook)
