@@ -312,8 +312,13 @@ pref("browser.search.suggest.enabled", true);
 
 pref("browser.history.showSessions", false);
 pref("browser.sessionhistory.max_entries", 50);
+#ifndef WINCE
 pref("browser.history_expire_days", 180);
 pref("browser.history_expire_days_min", 90);
+#else
+pref("browser.history_expire_days", 90);
+pref("browser.history_expire_days_min", 45);
+#endif
 pref("browser.history_expire_sites", 40000);
 
 // handle links targeting new windows
