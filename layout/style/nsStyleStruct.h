@@ -316,10 +316,10 @@ struct nsStyleBackground {
     PRBool DependsOnFrameSize(nsStyleBackgroundImageType aType) const {
       if (aType == eBackgroundImage_Image) {
         return mWidthType <= ePercentage || mHeightType <= ePercentage;
-      } else if (aType == eBackgroundImage_Gradient) {
-        return mWidthType <= eAuto || mHeightType <= eAuto;
       } else {
-        NS_NOTREACHED("unrecognized image type");
+        NS_ABORT_IF_FALSE(aType == eBackgroundImage_Gradient,
+                          "unrecognized image type");
+        return mWidthType <= eAuto || mHeightType <= eAuto;
       }
     }
 
