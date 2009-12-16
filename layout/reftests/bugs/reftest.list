@@ -1319,6 +1319,7 @@ fails-if(MOZ_WIDGET_TOOLKIT!="cocoa") == 488692-1.html 488692-1-ref.html # needs
 == 521525-1.html 521525-1-ref.html
 == 521525-2.html 521525-2-ref.html
 == 521539-1.html 521539-1-ref.html
+== 527464-1.html 527464-ref.html
 == 528038-1a.html 528038-1-ref.html
 == 528038-1b.html 528038-1-ref.html
 == 528038-1c.html 528038-1-ref.html
@@ -1328,4 +1329,4 @@ fails-if(MOZ_WIDGET_TOOLKIT!="cocoa") == 488692-1.html 488692-1-ref.html # needs
 == 528038-2.html 528038-2-ref.html
 == 530686-1.html 530686-1-ref.html
 == 531371-1.html 531371-1-ref.html
-== 527464-1.html 527464-ref.html
+== 534919-1.html 534919-1-ref.html
