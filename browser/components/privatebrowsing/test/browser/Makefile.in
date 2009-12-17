@@ -66,6 +66,9 @@ _BROWSER_TEST_FILES =  \
 		browser_privatebrowsing_windowtitle.js \
 		browser_privatebrowsing_windowtitle_page.html \
 		browser_privatebrowsing_zoom.js \
+		ctxmenu.html \
+		ctxmenu-image.png \
+		popup.html \
 		$(NULL)
 
 libs:: $(_BROWSER_TEST_FILES)
