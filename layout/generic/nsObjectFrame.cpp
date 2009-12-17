@@ -619,7 +619,7 @@ private:
   PRBool SetupXShm();
   void ReleaseXShm();
   void NativeImageDraw(nsPluginRect* invalidRect = nsnull);
-  PRBool UpdateVisibility();
+  PRBool UpdateVisibility(PRBool aVisible);
 
 #endif
 };
@@ -5729,7 +5729,7 @@ void nsPluginInstanceOwner::SetPluginHost(nsIPluginHost* aHost)
 }
 
 #ifdef MOZ_PLATFORM_HILDON
-PRBool nsPluginInstanceOwner::UpdateVisibility()
+PRBool nsPluginInstanceOwner::UpdateVisibility(PRBool aVisible)
 {
   if (!mInstance)
     return PR_TRUE;
@@ -5739,7 +5739,7 @@ PRBool nsPluginInstanceOwner::UpdateVisibility()
   XVisibilityEvent& visibilityEvent = pluginEvent.event.xvisibility;
   visibilityEvent.type = VisibilityNotify;
   visibilityEvent.display = 0;
-  visibilityEvent.state = VisibilityUnobscured;
+  visibilityEvent.state = aVisible ? VisibilityUnobscured : VisibilityFullyObscured;
   mInstance->HandleEvent(&pluginEvent, &handled);
 
   mWidgetVisible = PR_TRUE;
@@ -5897,8 +5897,8 @@ nsPluginInstanceOwner::SetAbsoluteScreenPosition(nsIDOMElement* element,
   mAbsolutePositionClip = gfxRect(left,top, width, height);
 
   mBlitParentElement = element;
-    
-  UpdateVisibility();
+
+  UpdateVisibility(!(width == 0 && height == 0));
 
   if (!mInstance)
     return NS_OK;
