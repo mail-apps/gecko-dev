@@ -298,6 +298,10 @@ PrivateBrowsingService.prototype = {
                       getService(Ci.nsIHttpAuthManager);
         authMgr.clearAll();
 
+        try {
+          this._prefs.deleteBranch("geo.wifi.access_token.");
+        } catch (ex) {}
+
         if (!this._inPrivateBrowsing) {
           // Clear the error console
           let consoleService = Cc["@mozilla.org/consoleservice;1"].
