@@ -2632,7 +2632,7 @@ XRE_main(int argc, char* argv[], const nsXREAppData* aAppData)
     NS_BREAK();
 #endif
 
-  SetupErrorHandling();
+  SetupErrorHandling(argv[0]);
 
 #ifdef MOZ_ACCESSIBILITY_ATK
   // Reset GTK_MODULES, strip atk-bridge if exists
@@ -3655,7 +3655,7 @@ XRE_GetProcessType()
 }
 
 void
-SetupErrorHandling()
+SetupErrorHandling(const char* progname)
 {
 #ifdef XP_WIN
   /* On Windows XPSP3 and Windows Vista if DEP is configured off-by-default
@@ -3695,7 +3695,7 @@ SetupErrorHandling()
 #endif
 #endif
 
-  InstallSignalHandlers(argv[0]);
+  InstallSignalHandlers(progname);
 
 #ifndef WINCE
   // Unbuffer stdout, needed for tinderbox tests.
