@@ -50,6 +50,7 @@
 #include "jsinterp.h"
 #include "jslock.h"
 #include "jsnum.h"
+#include "jsvector.h"
 
 #if defined(DEBUG) && !defined(JS_JIT_SPEW)
 #define JS_JIT_SPEW
@@ -735,6 +736,7 @@ class TraceRecorder {
     uint32                  outerArgc; /* outer trace deepest frame argc */
     bool                    loop;
     nanojit::LIns*          loopLabel;
+    js::Vector<JSTraceType, 256> tempTypeMap;
 
     nanojit::LIns* insImmVal(jsval val);
     nanojit::LIns* insImmObj(JSObject* obj);
