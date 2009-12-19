@@ -1397,8 +1397,9 @@ obj_eval(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
     }
 
     tcflags = TCF_COMPILE_N_GO;
+    uintN staticLevel = caller->script->staticLevel + 1;
     if (caller) {
-        tcflags |= TCF_PUT_STATIC_LEVEL(caller->script->staticLevel + 1);
+        tcflags |= TCF_PUT_STATIC_LEVEL(staticLevel);
         principals = JS_EvalFramePrincipals(cx, fp, caller);
         file = js_ComputeFilename(cx, caller, principals, &line);
     } else {
@@ -1412,7 +1413,7 @@ obj_eval(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
 
     /* Cache local eval scripts indexed by source qualified by scope. */
     bucket = EvalCacheHash(cx, str);
-    if (caller->fun) {
+    if (!indirectCall && argc == 1 && caller->fun) {
         uintN count = 0;
         JSScript **scriptp = bucket;
 
@@ -1458,6 +1459,7 @@ obj_eval(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
                         }
                         if (i < 0 ||
                             STOBJ_GET_PARENT(objarray->vector[i]) == scopeobj) {
+                            JS_ASSERT(staticLevel == script->staticLevel);
                             EVAL_CACHE_METER(hit);
                             *scriptp = script->u.nextToGC;
                             script->u.nextToGC = NULL;
