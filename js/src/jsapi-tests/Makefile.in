@@ -54,6 +54,7 @@ CPPSRCS = \
   testSameValue.cpp \
   testDebugger.cpp \
   testDefineGetterSetterNonEnumerable.cpp \
+  testExtendedEq.cpp \
   $(NULL)
 
 DEFINES         += -DEXPORT_JS_API
