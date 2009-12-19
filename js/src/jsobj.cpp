@@ -1257,6 +1257,7 @@ obj_eval(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
     fp = js_GetTopStackFrame(cx);
     caller = js_GetScriptedCaller(cx, fp);
     indirectCall = (caller && caller->regs && *caller->regs->pc != JSOP_EVAL);
+    uintN staticLevel = caller->script->staticLevel + 1;
 
     /*
      * This call to js_GetWrappedObject is safe because of the security checks
@@ -1397,7 +1398,6 @@ obj_eval(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
     }
 
     tcflags = TCF_COMPILE_N_GO;
-    uintN staticLevel = caller->script->staticLevel + 1;
     if (caller) {
         tcflags |= TCF_PUT_STATIC_LEVEL(staticLevel);
         principals = JS_EvalFramePrincipals(cx, fp, caller);
