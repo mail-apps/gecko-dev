@@ -1413,7 +1413,7 @@ obj_eval(JSContext *cx, JSObject *obj, uintN argc, jsval *argv, jsval *rval)
 
     /* Cache local eval scripts indexed by source qualified by scope. */
     bucket = EvalCacheHash(cx, str);
-    if (!indirectCall && caller->fun) {
+    if (!indirectCall && argc == 1 && caller->fun) {
         uintN count = 0;
         JSScript **scriptp = bucket;
 
