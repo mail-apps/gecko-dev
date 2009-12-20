@@ -2116,6 +2116,35 @@ MergeTypeMaps(JSTraceType** partial, unsigned* plength, JSTraceType* complete, u
     *plength = clength;
 }
 
+/*
+ * Specializes a tree to any specifically missing globals, including any 
+ * dependent trees.
+ */
+static JS_REQUIRES_STACK void
+SpecializeTreesToLateGlobals(JSContext* cx, TreeInfo* root, JSTraceType* globalTypeMap,
+                            unsigned numGlobalSlots)
+{
+    TreeInfo* ti = root;
+
+    for (unsigned i = ti->nGlobalTypes(); i < numGlobalSlots; i++)
+        ti->typeMap.add(globalTypeMap[i]);
+
+    JS_ASSERT(ti->nGlobalTypes() == numGlobalSlots);
+
+    for (unsigned i = 0; i < root->dependentTrees.length(); i++) {
+        ti = (TreeInfo*)root->dependentTrees[i]->vmprivate;
+
+        /* ti can be NULL if we hit the recording tree in emitTreeCall; this is harmless. */
+        if (ti && ti->nGlobalTypes() < numGlobalSlots)
+            SpecializeTreesToLateGlobals(cx, ti, globalTypeMap, numGlobalSlots);
+    }
+    for (unsigned i = 0; i < root->linkedTrees.length(); i++) {
+        ti = (TreeInfo*)root->linkedTrees[i]->vmprivate;
+        if (ti && ti->nGlobalTypes() < numGlobalSlots)
+            SpecializeTreesToLateGlobals(cx, ti, globalTypeMap, numGlobalSlots);
+    }
+}
+
 /* Specializes a tree to any missing globals, including any dependent trees. */
 static JS_REQUIRES_STACK void
 SpecializeTreesToMissingGlobals(JSContext* cx, JSObject* globalObj, TreeInfo* root)
@@ -2125,18 +2154,7 @@ SpecializeTreesToMissingGlobals(JSContext* cx, JSObject* globalObj, TreeInfo* ro
     ti->typeMap.captureMissingGlobalTypes(cx, globalObj, *ti->globalSlots, ti->nStackTypes);
     JS_ASSERT(ti->globalSlots->length() == ti->typeMap.length() - ti->nStackTypes);
 
-    for (unsigned i = 0; i < root->dependentTrees.length(); i++) {
-        ti = (TreeInfo*)root->dependentTrees[i]->vmprivate;
-
-        /* ti can be NULL if we hit the recording tree in emitTreeCall; this is harmless. */
-        if (ti && ti->nGlobalTypes() < ti->globalSlots->length())
-            SpecializeTreesToMissingGlobals(cx, globalObj, ti);
-    }
-    for (unsigned i = 0; i < root->linkedTrees.length(); i++) {
-        ti = (TreeInfo*)root->linkedTrees[i]->vmprivate;
-        if (ti && ti->nGlobalTypes() < ti->globalSlots->length())
-            SpecializeTreesToMissingGlobals(cx, globalObj, ti);
-    }
+    SpecializeTreesToLateGlobals(cx, ti, ti->globalTypeMap(), ti->nGlobalTypes());
 }
 
 static void
@@ -4648,6 +4666,17 @@ TraceRecorder::joinEdgesToEntry(VMFragment* peer_root)
                 debug_only_printf(LC_TMTracer,
                                   "Joining type-stable trace to target exit %p->%p.\n",
                                   (void*)uexit->fragment, (void*)uexit->exit);
+
+                /*
+                 * See bug 531513. Before linking these trees, make sure the
+                 * peer's dependency graph is up to date.
+                 */
+                TreeInfo* from = (TreeInfo*)uexit->exit->root()->vmprivate;
+                if (from->nGlobalTypes() < treeInfo->nGlobalTypes()) {
+                    SpecializeTreesToLateGlobals(cx, from, treeInfo->globalTypeMap(),
+                                                 treeInfo->nGlobalTypes());
+                }
+
                 /* It's okay! Link together and remove the unstable exit. */
                 JoinPeers(traceMonitor->assembler, uexit->exit, (VMFragment*)fragment);
                 uexit = ti->removeUnstableExit(uexit->exit);
