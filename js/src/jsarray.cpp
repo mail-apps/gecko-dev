@@ -1297,9 +1297,9 @@ js_MakeArraySlow(JSContext *cx, JSObject *obj)
         /* obj is Array.prototype. */
         emptyShape = js_GenerateShape(cx, false);
     } else {
-        /* arrayProto is Array.prototype. */
         JS_ASSERT(arrayProto->getClass() == &js_SlowArrayClass);
-        emptyShape = OBJ_SCOPE(arrayProto)->emptyScope->shape;
+        if (!OBJ_SCOPE(arrayProto)->getEmptyScopeShape(cx, &js_SlowArrayClass, &emptyShape))
+            return JS_FALSE;
     }
     JSScope *scope = JSScope::create(cx, &js_SlowArrayObjectOps, &js_SlowArrayClass, obj,
                                      emptyShape);
