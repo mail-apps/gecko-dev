@@ -570,6 +570,10 @@ nsDownloadManager::InitFileDB(PRBool *aDoImport)
                "referrer, entityID, currBytes, maxBytes, mimeType, "
                "preferredApplication, preferredAction, autoResume "
         "FROM moz_downloads"), getter_AddRefs(stmt));
+      PRInt32 state;
+      if (NS_SUCCEEDED(rv) && NS_SUCCEEDED(stmt->GetState(&state)) &&
+          state == mozIStorageStatement::MOZ_STORAGE_STATEMENT_INVALID)
+        rv = NS_ERROR_UNEXPECTED;
       if (NS_SUCCEEDED(rv))
         break;
 
