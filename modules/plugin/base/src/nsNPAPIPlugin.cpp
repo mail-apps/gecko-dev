@@ -1622,6 +1622,9 @@ _evaluate(NPP npp, NPObject* npobj, NPString *script, NPVariant *result)
   JSContext *cx = GetJSContextFromDoc(doc);
   NS_ENSURE_TRUE(cx, false);
 
+  nsCOMPtr<nsIScriptContext> scx = GetScriptContextFromJSContext(cx);
+  NS_ENSURE_TRUE(scx, false);
+
   JSObject *obj =
     nsNPObjWrapper::GetNewOrUsed(npp, cx, npobj);
 
@@ -1647,9 +1650,6 @@ _evaluate(NPP npp, NPObject* npobj, NPString *script, NPVariant *result)
 
   NS_ConvertUTF8toUTF16 utf16script(script->utf8characters,
                                     script->utf8length);
-
-  nsCOMPtr<nsIScriptContext> scx = GetScriptContextFromJSContext(cx);
-  NS_ENSURE_TRUE(scx, false);
 
   nsIPrincipal *principal = doc->NodePrincipal();
 
