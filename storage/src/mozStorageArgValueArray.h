@@ -1,5 +1,6 @@
-/* -*- Mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*- */
-/* ***** BEGIN LICENSE BLOCK *****
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*-
+ * vim: sw=2 ts=2 et lcs=trail\:.,tab\:>~ :
+ * ***** BEGIN LICENSE BLOCK *****
  * Version: MPL 1.1/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Mozilla Public License Version
@@ -36,62 +37,30 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-#ifndef _MOZSTORAGEVALUEARRAY_H_
-#define _MOZSTORAGEVALUEARRAY_H_
-
-#include "nsCOMPtr.h"
+#ifndef _mozStorageArgValueArray_h_
+#define _mozStorageArgValueArray_h_
 
 #include "mozIStorageValueArray.h"
-#include "mozIStorageDataSet.h"
 
-#include "nsIArray.h"
+#include "sqlite3.h"
 
-#include <sqlite3.h>
+namespace mozilla {
+namespace storage {
 
-class nsIArray;
-
-class mozStorageStatementRowValueArray : public mozIStorageValueArray
+class ArgValueArray : public mozIStorageValueArray
 {
 public:
-    mozStorageStatementRowValueArray (sqlite3_stmt *aSqliteStmt);
-    ~mozStorageStatementRowValueArray();
+  ArgValueArray(PRInt32 aArgc, sqlite3_value **aArgv);
 
-    // interfaces
-    NS_DECL_ISUPPORTS
-    NS_DECL_MOZISTORAGEVALUEARRAY
+  NS_DECL_ISUPPORTS
+  NS_DECL_MOZISTORAGEVALUEARRAY
 
 private:
-    sqlite3_stmt *mSqliteStatement;
-    PRUint32 mNumEntries;
+  PRUint32 mArgc;
+  sqlite3_value **mArgv;
 };
 
-class mozStorageArgvValueArray : public mozIStorageValueArray
-{
-public:
-    mozStorageArgvValueArray (PRInt32 aArgc, sqlite3_value **aArgv);
-    ~mozStorageArgvValueArray();
+} // namespace storage
+} // namespace mozilla
 
-    // interfaces
-    NS_DECL_ISUPPORTS
-    NS_DECL_MOZISTORAGEVALUEARRAY
-
-private:
-    PRUint32 mArgc;
-    sqlite3_value **mArgv;
-};
-
-class mozStorageDataSet : public mozIStorageDataSet
-{
-public:
-    mozStorageDataSet (nsIArray *aRows);
-    ~mozStorageDataSet();
-
-    // interfaces
-    NS_DECL_ISUPPORTS
-    NS_DECL_MOZISTORAGEDATASET
-
-protected:
-    nsCOMPtr<nsIArray> mRows;
-};
-
-#endif /* _MOZSTORAGEVALUEARRAY_H_ */
+#endif // _mozStorageArgValueArray_h_

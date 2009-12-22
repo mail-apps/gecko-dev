@@ -1,5 +1,5 @@
 /* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: sw=2 ts=2 sts=2
+ * vim: sw=2 ts=2 sts=2 et
  * ***** BEGIN LICENSE BLOCK *****
  * Version: MPL 1.1/GPL 2.0/LGPL 2.1
  *
@@ -16,8 +16,8 @@
  * The Original Code is mozilla.org code.
  *
  * The Initial Developer of the Original Code is
- * Mozilla Corporation. 
- * Portions created by the Initial Developer are Copyright (C) 2008
+ * Mozilla Corporation.
+ * Portions created by the Initial Developer are Copyright (C) 2009
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
@@ -37,34 +37,26 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-#ifndef _mozStorageEvents_h_
-#define _mozStorageEvents_h_
+#include "nsISupports.idl"
 
-#include "nscore.h"
-#include "nsTArray.h"
-struct sqlite3_stmt;
-class mozStorageConnection;
-class mozIStorageStatementCallback;
-class mozIStoragePendingStatement;
+interface mozIStorageBindingParams;
 
-/**
- * Executes a statement in the background, and passes results back to the
- * caller.
- *
- * @param aStatements
- *        The SQLite statements to execute in the background.
- * @param aConnection
- *        The connection that created the statements to execute.
- * @param aCallback
- *        The callback that is notified of results, completion, and errors.
- * @param _stmt
- *        The handle to control the execution of the statements.
- */
-nsresult NS_executeAsync(
-  nsTArray<sqlite3_stmt *> &aStatements,
-  mozStorageConnection *aConnection,
-  mozIStorageStatementCallback *aCallback,
-  mozIStoragePendingStatement **_stmt
-);
+[scriptable, uuid(e676e1a3-1dc6-4802-ac03-291fa9de7f93)]
+interface mozIStorageBindingParamsArray : nsISupports {
+  /**
+   * Creates a new mozIStorageBindingParams object that can be added to this
+   * array.
+   *
+   * @returns a mozIStorageBindingParams object that can be used to specify
+   *          parameters that need to be bound.
+   */
+  mozIStorageBindingParams newBindingParams();
 
-#endif // _mozStorageEvents_h_
+  /**
+   * Adds the parameters to the end of this array.
+   *
+   * @param aParameters
+   *        The parameters to add to this array.
+   */
+  void addParams(in mozIStorageBindingParams aParameters);
+};
