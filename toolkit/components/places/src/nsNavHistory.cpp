@@ -1458,6 +1458,10 @@ nsNavHistory::MigrateV3Up(mozIStorageConnection* aDBConn)
   nsresult rv = mDBConn->CreateStatement(NS_LITERAL_CSTRING(
       "SELECT type from moz_annos"),
     getter_AddRefs(statement));
+  PRInt32 state;
+  if (NS_SUCCEEDED(rv) && NS_SUCCEEDED(statement->GetState(&state)) &&
+      state == mozIStorageStatement::MOZ_STORAGE_STATEMENT_INVALID)
+    rv = NS_ERROR_UNEXPECTED;
   if (NS_SUCCEEDED(rv))
     return NS_OK;
 
@@ -1488,6 +1492,10 @@ nsNavHistory::MigrateV6Up(mozIStorageConnection* aDBConn)
   nsresult rv = mDBConn->CreateStatement(NS_LITERAL_CSTRING(
       "SELECT a.dateAdded, a.lastModified FROM moz_annos a"), 
     getter_AddRefs(statement));
+  PRInt32 state;
+  if (NS_SUCCEEDED(rv) && NS_SUCCEEDED(statement->GetState(&state)) &&
+      state == mozIStorageStatement::MOZ_STORAGE_STATEMENT_INVALID)
+    rv = NS_ERROR_UNEXPECTED;
   if (NS_FAILED(rv)) {
     // add dateAdded and lastModified columns to moz_annos
     rv = aDBConn->ExecuteSimpleSQL(NS_LITERAL_CSTRING(
@@ -1503,6 +1511,9 @@ nsNavHistory::MigrateV6Up(mozIStorageConnection* aDBConn)
   rv = mDBConn->CreateStatement(NS_LITERAL_CSTRING(
       "SELECT b.dateAdded, b.lastModified FROM moz_items_annos b"), 
     getter_AddRefs(statement));
+  if (NS_SUCCEEDED(rv) && NS_SUCCEEDED(statement->GetState(&state)) &&
+      state == mozIStorageStatement::MOZ_STORAGE_STATEMENT_INVALID)
+    rv = NS_ERROR_UNEXPECTED;
   if (NS_FAILED(rv)) {
     // add dateAdded and lastModified columns to moz_items_annos
     rv = aDBConn->ExecuteSimpleSQL(NS_LITERAL_CSTRING(
@@ -1531,6 +1542,9 @@ nsNavHistory::MigrateV6Up(mozIStorageConnection* aDBConn)
   rv = mDBConn->CreateStatement(NS_LITERAL_CSTRING(
       "SELECT user_title FROM moz_places"),
     getter_AddRefs(statement2));
+  if (NS_SUCCEEDED(rv) && NS_SUCCEEDED(statement2->GetState(&state)) &&
+      state == mozIStorageStatement::MOZ_STORAGE_STATEMENT_INVALID)
+    rv = NS_ERROR_UNEXPECTED;
   if (NS_SUCCEEDED(rv)) {
     // 1. Indexes are moved along with the renamed table. Since we're dropping
     // that table, we're also dropping its indexes, and later re-creating them
@@ -1649,6 +1663,11 @@ nsNavHistory::MigrateV7Up(mozIStorageConnection* aDBConn)
   rv = aDBConn->CreateStatement(NS_LITERAL_CSTRING(
       "SELECT frecency FROM moz_places"),
     getter_AddRefs(hasFrecencyStatement));
+  PRInt32 state;
+  if (NS_SUCCEEDED(rv) &&
+      NS_SUCCEEDED(hasFrecencyStatement->GetState(&state)) &&
+      state == mozIStorageStatement::MOZ_STORAGE_STATEMENT_INVALID)
+    rv = NS_ERROR_UNEXPECTED;
 
   if (NS_FAILED(rv)) {
     // add frecency column to moz_places, default to -1

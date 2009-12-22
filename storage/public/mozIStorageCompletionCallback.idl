@@ -1,5 +1,5 @@
 /* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: sw=2 ts=2 sts=2
+  vim: sw=2 ts=2 et lcs=trail\:.,tab\:>~ :
  * ***** BEGIN LICENSE BLOCK *****
  * Version: MPL 1.1/GPL 2.0/LGPL 2.1
  *
@@ -13,11 +13,11 @@
  * for the specific language governing rights and limitations under the
  * License.
  *
- * The Original Code is unicode functions code.
+ * The Original Code is mozilla.org code.
  *
  * The Initial Developer of the Original Code is
- * Mozilla Corporation. 
- * Portions created by the Initial Developer are Copyright (C) 2007
+ * Mozilla Foundation.
+ * Portions created by the Initial Developer are Copyright (C) 2009
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
@@ -37,51 +37,12 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-#ifndef _mozStorageUnicodeFunctions_h_
-#define _mozStorageUnicodeFunctions_h_
+#include "nsISupports.idl"
 
-#include "sqlite3.h"
-#include "nscore.h"
-
-namespace StorageUnicodeFunctions {
-
+[scriptable,function, uuid(0bfee0c4-2c24-400e-b18e-b5bb41a032c8)]
+interface mozIStorageCompletionCallback : nsISupports {
   /**
-   * Registers the functions with sqlite.
-   *
-   * @param aDB
-   *        The database we'll be registering the functions with.
-   * @return the sqlite status code.
+   * Indicates that the event this callback was passed in for has completed.
    */
-  NS_HIDDEN_(int) RegisterFunctions(sqlite3 *aDB);
-
-  /**
-   * Does the upper and lowercase conversions for the SQL functions upper() and
-   * lower().
-   *
-   * @param p
-   *        The sqlite_context that this function is being called on.
-   * @param aArgc
-   *        The number of arguments the function is being called with.
-   * @param aArgv
-   *        An array of the arguments the functions is being called with.
-   */
-  NS_HIDDEN_(void) caseFunction(sqlite3_context *p,
-                                int aArgc,
-                                sqlite3_value **aArgv);
-
-  /**
-   * Performs the LIKE comparison in sqlite.
-   *
-   * @param p
-   *        The sqlite_context that this function is being called on.
-   * @param aArgc
-   *        The number of arguments the function is being called with.
-   * @param aArgv
-   *        An array of the arguments the functions is being called with.
-   */
-  NS_HIDDEN_(void) likeFunction(sqlite3_context *p,
-                                int aArgc,
-                                sqlite3_value **aArgv);
-}
-
-#endif // _mozStorageUnicodeFunctions_h_
+  void complete();
+};
