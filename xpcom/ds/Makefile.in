@@ -109,6 +109,9 @@ EXPORTS		= \
 		nsCommaSeparatedTokenizer.h \
 		$(NULL)			
 
+export:: TimeStamp.h
+	$(INSTALL) $^ $(DIST)/include/mozilla
+
 XPIDLSRCS	= \
 		nsIAtom.idl \
 		nsIAtomService.idl \

@@ -765,6 +765,10 @@ nsFormHistory::MigrateToVersion1()
   nsresult rv = mDBConn->CreateStatement(NS_LITERAL_CSTRING(
                   "SELECT timesUsed, firstUsed, lastUsed FROM moz_formhistory"),
                   getter_AddRefs(stmt));
+  PRInt32 state;
+  if (NS_SUCCEEDED(rv) && NS_SUCCEEDED(stmt->GetState(&state)) &&
+      state == mozIStorageStatement::MOZ_STORAGE_STATEMENT_INVALID)
+    rv = NS_ERROR_UNEXPECTED;
 
   PRBool columnsExist = !!NS_SUCCEEDED(rv);
 
@@ -877,6 +881,10 @@ nsFormHistory::dbAreExpectedColumnsPresent()
   nsresult rv = mDBConn->CreateStatement(NS_LITERAL_CSTRING(
                   "SELECT fieldname, value, timesUsed, firstUsed, lastUsed "
                   "FROM moz_formhistory"), getter_AddRefs(stmt));
+  PRInt32 state;
+  if (NS_SUCCEEDED(rv) && NS_SUCCEEDED(stmt->GetState(&state)) &&
+      state == mozIStorageStatement::MOZ_STORAGE_STATEMENT_INVALID)
+    rv = NS_ERROR_UNEXPECTED;
   return NS_SUCCEEDED(rv) ? PR_TRUE : PR_FALSE;
 }
 
