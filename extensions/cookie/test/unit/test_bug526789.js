@@ -69,15 +69,6 @@ function run_test() {
   do_check_eq(cm.countCookiesFromHost(""), 0);
   do_check_eq(cm.countCookiesFromHost("."), 0);
 
-  var e = cm.getCookiesFromHost("baz.com");
-  do_check_true(e.hasMoreElements());
-  do_check_eq(e.getNext().QueryInterface(Ci.nsICookie2).name, "foo");
-  do_check_false(e.hasMoreElements());
-  e = cm.getCookiesFromHost("");
-  do_check_false(e.hasMoreElements());
-  e = cm.getCookiesFromHost(".");
-  do_check_false(e.hasMoreElements());
-
   cm.removeAll();
 }
 
