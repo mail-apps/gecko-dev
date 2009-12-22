@@ -130,6 +130,9 @@ SDK_LIBRARY     =                        \
 		$(LIB_PREFIX)xpcomglue_s.$(LIB_SUFFIX) \
 		$(NULL)
 
+export:: BlockingResourceBase.h CondVar.h Monitor.h DeadlockDetector.h Mutex.h
+	$(INSTALL) $^ $(DIST)/include/mozilla
+
 # we don't want the shared lib, but we want to force the creation of a static lib.
 FORCE_STATIC_LIB = 1
 
