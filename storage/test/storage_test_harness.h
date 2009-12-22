@@ -1,5 +1,6 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* ***** BEGIN LICENSE BLOCK *****
+/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*-
+ * vim: sw=2 ts=2 et lcs=trail\:.,tab\:>~ :
+ * ***** BEGIN LICENSE BLOCK *****
  * Version: MPL 1.1/GPL 2.0/LGPL 2.1
  *
  * The contents of this file are subject to the Mozilla Public License Version
@@ -12,15 +13,15 @@
  * for the specific language governing rights and limitations under the
  * License.
  *
- * The Original Code is Oracle Corporation code.
+ * The Original Code is storage test code.
  *
  * The Initial Developer of the Original Code is
- *  Oracle Corporation
- * Portions created by the Initial Developer are Copyright (C) 2004
+ * Mozilla Corporation.
+ * Portions created by the Initial Developer are Copyright (C) 2009
  * the Initial Developer. All Rights Reserved.
  *
  * Contributor(s):
- *   Vladimir Vukicevic <vladimir.vukicevic@oracle.com>
+ *   Shawn Wilsher <me@shawnwilsher.com> (Original Author)
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -36,22 +37,38 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-#include "nsISupports.idl"
+#include "TestHarness.h"
+#include "nsMemory.h"
+#include "mozIStorageService.h"
+#include "mozIStorageConnection.h"
 
-interface nsIArray;
-interface nsISimpleEnumerator;
+static size_t gTotalTests = 0;
+static size_t gPassedTests = 0;
 
-[scriptable, uuid(57826606-3c8a-4243-9f2f-cb3fe6e91148)]
-interface mozIStorageDataSet : nsISupports {
-  /**
-   * All the rows in this data set, as a nsIArray
-   */
-  readonly attribute nsIArray dataRows;
+#define do_check_true(aCondition) \
+  PR_BEGIN_MACRO \
+    gTotalTests++; \
+    if (aCondition) \
+      gPassedTests++; \
+    else \
+      fail("Expected true, got false on line %d!", __LINE__); \
+  PR_END_MACRO
 
-  /**
-   * Get an enumerator for the result set rows.
-   * @returns a nsISimpleEnumerator of mozIStorageValueArray.
-   */
-  nsISimpleEnumerator getRowEnumerator();
-};
+#define do_check_false(aCondition) \
+  PR_BEGIN_MACRO \
+    gTotalTests++; \
+    if (!aCondition) \
+      gPassedTests++; \
+    else \
+      fail("Expected false, got true on line %d!", __LINE__); \
+  PR_END_MACRO
 
+already_AddRefed<mozIStorageConnection>
+getMemoryDatabase()
+{
+  nsCOMPtr<mozIStorageService> ss =
+    do_GetService("@mozilla.org/storage/service;1");
+  nsCOMPtr<mozIStorageConnection> conn;
+  (void)ss->OpenSpecialDatabase("memory", getter_AddRefs(conn));
+  return conn.forget();
+}
