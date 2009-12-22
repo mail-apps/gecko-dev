@@ -60,6 +60,7 @@ _MOCHITEST_FILES = \
 		test_pluginstream_poststream.html \
 		test_pluginstream_seek.html \
 		test_streamNotify.html \
+		test_instantiation.html \
 		$(NULL)
 
 #		test_npruntime_npnsetexception.html \ Disabled for e10s
