@@ -4129,7 +4129,7 @@ PRBool nsWindow::ProcessMessage(UINT msg, WPARAM &wParam, LPARAM &lParam,
 
 #if defined(WINCE_HAVE_SOFTKB)
         if (mIsTopWidgetWindow && sSoftKeyboardState)
-          nsWindowCE::ToggleSoftKB(fActive);
+          nsWindowCE::ToggleSoftKB(mWnd, fActive);
         if (nsWindowCE::sShowSIPButton != TRI_TRUE && WA_INACTIVE != fActive) {
           HWND hWndSIPB = FindWindowW(L"MS_SIPBUTTON", NULL ); 
           if (hWndSIPB)
@@ -4271,7 +4271,7 @@ PRBool nsWindow::ProcessMessage(UINT msg, WPARAM &wParam, LPARAM &lParam,
         case SPI_SIPMOVE:
         case SPI_SETSIPINFO:
         case SPI_SETCURRENTIM:
-          nsWindowCE::NotifySoftKbObservers();
+          nsWindowCE::NotifySoftKbObservers(mWnd);
           break;
         case SETTINGCHANGE_RESET:
           if (mWindowType == eWindowType_invisible) {
@@ -6163,7 +6163,7 @@ NS_IMETHODIMP nsWindow::SetIMEEnabled(PRUint32 aState)
 
 #if defined(WINCE_HAVE_SOFTKB)
   sSoftKeyboardState = (aState != nsIWidget::IME_STATUS_DISABLED);
-  nsWindowCE::ToggleSoftKB(sSoftKeyboardState);
+  nsWindowCE::ToggleSoftKB(mWnd, sSoftKeyboardState);
 #endif
 
   if (!enable != !mOldIMC)
