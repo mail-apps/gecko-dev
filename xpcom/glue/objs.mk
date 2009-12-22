@@ -74,6 +74,8 @@ XPCOM_GLUE_SRC_CPPSRCS = $(addprefix $(topsrcdir)/xpcom/glue/, $(XPCOM_GLUE_SRC_
 # only build it for the dependent XPCOM glue and builtin to xpcom-core.
 
 XPCOM_GLUENS_SRC_LCPPSRCS =      \
+  BlockingResourceBase.cpp       \
+  DeadlockDetector.cpp           \
   nsAutoLock.cpp                 \
   nsGenericFactory.cpp           \
   nsProxyRelease.cpp             \

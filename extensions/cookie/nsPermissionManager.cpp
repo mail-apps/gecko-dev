@@ -226,6 +226,10 @@ nsPermissionManager::InitDB(PRBool aRemoveFile)
         nsCOMPtr<mozIStorageStatement> stmt;
         rv = mDBConn->CreateStatement(NS_LITERAL_CSTRING(
           "SELECT host, type, permission FROM moz_hosts"), getter_AddRefs(stmt));
+        PRInt32 state;
+        if (NS_SUCCEEDED(rv) && NS_SUCCEEDED(stmt->GetState(&state)) &&
+            state == mozIStorageStatement::MOZ_STORAGE_STATEMENT_INVALID)
+          rv = NS_ERROR_UNEXPECTED;
         if (NS_SUCCEEDED(rv))
           break;
 
