@@ -976,8 +976,12 @@ nsWindow::ConstrainPosition(PRBool aAllowSlop, PRInt32 *aX, PRInt32 *aY)
 NS_IMETHODIMP
 nsWindow::Show(PRBool aState)
 {
-    if (aState == mIsShown)
+#ifndef MOZ_PLATFORM_HILDON
+    // XXX Bug 534981: work around to fix a large initial paint delay in Fennec
+    if (aState == mIsShown) {
         return NS_OK;
+    }
+#endif
 
     mIsShown = aState;
 
