@@ -9798,12 +9798,22 @@ TraceRecorder::record_JSOP_OBJTOP()
 JSRecordingStatus
 TraceRecorder::getClassPrototype(JSObject* ctor, LIns*& proto_ins)
 {
-    jsval pval;
+    // ctor must be a function created via js_InitClass.
+#ifdef DEBUG
+    JSClass *clasp = FUN_CLASP(GET_FUNCTION_PRIVATE(cx, ctor));
+    JS_ASSERT(clasp);
 
+    JSTraceMonitor &localtm = JS_TRACE_MONITOR(cx);
+#endif
+
+    jsval pval;
     if (!ctor->getProperty(cx, ATOM_TO_JSID(cx->runtime->atomState.classPrototypeAtom), &pval))
         ABORT_TRACE_ERROR("error getting prototype from constructor");
-    if (JSVAL_TAG(pval) != JSVAL_OBJECT)
-        ABORT_TRACE("got primitive prototype from constructor");
+
+    // ctor.prototype is a permanent data property, so this lookup cannot have
+    // deep-aborted.
+    JS_ASSERT(localtm.recorder);
+
 #ifdef DEBUG
     JSBool ok, found;
     uintN attrs;
@@ -9812,16 +9822,47 @@ TraceRecorder::getClassPrototype(JSObject* ctor, LIns*& proto_ins)
     JS_ASSERT(found);
     JS_ASSERT((~attrs & (JSPROP_READONLY | JSPROP_PERMANENT)) == 0);
 #endif
-    proto_ins = INS_CONSTOBJ(JSVAL_TO_OBJECT(pval));
+
+    // Since ctor was built by js_InitClass, we can assert (rather than check)
+    // that pval is usable.
+    JS_ASSERT(!JSVAL_IS_PRIMITIVE(pval));
+    JSObject *proto = JSVAL_TO_OBJECT(pval);
+    JS_ASSERT_IF(clasp != &js_ArrayClass, OBJ_SCOPE(proto)->emptyScope->clasp == clasp);
+
+    proto_ins = INS_CONSTOBJ(proto);
     return JSRS_CONTINUE;
 }
 
 JSRecordingStatus
 TraceRecorder::getClassPrototype(JSProtoKey key, LIns*& proto_ins)
 {
+#ifdef DEBUG
+    JSTraceMonitor &localtm = JS_TRACE_MONITOR(cx);
+#endif
+
     JSObject* proto;
     if (!js_GetClassPrototype(cx, globalObj, INT_TO_JSID(key), &proto))
         ABORT_TRACE_ERROR("error in js_GetClassPrototype");
+
+    // This should not have reentered.
+    JS_ASSERT(localtm.recorder);
+
+    // If we might end up passing the proto to JSObject::initSharingEmptyScope,
+    // we must check here that proto has a matching emptyScope. We skip the
+    // check for Array.prototype because new arrays, being non-native, are
+    // never initialized using initSharingEmptyScope.
+    if (key != JSProto_Array) {
+        if (!OBJ_IS_NATIVE(proto)) {
+            //non-native class prototype
+            return JSRS_STOP;
+        }
+        JSEmptyScope *emptyScope = OBJ_SCOPE(proto)->emptyScope;
+        if (!emptyScope || JSCLASS_CACHED_PROTO_KEY(emptyScope->clasp) != key) {
+            // class prototype is not the standard one
+            return JSRS_STOP;
+        }
+    }
+
     proto_ins = INS_CONSTOBJ(proto);
     return JSRS_CONTINUE;
 }
