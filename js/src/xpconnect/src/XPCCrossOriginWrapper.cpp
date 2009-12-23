@@ -547,7 +547,7 @@ XPC_XOW_AddProperty(JSContext *cx, JSObject *obj, jsval id, jsval *vp)
     return JS_FALSE;
   }
 
-  if (JSVAL_IS_OBJECT(*vp)) {
+  if (!JSVAL_IS_PRIMITIVE(*vp)) {
     JSObject *addedObj = JSVAL_TO_OBJECT(*vp);
     if (STOBJ_GET_CLASS(addedObj) == &sXPC_XOW_JSClass.base &&
         STOBJ_GET_PARENT(addedObj) != STOBJ_GET_PARENT(obj)) {
