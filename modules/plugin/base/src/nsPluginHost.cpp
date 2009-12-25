@@ -4143,44 +4143,52 @@ NS_IMETHODIMP nsPluginHost::GetPlugin(const char *aMimeType, nsIPlugin** aPlugin
         pluginTag->mEntryPoint = plugin;
         pluginTag->Mark(NS_PLUGIN_FLAG_NPAPI);
       // And if that fails, try to get an OJI plugin's entry point
-      } else if (pluginTag->mIsJavaPlugin) {
+      } else if (pluginTag->mIsJavaPlugin &&
+                 pluginTag->mName.Find("Java Embedding Plugin") != kNotFound) {
         // Refuse to load any other OJI plugin than the JEP.
-        if (pluginTag->mName.Find("Java Embedding Plugin") != kNotFound) {
-          nsFactoryProc nsGetFactory = nsnull;
-          nsGetFactory = (nsFactoryProc) PR_FindFunctionSymbol(pluginTag->mLibrary, "NSGetFactory");
+        nsFactoryProc nsGetFactory = nsnull;
+        nsGetFactory = (nsFactoryProc) PR_FindFunctionSymbol(pluginTag->mLibrary, "NSGetFactory");
 
-          // No, this is not a leak. GetGlobalServiceManager() doesn't
-          // addref the pointer on the way out. It probably should.
-          nsIServiceManagerObsolete* serviceManager;
-          nsServiceManager::GetGlobalServiceManager((nsIServiceManager**)&serviceManager);
+        // No, this is not a leak. GetGlobalServiceManager() doesn't
+        // addref the pointer on the way out. It probably should.
+        nsIServiceManagerObsolete* serviceManager;
+        nsServiceManager::GetGlobalServiceManager((nsIServiceManager**)&serviceManager);
 
-          nsIPluginOld *shadow = nsnull;
-          rv = nsGetFactory(serviceManager, kPluginOldCID, nsnull, nsnull,
-                            (nsIFactory**)&shadow);
-          if (NS_SUCCEEDED(rv) && shadow) {
-            plugin = static_cast<nsIPlugin*>(new nsNPAPIPlugin(shadow));
-            if (!plugin)
-              return NS_ERROR_OUT_OF_MEMORY;
-            plugin->Initialize();
-            pluginTag->mEntryPoint = plugin;
-          }
+        nsIPluginOld *shadow = nsnull;
+        rv = nsGetFactory(serviceManager, kPluginOldCID, nsnull, nsnull,
+                          (nsIFactory**)&shadow);
+        if (NS_SUCCEEDED(rv) && shadow) {
+          plugin = static_cast<nsIPlugin*>(new nsNPAPIPlugin(shadow));
+          if (!plugin)
+            return NS_ERROR_OUT_OF_MEMORY;
+          plugin->Initialize();
+          pluginTag->mEntryPoint = plugin;
         }
+        else {
+          return NS_ERROR_FAILURE;
+        }
+      }
+      else {
+        return NS_ERROR_FAILURE;
       }
     }
 #else
     if (!plugin) {
       // Now lets try to get the entry point from an NPAPI plugin
       rv = CreateNPAPIPlugin(pluginTag, getter_AddRefs(plugin));
-      if (NS_SUCCEEDED(rv))
-        pluginTag->mEntryPoint = plugin;
+      if (NS_FAILED(rv))
+        return rv;
+
+      pluginTag->mEntryPoint = plugin;
     }
 #endif
 
-    if (plugin) {
-      NS_ADDREF(*aPlugin = plugin);
+    if (!plugin)
+      return NS_ERROR_FAILURE;
 
-      return NS_OK;
-    }
+
+    NS_ADDREF(*aPlugin = plugin);
+    return NS_OK;
   }
 
   PLUGIN_LOG(PLUGIN_LOG_NORMAL,
