@@ -9826,6 +9826,22 @@ nsHTMLPluginObjElementSH::GetPluginJSObject(JSContext *cx, JSObject *obj,
 #endif /* OJI */
 }
 
+NS_IMETHODIMP
+nsHTMLPluginObjElementSH::NewResolve(nsIXPConnectWrappedNative *wrapper,
+                                     JSContext *cx, JSObject *obj, jsval id,
+                                     PRUint32 flags, JSObject **objp,
+                                     PRBool *_retval)
+{
+  // Make sure the plugin instance is loaded and instantiated, if
+  // possible.
+
+  nsCOMPtr<nsIPluginInstance> pi;
+  nsresult rv = GetPluginInstanceIfSafe(wrapper, obj, getter_AddRefs(pi));
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  return nsElementSH::NewResolve(wrapper, cx, obj, id, flags, objp,
+                                 _retval);
+}
 
 // HTMLOptionsCollection helper
 
