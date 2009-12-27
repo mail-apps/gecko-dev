@@ -368,7 +368,7 @@ nsDataObj::nsDataObj(nsIURI * uri)
   : m_cRef(0), mTransferable(nsnull),
     mIsAsyncMode(FALSE), mIsInOperation(FALSE)
 {
-  m_enumFE = new CEnumFormatEtc(32);
+  m_enumFE = new CEnumFormatEtc();
   m_enumFE->AddRef();
 
   if (uri) {
@@ -644,7 +644,7 @@ nsDataObj::LookupArbitraryFormat(FORMATETC *aFormat, LPDATAENTRY *aDataEntry, BO
 
   // Add this to our IEnumFORMATETC impl. so we can return it when
   // it's requested.
-  m_enumFE->AddFE(aFormat);
+  m_enumFE->AddFormatEtc(aFormat);
 
   // Store a copy internally in the arbitrary formats array.
   mDataEntryList.AppendElement(dataEntry);
@@ -1512,7 +1512,7 @@ void nsDataObj::AddDataFlavor(const char* aDataFlavor, LPFORMATETC aFE)
   // unicode, etc), so we will look up the data flavor that corresponds to
   // the FE and then ask the transferable for that type of data.
   mDataFlavors.AppendElement(aDataFlavor);
-  m_enumFE->AddFE(aFE);
+  m_enumFE->AddFormatEtc(aFE);
 }
 
 //-----------------------------------------------------
