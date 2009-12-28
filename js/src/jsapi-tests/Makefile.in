@@ -51,6 +51,7 @@ CPPSRCS = \
   testPropCache.cpp \
   testXDR.cpp \
   testIntString.cpp \
+  testIsAboutToBeFinalized.cpp \
   testSameValue.cpp \
   testDebugger.cpp \
   testDefineGetterSetterNonEnumerable.cpp \
