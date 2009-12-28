@@ -11160,6 +11160,8 @@ TraceRecorder::record_JSOP_GETELEM()
             }
             JS_ASSERT(v_ins);
             set(&lval, v_ins);
+            if (call)
+                set(&idx, obj_ins);
             return JSRS_CONTINUE;
         }
         ABORT_TRACE("can't reach arguments object's frame");
