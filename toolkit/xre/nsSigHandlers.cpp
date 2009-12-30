@@ -54,6 +54,10 @@
 #include "prenv.h"
 #include "nsDebug.h"
 
+#if defined(XP_MACOSX)
+#include <ucontext.h>
+#endif
+
 #if defined(LINUX)
 #include <sys/time.h>
 #include <sys/resource.h>
