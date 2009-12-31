@@ -2157,12 +2157,6 @@ SpecializeTreesToMissingGlobals(JSContext* cx, JSObject* globalObj, TreeInfo* ro
     SpecializeTreesToLateGlobals(cx, ti, ti->globalTypeMap(), ti->nGlobalTypes());
 }
 
-void
-js_FlushJITCache(JSContext *cx)
-{
-    ResetJIT(cx, FR_OOM);
-}
-
 static void
 TrashTree(JSContext* cx, Fragment* f);
 
@@ -4147,6 +4141,12 @@ ResetJIT(JSContext* cx, TraceVisFlushReason r)
 #else
 #define ResetJIT(cx, r) ResetJITImpl(cx)
 #endif
+
+void
+js_FlushJITCache(JSContext *cx)
+{
+    ResetJIT(cx, FR_OOM);
+}
 
 JS_REQUIRES_STACK void
 js_ResetJIT(JSContext* cx)
