@@ -2157,12 +2157,6 @@ SpecializeTreesToMissingGlobals(JSContext* cx, JSObject* globalObj, TreeInfo* ro
     SpecializeTreesToLateGlobals(cx, ti, ti->globalTypeMap(), ti->nGlobalTypes());
 }
 
-void
-js_FlushJITCache(JSContext *cx)
-{
-    ResetJIT(cx, FR_OOM);
-}
-
 static void
 TrashTree(JSContext* cx, Fragment* f);
 
@@ -4118,17 +4112,15 @@ ProhibitFlush(JSContext* cx)
     return false;
 }
 
-static void
+static JS_REQUIRES_STACK void
 ResetJITImpl(JSContext* cx)
 {
     if (!TRACING_ENABLED(cx))
         return;
     JSTraceMonitor* tm = &JS_TRACE_MONITOR(cx);
     debug_only_print0(LC_TMTracer, "Flushing cache.\n");
-    if (tm->recorder) {
-        JS_ASSERT_NOT_ON_TRACE(cx);
+    if (tm->recorder)
         js_AbortRecording(cx, "flush cache");
-    }
     if (ProhibitFlush(cx)) {
         debug_only_print0(LC_TMTracer, "Deferring JIT flush due to deep bail.\n");
         tm->needFlush = JS_TRUE;
@@ -4138,7 +4130,7 @@ ResetJITImpl(JSContext* cx)
 }
 
 #ifdef MOZ_TRACEVIS
-static JS_INLINE void
+static JS_INLINE JS_REQUIRES_STACK void
 ResetJIT(JSContext* cx, TraceVisFlushReason r)
 {
     js_LogTraceVisEvent(cx, S_RESET, r);
