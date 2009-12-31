@@ -218,7 +218,8 @@ static void fpehandler(int signum, siginfo_t *si, void *context)
 #ifdef XP_MACOSX
   ucontext_t *uc = (ucontext_t *)context;
 
-#if defined(__i386__) || defined(__amd64__)
+// Not available with 10.4 SDK? See bug 533035
+#if 0
   _STRUCT_FP_CONTROL *ctrl = &uc->uc_mcontext->fs.fpu_fcw;
   ctrl->invalid = ctrl->denorm = ctrl->zdiv = ctrl->ovrfl = ctrl->undfl = ctrl->precis = 1;
 
