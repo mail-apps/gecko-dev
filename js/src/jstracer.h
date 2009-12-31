@@ -1139,7 +1139,7 @@ extern bool
 js_OverfullJITCache(JSTraceMonitor* tm);
 
 extern void
-js_ResetJIT(JSContext* cx);
+js_FlushJITCache(JSContext* cx);
 
 extern void
 js_PurgeJITOracle();
