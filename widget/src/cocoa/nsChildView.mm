@@ -1276,17 +1276,19 @@ NS_IMETHODIMP nsChildView::StartDrawPlugin()
                "StartDrawPlugin must only be called on a plugin widget");
   if (mWindowType != eWindowType_plugin) return NS_ERROR_FAILURE;
 
-  // Prevent reentrant "drawing" (or in fact reentrant handling of any plugin
-  // event).  Doing this for both CoreGraphics and QuickDraw plugins restores
-  // the 1.8-branch behavior wrt reentrancy, and fixes (or works around) bugs
-  // caused by plugins depending on the old behavior -- e.g. bmo bug 409615.
-  if (mPluginDrawing)
-    return NS_ERROR_FAILURE;
-
   NSWindow* window = [mView nativeWindow];
   if (!window)
     return NS_ERROR_FAILURE;
-  
+
+  // In QuickDraw drawing mode, prevent reentrant handling of any plugin event
+  // (this emulates behavior on the 1.8 branch, where only QuickDraw mode is
+  // supported).  But in CoreGraphics drawing mode only do this if the current
+  // plugin event isn't an update/paint event.
+  if (!mPluginIsCG || (mView != [NSView focusView])) {
+    if (mPluginDrawing)
+      return NS_ERROR_FAILURE;
+  }
+
   // It appears that the WindowRef from which we get the plugin port undergoes the
   // traditional BeginUpdate/EndUpdate cycle, which, if you recall, sets the visible
   // region to the intersection of the visible region and the update region. Since
