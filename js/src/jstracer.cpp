@@ -3138,6 +3138,11 @@ struct ArgClosureTraits
     // See also UpvarArgTraits.
     static inline uint32 adj_slot(JSStackFrame* fp, uint32 slot) { return 2 + slot; }
 
+    // Generate the adj_slot computation in LIR.
+    static inline LIns* adj_slot_lir(LirWriter* lir, LIns* fp_ins, unsigned slot) {
+        return lir->insImm(2 + slot);
+    }
+
     // See also UpvarArgTraits.
     static inline jsval* slots(JSStackFrame* fp) { return fp->argv; }
 private:
@@ -3154,6 +3159,12 @@ struct VarClosureTraits
 {
     // See also UpvarVarTraits.
     static inline uint32 adj_slot(JSStackFrame* fp, uint32 slot) { return 3 + fp->argc + slot; }
+
+    // See also UpvarVarTraits.
+    static inline LIns* adj_slot_lir(LirWriter* lir, LIns* fp_ins, unsigned slot) {
+        LIns *argc_ins = lir->insLoad(LIR_ld, fp_ins, offsetof(JSStackFrame, argc));
+        return lir->ins2(LIR_add, lir->insImm(3 + slot), argc_ins);
+    }
 
     // See also UpvarVarTraits.
     static inline jsval* slots(JSStackFrame* fp) { return fp->slots; }
@@ -3420,6 +3431,27 @@ public:
             mStackOffset += sizeof(double);
         }
         return true;
+    }
+};
+
+// Like ImportUnboxedStackSlotVisitor, except that this does not import 
+// slots past nfixed. It imports only the slots that belong totally to
+// the given frame.
+class ImportUnboxedFrameSlotVisitor : public ImportUnboxedStackSlotVisitor
+{
+public:
+    ImportUnboxedFrameSlotVisitor(TraceRecorder &recorder,
+                                  LIns *base,
+                                  ptrdiff_t stackOffset,
+                                  JSTraceType *typemap) :
+        ImportUnboxedStackSlotVisitor(recorder, base, stackOffset, typemap)
+    {}
+
+    JS_REQUIRES_STACK JS_ALWAYS_INLINE bool
+    visitStackSlots(jsval *vp, size_t count, JSStackFrame* fp) {
+        if (vp == &fp->slots[fp->script->nfixed])
+            return false;
+        return ImportUnboxedStackSlotVisitor::visitStackSlots(vp, count, fp);
     }
 };
 
@@ -4888,11 +4920,26 @@ TraceRecorder::emitTreeCall(VMFragment* inner, VMSideExit* exit)
         lir->insStorei(lirbuf->rp, lirbuf->state, offsetof(InterpState, rp));
     }
 
+    // Create snapshot now so that the following block has an updated type map.
+    VMSideExit* nested = snapshot(NESTED_EXIT);
+
+    // If the outer-trace entry frame is not the same as the inner-trace entry frame,
+    // then we must reimport the outer trace entry frame in case the inner trace set
+    // upvars defined in that frame.
+    if (callDepth > 0) {
+        ptrdiff_t offset = -treeInfo->nativeStackBase;
+        JSStackFrame *fp = cx->fp;
+        for (unsigned i = 0; i < callDepth; ++i)
+            fp = fp->down;
+        ImportUnboxedFrameSlotVisitor frameVisitor(*this, lirbuf->sp, offset, 
+                                                   nested->stackTypeMap());
+        VisitFrameSlots(frameVisitor, 0, fp, NULL);
+    }
+
     /*
      * Guard that we come out of the inner tree along the same side exit we came out when
      * we called the inner tree at recording time.
      */
-    VMSideExit* nested = snapshot(NESTED_EXIT);
     guard(true, lir->ins2(LIR_peq, ret, INS_CONSTPTR(exit)), nested);
     debug_only_printf(LC_TMTreeVis, "TREEVIS TREECALL INNER=%p EXIT=%p GUARD=%p\n", (void*)inner,
                       (void*)nested, (void*)exit);
@@ -10791,6 +10838,52 @@ TraceRecorder::setCallProp(JSObject *callobj, LIns *callobj_ins, JSScopeProperty
     else
         ABORT_TRACE("can't trace special CallClass setter");
 
+    // Even though the frame is out of range, later we might be called as an
+    // inner trace such that the target variable is defined in the outer trace
+    // entry frame. In that case, we must store to the native stack area for
+    // that frame.
+
+    LIns *fp_ins = lir->insLoad(LIR_ldp, cx_ins, offsetof(JSContext, fp));
+    LIns *fpcallobj_ins = lir->insLoad(LIR_ldp, fp_ins, offsetof(JSStackFrame, callobj));
+    LIns *br1 = lir->insBranch(LIR_jf, lir->ins2(LIR_peq, fpcallobj_ins, callobj_ins), NULL);
+
+    // Case 1: storing to native stack area.
+
+    // Compute native stack slot and address offset we are storing to.
+    unsigned slot = uint16(sprop->shortid);
+    LIns *slot_ins;
+    if (sprop->setter == SetCallArg)
+        slot_ins = ArgClosureTraits::adj_slot_lir(lir, fp_ins, slot);
+    else
+        slot_ins = VarClosureTraits::adj_slot_lir(lir, fp_ins, slot);
+    LIns *offset_ins = lir->ins2(LIR_mul, slot_ins, INS_CONST(sizeof(double)));
+
+    // Guard that we are not changing the type of the slot we are storing to.
+    LIns *callstackBase_ins = lir->insLoad(LIR_ldp, lirbuf->state, 
+                                           offsetof(InterpState, callstackBase));
+    LIns *frameInfo_ins = lir->insLoad(LIR_ldp, callstackBase_ins, 0);
+    LIns *typemap_ins = lir->ins2(LIR_addp, frameInfo_ins, INS_CONSTWORD(sizeof(FrameInfo)));
+    LIns *type_ins = lir->insLoad(LIR_ldcb, 
+                                  lir->ins2(LIR_addp, typemap_ins, lir->ins_u2p(slot_ins)), 0);
+    JSTraceType type = getCoercedType(v);
+    if (type == TT_INT32 && !isPromoteInt(v_ins))
+        type = TT_DOUBLE;
+    guard(true,
+          addName(lir->ins2(LIR_eq, type_ins, lir->insImm(type)),
+                  "guard(type-stable set upvar)"),
+          BRANCH_EXIT);
+
+    // Store to the native stack slot.
+    LIns *stackBase_ins = lir->insLoad(LIR_ldp, lirbuf->state, 
+                                       offsetof(InterpState, stackBase));
+    LIns *storeValue_ins = isPromoteInt(v_ins) ? demote(lir, v_ins) : v_ins;
+    lir->insStorei(storeValue_ins, 
+                   lir->ins2(LIR_addp, stackBase_ins, lir->ins_u2p(offset_ins)), 0);
+    LIns *br2 = lir->insBranch(LIR_j, NULL, NULL);
+
+    // Case 2: calling builtin.
+    LIns *label1 = lir->ins0(LIR_label);
+    br1->setTarget(label1);
     LIns* args[] = {
         box_jsval(v, v_ins),
         INS_CONST(SPROP_USERID(sprop)),
@@ -10799,6 +10892,10 @@ TraceRecorder::setCallProp(JSObject *callobj, LIns *callobj_ins, JSScopeProperty
     };
     LIns* call_ins = lir->insCall(ci, args);
     guard(false, addName(lir->ins_eq0(call_ins), "guard(set upvar)"), STATUS_EXIT);
+
+    LIns *label2 = lir->ins0(LIR_label);
+    br2->setTarget(label2);
+    
     return JSRS_CONTINUE;
 }
 
