@@ -953,7 +953,9 @@ nsCookieService::Add(const nsACString &aDomain,
                      PRBool            aIsSession,
                      PRInt64           aExpiry)
 {
-  NS_ENSURE_TRUE(!aDomain.IsEmpty() && !aDomain.EqualsLiteral("."),
+  // empty domains are acceptable (e.g. file:// URI's), but domains containing
+  // a trailing '.' will break our domainwalking code.
+  NS_ENSURE_TRUE(aDomain.IsEmpty() || aDomain.Last() != '.',
                  NS_ERROR_INVALID_ARG);
 
   PRInt64 currentTimeInUsec = PR_Now();
@@ -980,7 +982,9 @@ nsCookieService::Remove(const nsACString &aHost,
                         const nsACString &aPath,
                         PRBool           aBlocked)
 {
-  NS_ENSURE_TRUE(!aHost.IsEmpty() && !aHost.EqualsLiteral("."),
+  // empty domains are acceptable (e.g. file:// URI's), but domains containing
+  // a trailing '.' will break our domainwalking code.
+  NS_ENSURE_TRUE(aHost.IsEmpty() || aHost.Last() != '.',
                  NS_ERROR_INVALID_ARG);
 
   nsListIter matchIter;
@@ -999,7 +1003,7 @@ nsCookieService::Remove(const nsACString &aHost,
     nsCAutoString host(NS_LITERAL_CSTRING("http://"));
     
     // strip off the domain dot, if necessary
-    if (aHost.First() == '.')
+    if (!aHost.IsEmpty() && aHost.First() == '.')
       host.Append(Substring(aHost, 1, aHost.Length() - 1));
     else
       host.Append(aHost);
@@ -1263,10 +1267,17 @@ nsCookieService::GetCookieInternal(nsIURI      *aHostURI,
   }
   // trim trailing dots
   hostFromURI.Trim(".");
+
+  // block any URIs without a host that aren't file:// URIs
   if (hostFromURI.IsEmpty()) {
-    COOKIE_LOGFAILURE(GET_COOKIE, aHostURI, nsnull, "empty host");
-    return;
+    PRBool isFileURI = PR_FALSE;
+    aHostURI->SchemeIs("file", &isFileURI);
+    if (!isFileURI) {
+      COOKIE_LOGFAILURE(GET_COOKIE, aHostURI, nsnull, "host is empty");
+      return;
+    }
   }
+
   // insert a leading dot, so we begin the hash lookup with the
   // equivalent domain cookie host
   hostFromURI.Insert(NS_LITERAL_CSTRING("."), 0);
@@ -1339,11 +1350,12 @@ nsCookieService::GetCookieInternal(nsIURI      *aHostURI,
         stale = PR_TRUE;
     }
 
-    currentDot = nextDot;
-    if (currentDot)
-      nextDot = strchr(currentDot + 1, '.');
+    if (!nextDot)
+      break;
 
-  } while (currentDot);
+    currentDot = nextDot;
+    nextDot = *currentDot ? strchr(currentDot + 1, '.') : nsnull;
+  } while (1);
 
   PRInt32 count = foundCookieList.Count();
   if (count == 0)
@@ -1855,8 +1867,6 @@ nsCookieService::IsForeign(nsIURI *aHostURI,
   // trim trailing dots
   currentHost.Trim(".");
   firstHost.Trim(".");
-  if (currentHost.IsEmpty() || firstHost.IsEmpty())
-    return PR_TRUE;
 
   // fast path: check if the two hosts are identical.
   // this also covers two special cases:
@@ -1963,8 +1973,14 @@ nsCookieService::CheckDomain(nsCookieAttributes &aCookieAttributes,
   }
   // trim trailing dots
   hostFromURI.Trim(".");
-  if (hostFromURI.IsEmpty())
-    return PR_FALSE;
+
+  // block any URIs without a host that aren't file:// URIs
+  if (hostFromURI.IsEmpty()) {
+    PRBool isFileURI = PR_FALSE;
+    aHostURI->SchemeIs("file", &isFileURI);
+    if (!isFileURI)
+      return PR_FALSE;
+  }
 
   // if a domain is given, check the host has permission
   if (!aCookieAttributes.host.IsEmpty()) {
@@ -2007,14 +2023,6 @@ nsCookieService::CheckDomain(nsCookieAttributes &aCookieAttributes,
      * entire .co.nz domain. however, it's only a only a partial solution and
      * it breaks sites (IE doesn't enforce it), so we don't perform this check.
      */
-  }
-
-  // block any URIs without a host that aren't file:/// URIs
-  if (hostFromURI.IsEmpty()) {
-    PRBool isFileURI = PR_FALSE;
-    aHostURI->SchemeIs("file", &isFileURI);
-    if (!isFileURI)
-      return PR_FALSE;
   }
 
   // no domain specified, use hostFromURI
@@ -2193,8 +2201,6 @@ PRUint32
 nsCookieService::CountCookiesFromHostInternal(const nsACString  &aHost,
                                               nsEnumerationData &aData)
 {
-  NS_ASSERTION(!aHost.IsEmpty() && !aHost.EqualsLiteral("."), "empty host");
-
   PRUint32 countFromHost = 0;
   nsCAutoString hostWithDot(NS_LITERAL_CSTRING(".") + aHost);
 
@@ -2215,11 +2221,12 @@ nsCookieService::CountCookiesFromHostInternal(const nsACString  &aHost,
       }
     }
 
-    currentDot = nextDot;
-    if (currentDot)
-      nextDot = strchr(currentDot + 1, '.');
+    if (!nextDot)
+      break;
 
-  } while (currentDot);
+    currentDot = nextDot;
+    nextDot = *currentDot ? strchr(currentDot + 1, '.') : nsnull;
+  } while (1);
 
   return countFromHost;
 }
@@ -2230,11 +2237,6 @@ NS_IMETHODIMP
 nsCookieService::CountCookiesFromHost(const nsACString &aHost,
                                       PRUint32         *aCountFromHost)
 {
-  if (aHost.IsEmpty() || aHost.EqualsLiteral(".")) {
-    *aCountFromHost = 0;
-    return NS_OK;
-  }
-
   // we don't care about finding the oldest cookie here, so disable the search
   nsEnumerationData data(PR_Now() / PR_USEC_PER_SEC, LL_MININT);
   *aCountFromHost = CountCookiesFromHostInternal(aHost, data);
@@ -2249,8 +2251,6 @@ nsCookieService::FindCookie(const nsAFlatCString &aHost,
                             nsListIter           &aIter,
                             PRInt64               aCurrentTime)
 {
-  NS_ASSERTION(!aHost.IsEmpty() && !aHost.EqualsLiteral("."), "empty host");
-
   nsCookieEntry *entry = mDBState->hostTable.GetEntry(aHost.get());
   for (aIter = nsListIter(entry); aIter.current; ++aIter) {
     if (aIter.current->Expiry() > aCurrentTime &&
