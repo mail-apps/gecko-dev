@@ -93,6 +93,9 @@ static DllBlockInfo sWindowsDllBlocklist[] = {
 
   // fgjk4wvb.dll - Suspected malware
   {"fgjk4wvb.dll", MAKE_VERSION(8,8,8,8)},
+
+  // rdolib.dll - Suspected malware
+  {"rdolib.dll", MAKE_VERSION(6,0,88,4)},
   
   // leave these two in always for tests
   { "mozdllblockingtest.dll", ALL_VERSIONS },
