@@ -201,6 +201,9 @@ nsPluginErrorEvent::Run()
     case ePluginOutdated:
       type = NS_LITERAL_STRING("PluginOutdated");
       break;
+    case ePluginCrashed:
+      type = NS_LITERAL_STRING("PluginCrashed");
+      break;
     default:
       return NS_OK;
   }
@@ -256,7 +259,7 @@ class AutoFallback {
         LOG(("OBJLC [%p]: rv=%08x, falling back\n", mContent, *mResult));
         mContent->Fallback(PR_FALSE);
         if (mPluginState != ePluginOtherState) {
-          mContent->mPluginState = mPluginState;
+          mContent->mFallbackReason = mPluginState;
         }
       }
     }
@@ -359,7 +362,7 @@ nsObjectLoadingContent::nsObjectLoadingContent()
   , mInstantiating(PR_FALSE)
   , mUserDisabled(PR_FALSE)
   , mSuppressed(PR_FALSE)
-  , mPluginState(ePluginOtherState)
+  , mFallbackReason(ePluginOtherState)
 {
 }
 
@@ -598,7 +601,7 @@ nsObjectLoadingContent::OnStartRequest(nsIRequest *aRequest,
     case eType_Null:
       LOG(("OBJLC [%p]: Unsupported type, falling back\n", this));
       // Need to fallback here (instead of using the case below), so that we can
-      // set mPluginState without it being overwritten. This is also why we
+      // set mFallbackReason without it being overwritten. This is also why we
       // return early.
       Fallback(PR_FALSE);
 
@@ -606,8 +609,8 @@ nsObjectLoadingContent::OnStartRequest(nsIRequest *aRequest,
                                                              mContentType);
       // Do nothing, but fire the plugin not found event if needed
       if (pluginState != ePluginOtherState) {
+        mFallbackReason = pluginState;
         FirePluginError(thisContent, pluginState);
-        mPluginState = pluginState;
       }
       return NS_BINDING_ABORTED;
   }
@@ -931,7 +934,7 @@ nsObjectLoadingContent::ObjectState() const
 
       // Otherwise, broken
       PRInt32 state = NS_EVENT_STATE_BROKEN;
-      switch (mPluginState) {
+      switch (mFallbackReason) {
         case ePluginDisabled:
           state |= NS_EVENT_STATE_HANDLER_DISABLED;
           break;
@@ -1486,7 +1489,7 @@ nsObjectLoadingContent::UnloadContent()
   }
   mType = eType_Null;
   mUserDisabled = mSuppressed = PR_FALSE;
-  mPluginState = ePluginOtherState;
+  mFallbackReason = ePluginOtherState;
 }
 
 void
@@ -1885,4 +1888,12 @@ nsObjectLoadingContent::SetAbsoluteScreenPosition(nsIDOMElement* element,
   return frame->SetAbsoluteScreenPosition(element, position, clip);
 }
 
-
+NS_IMETHODIMP
+nsObjectLoadingContent::PluginCrashed()
+{
+  UnloadContent();
+  mFallbackReason = ePluginCrashed;
+  nsCOMPtr<nsIContent> thisContent = do_QueryInterface(static_cast<nsIImageLoadingContent*>(this));
+  FirePluginError(thisContent, mFallbackReason);
+  return NS_OK;
+}
