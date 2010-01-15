@@ -14024,7 +14024,7 @@ TraceRecorder::record_JSOP_LENGTH()
         // We must both check at record time and guard at run time that
         // arguments.length has not been reassigned, redefined or deleted.
         if (js_IsOverriddenArgsLength(obj))
-            RETURN_STOP_A("can't trace JSOP_ARGCNT if arguments.length has been modified");
+            ABORT_TRACE("can't trace JSOP_ARGCNT if arguments.length has been modified");
         LIns* slot_ins = guardArgsLengthNotAssigned(obj_ins);
 
         // slot_ins is the value from the slot; right-shift by 2 bits to get
