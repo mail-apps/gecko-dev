@@ -490,7 +490,8 @@ public:
   PRBool SendNativeEvents()
   {
 #ifdef XP_WIN
-    return MatchPluginName("Shockwave Flash");
+    return mPluginWindow->type == NPWindowTypeDrawable &&
+           MatchPluginName("Shockwave Flash");
 #else
     return PR_FALSE;
 #endif
