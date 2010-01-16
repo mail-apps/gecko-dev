@@ -1414,9 +1414,12 @@ LoginManagerStorage_mozStorage.prototype = {
     _dbMigrateToVersion2 : function () {
         // Check to see if GUID column already exists.
         let exists = true;
-        try { 
+        try {
             let stmt = this._dbConnection.createStatement(
                            "SELECT guid FROM moz_logins");
+            let wrapped = Cc["@mozilla.org/storage/statement-wrapper;1"].
+                          createInstance(Ci.mozIStorageStatementWrapper);
+            wrapped.initialize(stmt);
             // (no need to execute statement, if it compiled we're good)
             stmt.finalize();
         } catch (e) {
@@ -1479,13 +1482,17 @@ LoginManagerStorage_mozStorage.prototype = {
         let exists = true;
         let query = "SELECT encType FROM moz_logins";
         let stmt;
-        try { 
+        try {
             stmt = this._dbConnection.createStatement(query);
+            let wrapped = Cc["@mozilla.org/storage/statement-wrapper;1"].
+                          createInstance(Ci.mozIStorageStatementWrapper);
+            wrapped.initialize(stmt);
             // (no need to execute statement, if it compiled we're good)
             stmt.finalize();
         } catch (e) {
             exists = false;
         }
+        stmt = null;
 
         // Add the new column and index only if needed.
         if (!exists) {
@@ -1532,7 +1539,7 @@ LoginManagerStorage_mozStorage.prototype = {
                 stmt.reset();
             }
         }
-        
+
     },
 
 
@@ -1555,8 +1562,11 @@ LoginManagerStorage_mozStorage.prototype = {
                        "guid, " +
                        "encType " +
                     "FROM moz_logins";
-        try { 
+        try {
             let stmt = this._dbConnection.createStatement(query);
+            let wrapped = Cc["@mozilla.org/storage/statement-wrapper;1"].
+                          createInstance(Ci.mozIStorageStatementWrapper);
+            wrapped.initialize(stmt);
             // (no need to execute statement, if it compiled we're good)
             stmt.finalize();
         } catch (e) {
@@ -1567,8 +1577,11 @@ LoginManagerStorage_mozStorage.prototype = {
                    "id, " +
                    "hostname " +
                 "FROM moz_disabledHosts";
-        try { 
+        try {
             let stmt = this._dbConnection.createStatement(query);
+            let wrapped = Cc["@mozilla.org/storage/statement-wrapper;1"].
+                          createInstance(Ci.mozIStorageStatementWrapper);
+            wrapped.initialize(stmt);
             // (no need to execute statement, if it compiled we're good)
             stmt.finalize();
         } catch (e) {

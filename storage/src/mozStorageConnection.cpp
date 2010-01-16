@@ -649,7 +649,7 @@ Connection::ExecuteAsync(mozIStorageStatement **aStatements,
     nsresult rv = stmt->getAsynchronousStatementData(data);
     NS_ENSURE_SUCCESS(rv, rv);
 
-    NS_ASSERTION(::sqlite3_db_handle(stmt->nativeStatement()) == mDBConn,
+    NS_ASSERTION(stmt->owningConnection() == this,
                  "Statement must be from this database connection!");
 
     // Now append it to our array.

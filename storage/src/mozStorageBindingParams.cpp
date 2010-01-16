@@ -135,8 +135,20 @@ BindingParams::BindingParams(BindingParamsArray *aOwningArray,
 , mOwningStatement(aOwningStatement)
 , mLocked(false)
 {
-  (void)mOwningStatement->GetParameterCount(&mParamCount);
-  (void)mParameters.SetCapacity(mParamCount);
+  // We only want to get the number of parameters if it will not cause us to
+  // attempt to acquire the sqlite mutex.  Also, since creation of the
+  // statement can fail, it is not appropriate to trigger that here in a
+  // constructor that cannot fail.
+  if (mOwningStatement->syncStatementAvailable()) {
+    PRUint32 paramCount;
+    (void)mOwningStatement->GetParameterCount(&paramCount);
+    mParamCount = paramCount;
+    (void)mParameters.SetCapacity(mParamCount);
+  }
+  else {
+    // Indicate that we just don't know how many parameters there are.
+    mParamCount = -1;
+  }
 }
 
 void
@@ -290,7 +302,8 @@ BindingParams::BindByIndex(PRUint32 aIndex,
                            nsIVariant *aValue)
 {
   NS_ENSURE_FALSE(mLocked, NS_ERROR_UNEXPECTED);
-  ENSURE_INDEX_VALUE(aIndex, mParamCount);
+  NS_ENSURE_TRUE(mParamCount == -1 || aIndex < mParamCount,
+                 NS_ERROR_INVALID_ARG);
 
   // Store the variant for later use.
   NS_ENSURE_TRUE(mParameters.ReplaceObjectAt(aValue, aIndex),

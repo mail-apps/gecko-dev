@@ -1,5 +1,5 @@
 /* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*-
- * vim: sw=2 ts=2 et lcs=trail\:.,tab\:>~ :
+  vim: sw=2 ts=2 et lcs=trail\:.,tab\:>~ :
  * ***** BEGIN LICENSE BLOCK *****
  * Version: MPL 1.1/GPL 2.0/LGPL 2.1
  *
@@ -16,7 +16,7 @@
  * The Original Code is mozilla.org code.
  *
  * The Initial Developer of the Original Code is
- * Mozilla Corporation.
+ * Mozilla Foundation.
  * Portions created by the Initial Developer are Copyright (C) 2009
  * the Initial Developer. All Rights Reserved.
  *
@@ -37,72 +37,12 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-#ifndef _mozStorageBindingParams_h_
-#define _mozStorageBindingParams_h_
+#include "nsISupports.idl"
 
-#include "nsAutoPtr.h"
-#include "nsCOMArray.h"
-#include "nsIVariant.h"
-
-#include "mozStorageBindingParamsArray.h"
-#include "mozStorageStatement.h"
-#include "mozIStorageBindingParams.h"
-
-class mozIStorageError;
-struct sqlite3_stmt;
-
-namespace mozilla {
-namespace storage {
-
-class BindingParams : public mozIStorageBindingParams
-{
-public:
-  NS_DECL_ISUPPORTS
-  NS_DECL_MOZISTORAGEBINDINGPARAMS
-
+[scriptable,function, uuid(0bfee0c4-2c24-400e-b18e-b5bb41a032c8)]
+interface mozIStorageCompletionCallback : nsISupports {
   /**
-   * Locks the parameters and prevents further modification to it (such as
-   * binding more elements to it).
+   * Indicates that the event this callback was passed in for has completed.
    */
-  void lock();
-
-  /**
-   * Unlocks the parameters and allows modification to it again.
-   */
-  void unlock();
-
-  /**
-   * @returns the pointer to the owning BindingParamsArray.
-   */
-  const BindingParamsArray *getOwner() const;
-
-  /**
-   * Binds our stored data to the statement.
-   *
-   * @param aStatement
-   *        The statement to bind our data to.
-   * @returns nsnull on success, or a mozIStorageError object if an error
-   *          occurred.
-   */
-  already_AddRefed<mozIStorageError> bind(sqlite3_stmt *aStatement);
-
-  BindingParams(BindingParamsArray *aOwningArray,
-                Statement *aOwningStatement);
-
-private:
-  nsRefPtr<BindingParamsArray> mOwningArray;
-  Statement *mOwningStatement;
-  nsCOMArray<nsIVariant> mParameters;
-  /**
-   * -1 means that the number of parameters is unknown due to the synchronous
-   * statement not being available; any other value is the actual number of
-   * parameters for the statement.
-   */
-  PRInt32 mParamCount;
-  bool mLocked;
+  void complete();
 };
-
-} // namespace storage
-} // namespace mozilla
-
-#endif // _mozStorageBindingParams_h_
