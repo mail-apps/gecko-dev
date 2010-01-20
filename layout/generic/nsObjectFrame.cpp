@@ -601,10 +601,6 @@ private:
   // used to keep track of how big our buffer is.
   nsIntSize mPluginSize;
 
-  // the element that was passed into SetAbsoluteScreenPosition().
-  // This will be the element we use to determine which Window we draw into.
-  nsCOMPtr<nsIDOMElement> mBlitParentElement;
-
   // The absolute position on the screen to draw to.
   gfxRect mAbsolutePosition;
 
@@ -2529,6 +2525,7 @@ nsPluginInstanceOwner::nsPluginInstanceOwner()
 #ifdef MOZ_PLATFORM_HILDON
   mPluginSize = nsIntSize(0,0);
   mXlibSurfGC = None;
+  mBlitWindow = nsnull;
   mSharedXImage = nsnull;
   mSharedSegmentInfo.shmaddr = nsnull;
 #endif
@@ -5070,7 +5067,6 @@ nsPluginInstanceOwner::ReleaseXShm()
 PRBool
 nsPluginInstanceOwner::SetupXShm()
 {
-  mBlitWindow = GDK_WINDOW_XWINDOW(GetClosestWindow(mBlitParentElement));
   if (!mBlitWindow)
     return PR_FALSE;
 
@@ -5165,7 +5161,7 @@ void
 nsPluginInstanceOwner::NativeImageDraw(nsPluginRect* invalidRect)
 {
   // if we haven't been positioned yet, ignore
-  if (!mBlitParentElement)
+  if (!mBlitWindow)
     return;
 
   // if the clip rect is zero, we have nothing to do.
@@ -5886,10 +5882,15 @@ nsPluginInstanceOwner::SetAbsoluteScreenPosition(nsIDOMElement* element,
                                                  nsIDOMClientRect* position,
                                                  nsIDOMClientRect* clip)
 {
-  if ((mBlitParentElement && (mBlitParentElement != element)) ||
-      !position || !clip)
+  if (!element || !position || !clip)
     return NS_ERROR_FAILURE;
   
+  if (!mBlitWindow) {
+    mBlitWindow = GDK_WINDOW_XWINDOW(GetClosestWindow(element));
+    if (!mBlitWindow)
+      return NS_ERROR_FAILURE;
+  }
+
   float left, top, width, height;
   position->GetLeft(&left);
   position->GetTop(&top);
@@ -5904,8 +5905,6 @@ nsPluginInstanceOwner::SetAbsoluteScreenPosition(nsIDOMElement* element,
   clip->GetHeight(&height);
 
   mAbsolutePositionClip = gfxRect(left, top, width, height);
-
-  mBlitParentElement = element;
 
   UpdateVisibility(!(width == 0 && height == 0));
 
