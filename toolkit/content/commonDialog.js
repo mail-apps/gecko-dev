@@ -205,6 +205,8 @@ function commonDialogOnLoad()
                 .playSystemSound(sound);
     }
   } catch (e) { }
+
+  observerService.notifyObservers(window, "common-dialog-loaded", null);
 }
 
 var gDelayExpired = false;
