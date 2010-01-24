@@ -462,7 +462,7 @@ function fillRowWithFlex(aRow)
 
 /**
  * Makes sure that an item that has been cloned from a template
- * is stripped of any aiitributes that may adversely affect its
+ * is stripped of any attributes that may adversely affect its
  * appearance in the palette.
  */
 function cleanUpItemForPalette(aItem, aWrapper)
