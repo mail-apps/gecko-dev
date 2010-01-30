@@ -3708,7 +3708,9 @@ SetupErrorHandling(const char* progname)
 #endif
 #endif
 
+#ifndef XP_OS2
   InstallSignalHandlers(progname);
+#endif
 
 #ifndef WINCE
   // Unbuffer stdout, needed for tinderbox tests.
