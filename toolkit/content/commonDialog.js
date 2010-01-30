@@ -206,6 +206,8 @@ function commonDialogOnLoad()
     }
   } catch (e) { }
 
+  var observerService = Components.classes["@mozilla.org/observer-service;1"]
+                                  .getService(Components.interfaces.nsIObserverService);
   observerService.notifyObservers(window, "common-dialog-loaded", null);
 }
 
