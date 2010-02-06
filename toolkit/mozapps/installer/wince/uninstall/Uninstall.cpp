@@ -47,7 +47,7 @@
 #include <cfgmgrapi.h>
 
 #include "nsSetupStrings.h"
-#include "resource.h"
+#include "Uninstall.rh"
 
 #define WM_DIALOGCREATED (WM_USER + 1)
 
