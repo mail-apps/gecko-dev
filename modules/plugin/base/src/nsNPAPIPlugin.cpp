@@ -321,10 +321,10 @@ nsNPAPIPlugin::SetPluginRefNum(short aRefNum)
 
 #ifdef MOZ_IPC
 void
-nsNPAPIPlugin::PluginCrashed()
+nsNPAPIPlugin::PluginCrashed(const nsAString& dumpID)
 {
   nsRefPtr<nsPluginHost> host = dont_AddRef(nsPluginHost::GetInst());
-  host->PluginCrashed(this);
+  host->PluginCrashed(this, dumpID);
 }
 #endif
 
