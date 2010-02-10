@@ -115,6 +115,10 @@ CPPSRCS = \
 
 FORCE_STATIC_LIB = 1
 
+EXTRA_JS_MODULES = \
+  CrashSubmit.jsm \
+  $(NULL)
+
 ifdef ENABLE_TESTS
 TOOL_DIRS = test
 endif
