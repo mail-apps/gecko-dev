@@ -1341,10 +1341,9 @@ IsFrameAllowedInTable(nsIAtom* aType)
 #endif
 
 static PRBool
-AnyTablePartHasBorderOrBackground(const nsFrameList& aFrames)
+AnyTablePartHasBorderOrBackground(nsIFrame* aStart, nsIFrame* aEnd)
 {
-  for (nsFrameList::Enumerator e(aFrames); !e.AtEnd(); e.Next()) {
-    nsIFrame* f = e.get();
+  for (nsIFrame* f = aStart; f != aEnd; f = f->GetNextSibling()) {
     NS_ASSERTION(IsFrameAllowedInTable(f->GetType()), "unexpected frame type");
 
     if (f->GetStyleVisibility()->IsVisible() &&
@@ -1357,7 +1356,7 @@ AnyTablePartHasBorderOrBackground(const nsFrameList& aFrames)
     if (cellFrame)
       continue;
 
-    if (AnyTablePartHasBorderOrBackground(f->GetChildList(nsnull)))
+    if (AnyTablePartHasBorderOrBackground(f->GetChildList(nsnull).FirstChild(), nsnull))
       return PR_TRUE;
   }
 
@@ -1394,8 +1393,8 @@ nsTableFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
   // Specific visibility decisions are delegated to the table background
   // painter, which handles borders and backgrounds for the table.
   if (aBuilder->IsForEventDelivery() ||
-      AnyTablePartHasBorderOrBackground(nsFrameList(this, GetNextSibling())) ||
-      AnyTablePartHasBorderOrBackground(mColGroups)) {
+      AnyTablePartHasBorderOrBackground(this, GetNextSibling()) ||
+      AnyTablePartHasBorderOrBackground(mColGroups.FirstChild(), nsnull)) {
     item = new (aBuilder) nsDisplayTableBorderBackground(this);
     nsresult rv = aLists.BorderBackground()->AppendNewToTop(item);
     NS_ENSURE_SUCCESS(rv, rv);
