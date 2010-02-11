@@ -690,8 +690,6 @@ nsObjectFrame::Destroy()
                (mContent && mContent->GetCurrentDoc()->GetDisplayDocument()),
                "about to crash due to bug 136927");
 
-  PresContext()->RootPresContext()->UnregisterPluginForGeometryUpdates(this);
-
   // we need to finish with the plugin before native window is destroyed
   // doing this in the destructor is too late.
   StopPluginInternal(PR_TRUE);
@@ -770,6 +768,9 @@ nsObjectFrame::CreateWidget(nscoord aWidth,
   viewMan->MoveViewTo(view, origin.x, origin.y);
 
   if (!aViewOnly && !mWidget && usewidgets) {
+    nsRootPresContext* rpc = PresContext()->GetRootPresContext();
+    if (!rpc)
+      return NS_ERROR_FAILURE;
     mInnerView = viewMan->CreateView(GetContentRect() - GetPosition(), view);
     if (!mInnerView) {
       NS_ERROR("Could not create inner view");
@@ -782,7 +783,6 @@ nsObjectFrame::CreateWidget(nscoord aWidth,
     if (NS_FAILED(rv))
       return rv;
 
-    nsRootPresContext* rpc = PresContext()->RootPresContext();
     // XXX this breaks plugins in popups ... do we care?
     nsIWidget* parentWidget =
       rpc->PresShell()->FrameManager()->GetRootFrame()->GetWindow();
@@ -1257,16 +1257,18 @@ nsObjectFrame::ComputeWidgetGeometry(const nsRegion& aRegion,
   if (!mWidget)
     return;
 
-  nsIWidget::Configuration* configuration =
-    aConfigurations->AppendElement();
+  nsPresContext* presContext = PresContext();
+  nsRootPresContext* rootPC = presContext->GetRootPresContext();
+  if (!rootPC)
+    return;
+
+  nsIWidget::Configuration* configuration = aConfigurations->AppendElement();
   if (!configuration)
     return;
   configuration->mChild = mWidget;
 
-  nsPresContext* presContext = PresContext();
   PRInt32 appUnitsPerDevPixel = presContext->AppUnitsPerDevPixel();
-  nsIFrame* rootFrame =
-    presContext->RootPresContext()->PresShell()->FrameManager()->GetRootFrame();
+  nsIFrame* rootFrame = rootPC->PresShell()->FrameManager()->GetRootFrame();
   nsRect bounds = GetContentRect() + GetParent()->GetOffsetTo(rootFrame);
   configuration->mBounds = bounds.ToNearestPixels(appUnitsPerDevPixel);
 
@@ -2318,6 +2320,12 @@ nsObjectFrame::StopPluginInternal(PRBool aDelayedStop)
 {
   if (!mInstanceOwner) {
     return;
+  }
+
+  if (mWidget) {
+    nsRootPresContext* rootPC = PresContext()->GetRootPresContext();
+    NS_ASSERTION(rootPC, "unable to unregister the plugin frame");
+    rootPC->UnregisterPluginForGeometryUpdates(this);
   }
 
   // Transfer the reference to the instance owner onto the stack so
