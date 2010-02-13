@@ -845,6 +845,9 @@ static nsresult ConvertToUTF8(nsIUnicodeDecoder *aUnicodeDecoder,
 
 nsresult nsPluginTag::EnsureMembersAreUTF8()
 {
+#ifdef XP_WIN
+  return NS_OK;
+#else
   nsresult rv;
 
   nsCOMPtr<nsIPlatformCharset> pcs =
@@ -882,6 +885,7 @@ nsresult nsPluginTag::EnsureMembersAreUTF8()
     }
   }
   return NS_OK;
+#endif
 }
 
 void nsPluginTag::SetHost(nsPluginHost * aHost)
@@ -3626,7 +3630,7 @@ nsPluginHost::TrySetUpPluginInstance(const char *aMimeType,
 #if defined(XP_WIN) && !defined(WINCE)
     static BOOL firstJavaPlugin = FALSE;
     BOOL restoreOrigDir = FALSE;
-    char origDir[_MAX_PATH];
+    WCHAR origDir[_MAX_PATH];
     if (pluginTag->mIsJavaPlugin && !firstJavaPlugin) {
       DWORD dw = GetCurrentDirectoryA(_MAX_PATH, origDir);
       NS_ASSERTION(dw <= _MAX_PATH, "Falied to obtain the current directory, which may leads to incorrect class laoding");
