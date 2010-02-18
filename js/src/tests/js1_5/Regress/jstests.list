@@ -131,7 +131,7 @@ script regress-31255.js
 script regress-312588.js
 random script regress-313967-01.js # BigO
 random script regress-313967-02.js # BigO
-skip-if(xulRuntime.OS=="WINNT"&&isDebugBuild) script regress-314401.js # slow
+skip-if(!xulRuntime.shell) script regress-314401.js # bug 538159
 script regress-315974.js
 script regress-315990.js
 script regress-317476.js
