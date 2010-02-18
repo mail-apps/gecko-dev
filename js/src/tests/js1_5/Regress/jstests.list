@@ -170,7 +170,7 @@ skip-if(xulRuntime.OS=="WINNT"&&isDebugBuild) script regress-341360.js # slow
 script regress-343713.js
 script regress-343966.js
 script regress-344711-n.js
-fails-if(!xulRuntime.shell) script regress-344804.js # bug 535393
+skip-if(!xulRuntime.shell) script regress-344804.js # bug 547025
 script regress-344959.js
 script regress-346237.js
 script regress-346801.js
