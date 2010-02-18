@@ -331,7 +331,7 @@ public:
                    PRBool aClearQueue) {
     NS_ASSERTION(aRunnable, "Null pointer!");
 
-    // No need to enter the monitor because we should already be in it.
+    PR_ASSERT_CURRENT_THREAD_IN_MONITOR(gDOMThreadService->mMonitor);
 
     if (NS_LIKELY(!aTimeoutInterval)) {
       NS_ADDREF(aRunnable);
@@ -352,7 +352,7 @@ public:
     NS_ASSERTION(aTimeoutInterval, "No timeout specified!");
     NS_ASSERTION(aTimeoutInterval!= PR_INTERVAL_NO_TIMEOUT, "Bad timeout!");
 
-    // No need to enter the monitor because we should already be in it.
+    PR_ASSERT_CURRENT_THREAD_IN_MONITOR(gDOMThreadService->mMonitor);
 
     NS_ASSERTION(mWorker->GetExpirationTime() == PR_INTERVAL_NO_TIMEOUT,
                  "Asked to set timeout on a runnable with no close handler!");
@@ -366,6 +366,17 @@ public:
   NS_IMETHOD Run() {
     NS_ASSERTION(!NS_IsMainThread(),
                  "This should *never* run on the main thread!");
+
+    // If the worker has been suspended then we're going to bail here and let
+    // another worker take precedence.
+    if (mWorker->IsSuspended()) {
+      if (gDOMThreadService->QueueSuspendedWorker(this)) {
+        return NS_OK;
+      }
+      // Out of memory maybe? We can suspend the old fashioned way by not
+      // returning here.
+      NS_WARNING("Can't reschedule worker?!");
+    }
 
     // This must have been set up by the thread service
     NS_ASSERTION(gJSContextIndex != BAD_TLS_INDEX, "No context index!");
@@ -827,6 +838,16 @@ nsDOMThreadService::Cleanup()
   // Init fails somehow. We can therefore assume that all services will still
   // be available here.
 
+  {
+    nsAutoMonitor mon(mMonitor);
+
+    NS_ASSERTION(!mPools.Count(), "Live workers left!");
+    mPools.Clear();
+
+    NS_ASSERTION(!mSuspendedWorkers.Length(), "Suspended workers left!");
+    mSuspendedWorkers.Clear();
+  }
+
   if (gObserverService) {
     gObserverService->RemoveObserver(this, NS_XPCOM_SHUTDOWN_OBSERVER_ID);
     NS_RELEASE(gObserverService);
@@ -853,11 +874,6 @@ nsDOMThreadService::Cleanup()
   // These must be released after the thread pool is shut down.
   NS_IF_RELEASE(gJSRuntimeService);
   NS_IF_RELEASE(gWorkerSecurityManager);
-
-  nsAutoMonitor mon(mMonitor);
-  NS_ASSERTION(!mPools.Count(), "Live workers left!");
-
-  mPools.Clear();
 }
 
 nsresult
@@ -944,8 +960,7 @@ nsDOMThreadService::SetWorkerTimeout(nsDOMWorker* aWorker,
 void
 nsDOMThreadService::WorkerComplete(nsDOMWorkerRunnable* aRunnable)
 {
-
-  // No need to be in the monitor here because we should already be in it.
+  PR_ASSERT_CURRENT_THREAD_IN_MONITOR(mMonitor);
 
 #ifdef DEBUG
   nsRefPtr<nsDOMWorker>& debugWorker = aRunnable->mWorker;
@@ -957,6 +972,23 @@ nsDOMThreadService::WorkerComplete(nsDOMWorkerRunnable* aRunnable)
 #endif
 
   mWorkersInProgress.Remove(aRunnable->mWorker);
+}
+
+PRBool
+nsDOMThreadService::QueueSuspendedWorker(nsDOMWorkerRunnable* aRunnable)
+{
+  nsAutoMonitor mon(mMonitor);
+
+#ifdef DEBUG
+    {
+      // Make sure that the runnable is in mWorkersInProgress.
+      nsRefPtr<nsDOMWorkerRunnable> current;
+      mWorkersInProgress.Get(aRunnable->mWorker, getter_AddRefs(current));
+      NS_ASSERTION(current == aRunnable, "Something crazy wrong here!");
+    }
+#endif
+
+  return mSuspendedWorkers.AppendElement(aRunnable) ? PR_TRUE : PR_FALSE;
 }
 
 /* static */
@@ -1033,7 +1065,7 @@ nsDOMThreadService::GetPoolForGlobal(nsIScriptGlobalObject* aGlobalObject,
 void
 nsDOMThreadService::TriggerOperationCallbackForPool(nsDOMWorkerPool* aPool)
 {
-  nsAutoMonitor mon(mMonitor);
+  PR_ASSERT_CURRENT_THREAD_IN_MONITOR(mMonitor);
 
   // See if we need to trigger the operation callback on any currently running
   // contexts.
@@ -1048,6 +1080,46 @@ nsDOMThreadService::TriggerOperationCallbackForPool(nsDOMWorkerPool* aPool)
 }
 
 void
+nsDOMThreadService::RescheduleSuspendedWorkerForPool(nsDOMWorkerPool* aPool)
+{
+  PR_ASSERT_CURRENT_THREAD_IN_MONITOR(mMonitor);
+
+  PRUint32 count = mSuspendedWorkers.Length();
+  if (!count) {
+    // Nothing to do here.
+    return;
+  }
+
+  nsTArray<nsDOMWorkerRunnable*> others(count);
+
+  for (PRUint32 index = 0; index < count; index++) {
+    nsDOMWorkerRunnable* runnable = mSuspendedWorkers[index];
+
+#ifdef DEBUG
+    {
+      // Make sure that the runnable never left mWorkersInProgress.
+      nsRefPtr<nsDOMWorkerRunnable> current;
+      mWorkersInProgress.Get(runnable->mWorker, getter_AddRefs(current));
+      NS_ASSERTION(current == runnable, "Something crazy wrong here!");
+    }
+#endif
+
+    if (runnable->mWorker->Pool() == aPool) {
+#ifdef DEBUG
+      nsresult rv =
+#endif
+      mThreadPool->Dispatch(runnable, NS_DISPATCH_NORMAL);
+      NS_ASSERTION(NS_SUCCEEDED(rv), "This shouldn't ever fail!");
+    }
+    else {
+      others.AppendElement(runnable);
+    }
+  }
+
+  mSuspendedWorkers.SwapElements(others);
+}
+
+void
 nsDOMThreadService::CancelWorkersForGlobal(nsIScriptGlobalObject* aGlobalObject)
 {
   NS_ASSERTION(aGlobalObject, "Null pointer!");
@@ -1055,7 +1127,11 @@ nsDOMThreadService::CancelWorkersForGlobal(nsIScriptGlobalObject* aGlobalObject)
   nsRefPtr<nsDOMWorkerPool> pool = GetPoolForGlobal(aGlobalObject, PR_TRUE);
   if (pool) {
     pool->Cancel();
+
+    nsAutoMonitor mon(mMonitor);
+
     TriggerOperationCallbackForPool(pool);
+    RescheduleSuspendedWorkerForPool(pool);
   }
 }
 
@@ -1067,6 +1143,8 @@ nsDOMThreadService::SuspendWorkersForGlobal(nsIScriptGlobalObject* aGlobalObject
   nsRefPtr<nsDOMWorkerPool> pool = GetPoolForGlobal(aGlobalObject, PR_FALSE);
   if (pool) {
     pool->Suspend();
+
+    nsAutoMonitor mon(mMonitor);
     TriggerOperationCallbackForPool(pool);
   }
 }
@@ -1079,7 +1157,11 @@ nsDOMThreadService::ResumeWorkersForGlobal(nsIScriptGlobalObject* aGlobalObject)
   nsRefPtr<nsDOMWorkerPool> pool = GetPoolForGlobal(aGlobalObject, PR_FALSE);
   if (pool) {
     pool->Resume();
+
+    nsAutoMonitor mon(mMonitor);
+
     TriggerOperationCallbackForPool(pool);
+    RescheduleSuspendedWorkerForPool(pool);
   }
 }
 
