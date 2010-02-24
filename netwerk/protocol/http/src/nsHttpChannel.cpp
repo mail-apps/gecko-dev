@@ -3106,16 +3106,35 @@ nsHttpChannel::GenCredsAndSetEntry(nsIHttpAuthenticator *auth,
     } else {
         continuationState = &mAuthContinuationState;
     }
-
-    rv = auth->GenerateCredentials(this,
-                                   challenge,
-                                   proxyAuth,
-                                   ident.Domain(),
-                                   ident.User(),
-                                   ident.Password(),
-                                   &ss,
-                                   &*continuationState,
-                                   result);
+    
+    nsCOMPtr<nsIHttpAuthenticator_1_9_2> auth192 = 
+        do_QueryInterface(auth);
+        
+    PRUint32 generateFlags;
+    if (auth192) {
+        rv = auth192->GenerateCredentials_1_9_2(this,
+                                                challenge,
+                                                proxyAuth,
+                                                ident.Domain(),
+                                                ident.User(),
+                                                ident.Password(),
+                                                &ss,
+                                                &*continuationState,
+                                                &generateFlags,
+                                                result);
+    }
+    else {
+        generateFlags = 0;
+        rv = auth->GenerateCredentials(this,
+                                       challenge,
+                                       proxyAuth,
+                                       ident.Domain(),
+                                       ident.User(),
+                                       ident.Password(),
+                                       &ss,
+                                       &*continuationState,
+                                       result);
+    }
 
     sessionState.swap(ss);
     if (NS_FAILED(rv)) return rv;
@@ -3132,6 +3151,9 @@ nsHttpChannel::GenCredsAndSetEntry(nsIHttpAuthenticator *auth,
     PRBool saveChallenge =
         0 != (authFlags & nsIHttpAuthenticator::REUSABLE_CHALLENGE);
 
+    PRBool saveIdentity =
+        0 == (generateFlags & nsIHttpAuthenticator_1_9_2::USING_INTERNAL_IDENTITY);
+
     // this getter never fails
     nsHttpAuthCache *authCache = gHttpHandler->AuthCache();
 
@@ -3144,7 +3166,8 @@ nsHttpChannel::GenCredsAndSetEntry(nsIHttpAuthenticator *auth,
     rv = authCache->SetAuthEntry(scheme, host, port, directory, realm,
                                  saveCreds ? *result : nsnull,
                                  saveChallenge ? challenge : nsnull,
-                                 ident, sessionState);
+                                 saveIdentity ? &ident : nsnull,
+                                 sessionState);
     return rv;
 }
 
