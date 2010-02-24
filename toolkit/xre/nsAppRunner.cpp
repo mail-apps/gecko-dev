@@ -301,6 +301,7 @@ extern "C" {
 #endif
 
 extern void InstallSignalHandlers(const char *ProgramName);
+#include "nsX11ErrorHandler.h"
 
 int    gArgc;
 char **gArgv;
@@ -3114,6 +3115,10 @@ XRE_main(int argc, char* argv[], const nsXREAppData* aAppData)
 
     gtk_widget_set_default_colormap(gdk_rgb_get_colormap());
 #endif /* MOZ_WIDGET_GTK2 */
+#ifdef MOZ_X11
+    // Do this after initializing GDK, or GDK will install its own handler.
+    InstallX11ErrorHandler();
+#endif
 
     // Call the code to install our handler
 #ifdef MOZ_JPROF
