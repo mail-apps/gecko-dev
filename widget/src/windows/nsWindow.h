@@ -414,7 +414,6 @@ protected:
   PRPackedBool          mInDtor;
   PRPackedBool          mIsVisible;
   PRPackedBool          mIsInMouseCapture;
-  PRPackedBool          mInScrollProcessing;
   PRPackedBool          mUnicodeWidget;
   PRPackedBool          mPainting;
   char                  mLeadByte;
