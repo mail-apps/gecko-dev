@@ -4427,9 +4427,6 @@ nsEventStatus nsPluginInstanceOwner::ProcessEvent(const nsGUIEvent& anEvent)
         case NS_MOUSE_BUTTON_UP:
           carbonEvent.what = mouseUp;
           break;
-        default:
-          pluginWidget->EndDrawPlugin();
-          return nsEventStatus_eIgnore;
         }
       }
 
