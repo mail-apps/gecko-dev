@@ -76,9 +76,6 @@ export:: sqlite-version.h
 endif
 endif
 
-# FIXME: bug 419893
-NO_PROFILE_GUIDED_OPTIMIZE = 1
-
 ifdef GNU_CC
 MODULE_OPTIMIZE_FLAGS = -O2
 else
@@ -117,6 +114,11 @@ endif
 # Turn on SQLite's assertions in debug builds.
 ifdef MOZ_DEBUG
 DEFINES += -DSQLITE_DEBUG=1
+endif
+
+# disable PGO for Sun Studio
+ifdef SOLARIS_SUNPRO_CC
+NO_PROFILE_GUIDED_OPTIMIZE = 1
 endif
 
 ifeq ($(OS_ARCH),OS2)

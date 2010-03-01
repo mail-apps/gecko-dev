@@ -49,6 +49,10 @@
 namespace mozilla {
 namespace storage {
 
+/**
+ * @deprecated As of Mozilla 1.9.2.  Methods are already provided on
+ *             mozIStorageStatement.
+ */
 class StatementWrapper : public mozIStorageStatementWrapper
                        , public nsIXPCScriptable
 {

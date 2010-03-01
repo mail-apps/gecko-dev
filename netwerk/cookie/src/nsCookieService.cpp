@@ -544,6 +544,10 @@ nsCookieService::TryInitDB(PRBool aDeleteExistingDB)
         rv = mDBState->dbConn->CreateStatement(NS_LITERAL_CSTRING(
           "SELECT id, name, value, host, path, expiry, isSecure, isHttpOnly "
           "FROM moz_cookies"), getter_AddRefs(stmt));
+        PRInt32 state;
+        if (NS_SUCCEEDED(rv) && NS_SUCCEEDED(stmt->GetState(&state)) &&
+            state == mozIStorageStatement::MOZ_STORAGE_STATEMENT_INVALID)
+          rv = NS_ERROR_UNEXPECTED;
         if (NS_SUCCEEDED(rv))
           break;
 
