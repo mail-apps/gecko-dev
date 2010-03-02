@@ -119,12 +119,12 @@ CEnumFormatEtc::Next(ULONG aMaxToFetch, FORMATETC *aResult, ULONG *aNumFetched)
   if (mCurrentIdx >= mFormatList.Length())
       return S_FALSE;
 
-  PRUInt32 left = mFormatList.Length() - mCurrentIdx;
+  PRUint32 left = mFormatList.Length() - mCurrentIdx;
 
   if (!aMaxToFetch)
       return S_FALSE;
 
-  PRUInt32 count = static_cast<PRUInt32>(aMaxToFetch) < left ? static_cast<PRUInt32>(aMaxToFetch) : left;
+  PRUint32 count = static_cast<PRUint32>(aMaxToFetch) < left ? static_cast<PRUint32>(aMaxToFetch) : left;
 
   PRUint32 idx = 0;
   while (count > 0) {
