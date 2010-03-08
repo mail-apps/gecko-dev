@@ -52,6 +52,8 @@ _CHROME_FILES = \
 	test_bug514660.xul \
 	test_printpreview.xul \
 	printpreview_helper.xul \
+	chrome_content_integration_window.xul \
+	test_chrome_content_integration.xul \
     $(NULL)
 
 libs:: $(_CHROME_FILES)
