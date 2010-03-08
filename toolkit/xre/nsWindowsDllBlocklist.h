@@ -96,6 +96,10 @@ static DllBlockInfo sWindowsDllBlocklist[] = {
 
   // rdolib.dll - Suspected malware
   {"rdolib.dll", MAKE_VERSION(6,0,88,4)},
+
+  // Music download filter for vkontakte.ru - old instances
+  // of this DLL cause crashes
+  {"vksaver.dll", MAKE_VERSION(1,0,0,1)},
   
   // leave these two in always for tests
   { "mozdllblockingtest.dll", ALL_VERSIONS },
