@@ -891,8 +891,8 @@ MakeNewNPAPIStreamInternal(NPP npp, const char *relativeURL, const char *target,
 
   PluginDestructionGuard guard(npp);
 
-  nsIPluginInstance *inst = (nsIPluginInstance *) npp->ndata;
-  if (!inst)
+  nsNPAPIPluginInstance *inst = (nsNPAPIPluginInstance *) npp->ndata;
+  if (!inst || !inst->IsRunning())
     return NPERR_INVALID_INSTANCE_ERROR;
 
   nsCOMPtr<nsIPluginHost> pluginHost = do_GetService(MOZ_PLUGIN_HOST_CONTRACTID);
@@ -1117,7 +1117,7 @@ nsPluginThreadRunnable::nsPluginThreadRunnable(NPP instance,
     nsAutoLock lock(sPluginThreadAsyncCallLock);
 
     nsNPAPIPluginInstance *inst = (nsNPAPIPluginInstance *)instance->ndata;
-    if (!inst || !inst->IsStarted()) {
+    if (!inst || !inst->IsRunning()) {
       // The plugin was stopped, ignore this async call.
       mFunc = nsnull;
 

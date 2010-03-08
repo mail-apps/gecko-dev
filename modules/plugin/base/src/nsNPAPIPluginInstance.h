@@ -152,7 +152,14 @@ public:
   virtual ~nsNPAPIPluginInstance();
 
   // returns the state of mStarted
-  PRBool IsStarted();
+  bool IsRunning() {
+    return RUNNING == mRunning;
+  }
+
+  // Indicates whether the plugin is running normally or being shut down
+  bool CanFireNotifications() {
+    return mRunning == RUNNING || mRunning == DESTROYING;
+  }
 
   // cache this NPAPI plugin
   nsresult SetCached(PRBool aCache);
@@ -192,12 +199,18 @@ protected:
   NPDrawingModel mDrawingModel;
 #endif
 
+  enum {
+    NOT_STARTED,
+    RUNNING,
+    DESTROYING,
+    DESTROYED
+  } mRunning;
+
   // these are used to store the windowless properties
   // which the browser will later query
   PRPackedBool mWindowless;
   PRPackedBool mWindowlessLocal;
   PRPackedBool mTransparent;
-  PRPackedBool mStarted;
   PRPackedBool mCached;
   PRPackedBool mWantsAllNetworkStreams;
 
