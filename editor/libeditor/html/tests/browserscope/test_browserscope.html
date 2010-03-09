@@ -21,8 +21,6 @@ BrowserScope richtext category tests
 <script type="application/javascript">
 
 SimpleTest.waitForExplicitFinish();
-// Running all of the tests can take a long time, try to account for it
-SimpleTest.requestLongerTimeout(5);
 
 function sendScore(results, continueParams) {
   ok(results.length > 1, "At least one test should have been run");
