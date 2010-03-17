@@ -260,6 +260,7 @@ static const char* SUCCESS_STRING = "pass";
 
 static bool sIdentifiersInitialized = false;
 
+#ifdef NPAPI_TIMERS
 static uint32_t timerEventCount = 0;
 
 struct timerEvent {
@@ -283,6 +284,8 @@ static timerEvent timerEvents[] = {
   {2, -1, 0, false, 2},
 };
 static uint32_t totalTimerEvents = sizeof(timerEvents) / sizeof(timerEvent);
+
+#endif // NPAPI_TIMERS
 
 /**
  * Incremented for every startWatchingInstanceCount.
@@ -1280,6 +1283,7 @@ NPN_MemFree(void* ptr)
   return sBrowserFuncs->memfree(ptr);
 }
 
+#ifdef NPAPI_TIMERS
 uint32_t
 NPN_ScheduleTimer(NPP instance, uint32_t interval, NPBool repeat, void (*timerFunc)(NPP npp, uint32_t timerID))
 {
@@ -1291,6 +1295,7 @@ NPN_UnscheduleTimer(NPP instance, uint32_t timerID)
 {
   return sBrowserFuncs->unscheduletimer(instance, timerID);
 }
+#endif // NPAPI_TIMERS
 
 void
 NPN_ReleaseVariantValue(NPVariant *variant)
@@ -1387,11 +1392,13 @@ NPN_SetException(NPObject *npobj, const NPUTF8 *message)
   return sBrowserFuncs->setexception(npobj, message);
 }
 
+#ifdef NPAPI_CONVERTPOINT
 NPBool
 NPN_ConvertPoint(NPP instance, double sourceX, double sourceY, NPCoordinateSpace sourceSpace, double *destX, double *destY, NPCoordinateSpace destSpace)
 {
   return sBrowserFuncs->convertpoint(instance, sourceX, sourceY, sourceSpace, destX, destY, destSpace);
 }
+#endif // NPAPI_CONVERTPOINT
 
 NPError
 NPN_SetValueForURL(NPP instance, NPNURLVariable variable, const char *url, const char *value, uint32_t len)
@@ -2017,6 +2024,7 @@ doInternalConsistencyCheck(NPObject* npobj, const NPVariant* args, uint32_t argC
 static bool
 convertPointX(NPObject* npobj, const NPVariant* args, uint32_t argCount, NPVariant* result)
 {
+#ifdef NPAPI_CONVERTPOINT
   if (argCount != 4)
     return false;
 
@@ -2043,11 +2051,15 @@ convertPointX(NPObject* npobj, const NPVariant* args, uint32_t argCount, NPVaria
 
   DOUBLE_TO_NPVARIANT(resultX, *result);
   return true;
+#else
+  return false;
+#endif
 }
 
 static bool
 convertPointY(NPObject* npobj, const NPVariant* args, uint32_t argCount, NPVariant* result)
 {
+#ifdef NPAPI_CONVERTPOINT
   if (argCount != 4)
     return false;
 
@@ -2074,6 +2086,9 @@ convertPointY(NPObject* npobj, const NPVariant* args, uint32_t argCount, NPVaria
   
   DOUBLE_TO_NPVARIANT(resultY, *result);
   return true;
+#else
+  return false;
+#endif
 }
 
 static bool
@@ -2369,6 +2384,7 @@ getAuthInfo(NPObject* npobj, const NPVariant* args, uint32_t argCount, NPVariant
   return true;
 }
 
+#ifdef NPAPI_TIMERS
 static void timerCallback(NPP npp, uint32_t timerID)
 {
   InstanceData* id = static_cast<InstanceData*>(npp->pdata);
@@ -2400,10 +2416,12 @@ static void timerCallback(NPP npp, uint32_t timerID)
     NPN_UnscheduleTimer(npp, id->timerID[event.timerIdUnschedule]);
   }
 }
+#endif // NPAPI_TIMERS
 
 static bool
 timerTest(NPObject* npobj, const NPVariant* args, uint32_t argCount, NPVariant* result)
 {
+#ifdef NPAPI_TIMERS
   NPP npp = static_cast<TestNPObject*>(npobj)->npp;
   InstanceData* id = static_cast<InstanceData*>(npp->pdata);
   timerEventCount = 0;
@@ -2419,6 +2437,9 @@ timerTest(NPObject* npobj, const NPVariant* args, uint32_t argCount, NPVariant* 
   id->timerID[event.timerIdSchedule] = NPN_ScheduleTimer(npp, event.timerInterval, event.timerRepeat, timerCallback);
   
   return id->timerID[event.timerIdSchedule] != 0;
+#else
+  return false;
+#endif
 }
 
 #ifdef XP_WIN
