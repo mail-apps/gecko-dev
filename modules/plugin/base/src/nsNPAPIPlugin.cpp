@@ -235,6 +235,8 @@ nsNPAPIPlugin::nsNPAPIPlugin(NPPluginFuncs* callbacks,
                              PluginLibrary* aLibrary)
 {
   memset((void*) &fCallbacks, 0, sizeof(fCallbacks));
+
+  fCallbacks.size = sizeof(fCallbacks);
   fLibrary = nsnull;
 #ifdef OJI
   mShadow = nsnull;
@@ -248,8 +250,6 @@ nsNPAPIPlugin::nsNPAPIPlugin(NPPluginFuncs* callbacks,
   nsresult gepResult = aLibrary->NP_GetEntryPoints(&fCallbacks, &gepError);
   if (gepResult != NS_OK || gepError != NPERR_NO_ERROR)
     return;
-
-  fCallbacks.size = sizeof(fCallbacks);
 
   NS_ASSERTION(HIBYTE(fCallbacks.version) >= NP_VERSION_MAJOR,
                "callback version is less than NP version");
@@ -275,7 +275,6 @@ nsNPAPIPlugin::nsNPAPIPlugin(NPPluginFuncs* callbacks,
   if (gepResult != NS_OK || gepError != NPERR_NO_ERROR)
     return;
 
-  fCallbacks.size = sizeof(fCallbacks);
   fCallbacks.version = np_callbacks.version;
   fCallbacks.newp = (NPP_NewProcPtr)np_callbacks.newp;
   fCallbacks.destroy = (NPP_DestroyProcPtr)np_callbacks.destroy;
