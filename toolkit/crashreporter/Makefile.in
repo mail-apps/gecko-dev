@@ -50,9 +50,6 @@ REQUIRES = \
 	string \
 	$(NULL)
 
-DIRS = \
-	$(NULL)
-
 ifeq  ($(OS_ARCH),WINNT)
 DIRS += \
   google-breakpad/src/common/windows \
