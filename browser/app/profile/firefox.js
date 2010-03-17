@@ -909,6 +909,8 @@ pref("toolbar.customization.usesheet", true);
 pref("toolbar.customization.usesheet", false);
 #endif
 
+pref("dom.ipc.plugins.enabled", false);
+
 #ifdef XP_WIN
 #ifndef WINCE
 pref("browser.taskbar.previews.enable", false);

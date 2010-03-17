@@ -208,6 +208,10 @@
 #include "nsIPrefService.h"
 #endif
 
+#ifdef MOZ_IPC
+#include "base/command_line.h"
+#endif
+
 #ifdef WINCE
 class WindowsMutex {
 public:
@@ -3033,6 +3037,9 @@ XRE_main(int argc, char* argv[], const nsXREAppData* aAppData)
 
   MOZ_SPLASHSCREEN_UPDATE(20);
 
+  rv = XRE_InitCommandLine(gArgc, gArgv);
+  NS_ENSURE_SUCCESS(rv, 1);
+
   {
     nsXREDirProvider dirProvider;
     rv = dirProvider.Initialize(gAppData->directory, gAppData->xreDirectory);
@@ -3501,13 +3508,14 @@ XRE_main(int argc, char* argv[], const nsXREAppData* aAppData)
           }
 
           MOZ_SPLASHSCREEN_UPDATE(90);
-
-          NS_TIMELINE_ENTER("appStartup->Run");
-          rv = appStartup->Run();
-          NS_TIMELINE_LEAVE("appStartup->Run");
-          if (NS_FAILED(rv)) {
-            NS_ERROR("failed to run appstartup");
-            gLogConsoleErrors = PR_TRUE;
+          {
+            NS_TIMELINE_ENTER("appStartup->Run");
+            rv = appStartup->Run();
+            NS_TIMELINE_LEAVE("appStartup->Run");
+            if (NS_FAILED(rv)) {
+              NS_ERROR("failed to run appstartup");
+              gLogConsoleErrors = PR_TRUE;
+            }
           }
 
           // Check for an application initiated restart.  This is one that
@@ -3625,6 +3633,8 @@ XRE_main(int argc, char* argv[], const nsXREAppData* aAppData)
   if (appData.flags & NS_XRE_ENABLE_CRASH_REPORTER)
       CrashReporter::UnsetExceptionHandler();
 #endif
+
+  XRE_DeinitCommandLine();
 
   return NS_FAILED(rv) ? 1 : 0;
 }
