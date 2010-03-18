@@ -321,6 +321,10 @@ public:
 
   static nsresult GetPrompt(nsIPluginInstanceOwner *aOwner, nsIPrompt **aPrompt);
 
+#ifdef MOZ_IPC
+  void PluginCrashed(nsNPAPIPlugin* plugin);
+#endif
+
 private:
   nsresult
   TrySetUpPluginInstance(const char *aMimeType, nsIURI *aURL, nsIPluginInstanceOwner *aOwner);
