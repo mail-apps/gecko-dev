@@ -229,7 +229,7 @@ OnWrapperCreated()
 {
   if (sWrapperCount++ == 0) {
     static const char rtsvc_id[] = "@mozilla.org/js/xpc/RuntimeService;1";
-    nsCOMPtr<nsIJSRuntimeService> rtsvc(do_GetService(rtsvc_id));
+    nsCOMPtr<nsIJSRuntimeService_MOZILLA_1_9_2> rtsvc(do_GetService(rtsvc_id));
     if (!rtsvc)
       return;
 

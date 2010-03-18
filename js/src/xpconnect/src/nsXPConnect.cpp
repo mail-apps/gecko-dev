@@ -53,11 +53,12 @@
 #include "nsThreadUtilsInternal.h"
 #include "dom_quickstubs.h"
 
-NS_IMPL_THREADSAFE_ISUPPORTS6(nsXPConnect,
+NS_IMPL_THREADSAFE_ISUPPORTS7(nsXPConnect,
                               nsIXPConnect,
                               nsISupportsWeakReference,
                               nsIThreadObserver,
                               nsIJSRuntimeService,
+                              nsIJSRuntimeService_MOZILLA_1_9_2,
                               nsIJSContextStack,
                               nsIThreadJSContextStack)
 
