@@ -238,9 +238,6 @@ struct JSThreadData {
     /* Property cache for faster call/get/set invocation. */
     JSPropertyCache     propertyCache;
 
-    /* Random number generator state, used by jsmath.cpp. */
-    int64               rngSeed;
-
 #ifdef JS_TRACER
     /* Trace-tree JIT recorder/interpreter state. */
     JSTraceMonitor      traceMonitor;
@@ -1015,6 +1012,9 @@ struct JSContext {
 
     /* Stored here to avoid passing it around as a parameter. */
     uintN               resolveFlags;
+
+    /* Random number generator state, used by jsmath.cpp. */
+    int64               rngSeed;
 
 #ifdef JS_TRACER
     /*

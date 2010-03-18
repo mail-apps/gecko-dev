@@ -53,7 +53,7 @@ extern JSObject *
 js_InitMathClass(JSContext *cx, JSObject *obj);
 
 extern void
-js_InitRandom(JSThreadData *data);
+js_InitRandom(JSContext *cx);
 
 JS_END_EXTERN_C
 
