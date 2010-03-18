@@ -1341,7 +1341,7 @@ nsObjectFrame::IsOpaque() const
   if (!mInstanceOwner)
     return PR_FALSE;
 
-  NPWindow *window;
+  nsPluginWindow *window;
   mInstanceOwner->GetWindow(window);
   if (window->type != NPWindowTypeDrawable)
     return PR_TRUE;
@@ -1352,8 +1352,8 @@ nsObjectFrame::IsOpaque() const
   if (NS_FAILED(rv) || !pi)
     return PR_FALSE;
 
-  PRBool transparent = PR_FALSE;
-  pi->IsTransparent(&transparent);
+  PRUint32 transparent = PR_FALSE;
+  pi->GetValue(nsPluginInstanceVariable_TransparentBool, &transparent);
   return !transparent;
 #endif
 }

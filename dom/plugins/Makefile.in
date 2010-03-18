@@ -59,7 +59,6 @@ EXPORTS_mozilla/plugins = \
   BrowserStreamChild.h \
   BrowserStreamParent.h \
   ChildAsyncCall.h \
-  ChildTimer.h \
   NPEventOSX.h \
   NPEventWindows.h \
   NPEventX11.h \
@@ -96,7 +95,6 @@ ENABLE_CXX_EXCEPTIONS = 1
 
 CPPSRCS = \
   ChildAsyncCall.cpp \
-  ChildTimer.cpp \
   PluginMessageUtils.cpp \
   PluginInstanceChild.cpp \
   PluginInstanceParent.cpp \

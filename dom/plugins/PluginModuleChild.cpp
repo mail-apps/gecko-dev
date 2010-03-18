@@ -612,21 +612,6 @@ _getauthenticationinfo(NPP npp, const char *protocol,
                        char **username, uint32_t *ulen,
                        char **password, uint32_t *plen);
 
-static uint32_t NP_CALLBACK
-_scheduletimer(NPP instance, uint32_t interval, NPBool repeat,
-               void (*timerFunc)(NPP npp, uint32_t timerID));
-
-static void NP_CALLBACK
-_unscheduletimer(NPP instance, uint32_t timerID);
-
-static NPError NP_CALLBACK
-_popupcontextmenu(NPP instance, NPMenu* menu);
-
-static NPBool NP_CALLBACK
-_convertpoint(NPP instance, 
-              double sourceX, double sourceY, NPCoordinateSpace sourceSpace,
-              double *destX, double *destY, NPCoordinateSpace destSpace);
-
 } /* namespace child */
 } /* namespace plugins */
 } /* namespace mozilla */
@@ -681,11 +666,7 @@ const NPNetscapeFuncs PluginModuleChild::sBrowserFuncs = {
     mozilla::plugins::child::_construct,
     mozilla::plugins::child::_getvalueforurl,
     mozilla::plugins::child::_setvalueforurl,
-    mozilla::plugins::child::_getauthenticationinfo,
-    mozilla::plugins::child::_scheduletimer,
-    mozilla::plugins::child::_unscheduletimer,
-    mozilla::plugins::child::_popupcontextmenu,
-    mozilla::plugins::child::_convertpoint
+    mozilla::plugins::child::_getauthenticationinfo
 };
 
 PluginInstanceChild*
@@ -1445,44 +1426,6 @@ _getauthenticationinfo(NPP npp, const char *protocol,
         *plen = p.Length();
     }
     return result;
-}
-
-uint32_t NP_CALLBACK
-_scheduletimer(NPP npp, uint32_t interval, NPBool repeat,
-               void (*timerFunc)(NPP npp, uint32_t timerID))
-{
-    PLUGIN_LOG_DEBUG_FUNCTION;
-    AssertPluginThread();
-
-    return InstCast(npp)->ScheduleTimer(interval, repeat, timerFunc);
-}
-
-void NP_CALLBACK
-_unscheduletimer(NPP npp, uint32_t timerID)
-{
-    PLUGIN_LOG_DEBUG_FUNCTION;
-    AssertPluginThread();
-    InstCast(npp)->UnscheduleTimer(timerID);
-}
-
-NPError NP_CALLBACK
-_popupcontextmenu(NPP instance, NPMenu* menu)
-{
-    PLUGIN_LOG_DEBUG_FUNCTION;
-    AssertPluginThread();
-    NS_NOTYETIMPLEMENTED("Implement me!");
-    return NPERR_GENERIC_ERROR;
-}
-
-NPBool NP_CALLBACK
-_convertpoint(NPP instance, 
-              double sourceX, double sourceY, NPCoordinateSpace sourceSpace,
-              double *destX, double *destY, NPCoordinateSpace destSpace)
-{
-    PLUGIN_LOG_DEBUG_FUNCTION;
-    AssertPluginThread();
-    NS_NOTYETIMPLEMENTED("Implement me!");
-    return 0;
 }
 
 } /* namespace child */

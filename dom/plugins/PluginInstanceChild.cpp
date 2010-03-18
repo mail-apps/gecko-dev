@@ -1475,29 +1475,6 @@ PluginInstanceChild::InvalidateRect(NPRect* aInvalidRect)
     SendNPN_InvalidateRect(*aInvalidRect);
 }
 
-uint32_t
-PluginInstanceChild::ScheduleTimer(uint32_t interval, bool repeat,
-                                   TimerFunc func)
-{
-    ChildTimer* t = new ChildTimer(this, interval, repeat, func);
-    if (0 == t->ID()) {
-        delete t;
-        return 0;
-    }
-
-    mTimers.AppendElement(t);
-    return t->ID();
-}
-
-void
-PluginInstanceChild::UnscheduleTimer(uint32_t id)
-{
-    if (0 == id)
-        return;
-
-    mTimers.RemoveElement(id, ChildTimer::IDComparator());
-}
-
 static PLDHashOperator
 InvalidateObject(DeletingObjectEntry* e, void* userArg)
 {
@@ -1553,8 +1530,6 @@ PluginInstanceChild::AnswerNPP_Destroy(NPError* aResult)
     for (PRUint32 i = 0; i < mPendingAsyncCalls.Length(); ++i)
         mPendingAsyncCalls[i]->Cancel();
     mPendingAsyncCalls.TruncateLength(0);
-
-    mTimers.Clear();
 
     PluginModuleChild::current()->NPP_Destroy(this);
     mData.ndata = 0;

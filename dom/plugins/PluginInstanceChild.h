@@ -50,7 +50,6 @@
 #include "nsAutoPtr.h"
 #include "nsTArray.h"
 #include "ChildAsyncCall.h"
-#include "ChildTimer.h"
 #include "nsRect.h"
 #include "nsTHashtable.h"
 
@@ -185,9 +184,6 @@ public:
 
     void InvalidateRect(NPRect* aInvalidRect);
 
-    uint32_t ScheduleTimer(uint32_t interval, bool repeat, TimerFunc func);
-    void UnscheduleTimer(uint32_t id);
-
 private:
     friend class PluginModuleChild;
 
@@ -261,7 +257,6 @@ private:
 
     friend class ChildAsyncCall;
     nsTArray<ChildAsyncCall*> mPendingAsyncCalls;
-    nsTArray<nsAutoPtr<ChildTimer> > mTimers;
 
     /**
      * During destruction we enumerate all remaining scriptable objects and
