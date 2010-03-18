@@ -2556,8 +2556,13 @@ _requestread(NPStream *pstream, NPByteRange *rangeList)
   if (streamtype != nsPluginStreamType_Seek)
     return NPERR_STREAM_NOT_SEEKABLE;
 
-  if (streamlistener->mStreamInfo)
-    streamlistener->mStreamInfo->RequestRead((nsByteRange *)rangeList);
+  if (!streamlistener->mStreamInfo)
+    return NPERR_GENERIC_ERROR;
+
+  nsresult rv = streamlistener->mStreamInfo
+    ->RequestRead((NPByteRange *)rangeList);
+  if (NS_FAILED(rv))
+    return NPERR_GENERIC_ERROR;
 
   return NS_OK;
 }

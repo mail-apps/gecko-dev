@@ -257,8 +257,19 @@ nsresult nsNPAPIPluginStreamListener::CleanUpStream(NPReason reason)
   if (mStreamCleanedUp)
     return NS_OK;
 
+  mStreamCleanedUp = PR_TRUE;
+
+  StopDataPump();
+
+  // Seekable streams have an extra addref when they are created which must
+  // be matched here.
+  if (NP_SEEK == mStreamType)
+    NS_RELEASE_THIS();
+
   if (!mInst || !mInst->IsStarted())
     return rv;
+
+  mStreamInfo = NULL;
 
   PluginDestructionGuard guard(mInst);
 
@@ -286,10 +297,7 @@ nsresult nsNPAPIPluginStreamListener::CleanUpStream(NPReason reason)
       rv = NS_OK;
   }
 
-  mStreamCleanedUp = PR_TRUE;
-  mStreamStarted   = PR_FALSE;
-
-  StopDataPump();
+  mStreamStarted = PR_FALSE;
 
   // fire notification back to plugin, just like before
   CallURLNotify(reason);
@@ -386,6 +394,12 @@ nsNPAPIPluginStreamListener::OnStartBinding(nsIPluginStreamInfo* pluginInfo)
       break;
     case NP_SEEK:
       mStreamType = nsPluginStreamType_Seek; 
+      // Seekable streams should continue to exist even after OnStopRequest
+      // is fired, so we AddRef ourself an extra time and Release when the
+      // plugin calls NPN_DestroyStream (CleanUpStream). If the plugin never
+      // calls NPN_DestroyStream the stream will be destroyed before the plugin
+      // instance is destroyed.
+      NS_ADDREF_THIS();
       break;
     default:
       return NS_ERROR_FAILURE;
@@ -794,19 +808,13 @@ nsNPAPIPluginStreamListener::OnStopBinding(nsIPluginStreamInfo* pluginInfo,
   // check if the stream is of seekable type and later its destruction
   // see bug 91140    
   nsresult rv = NS_OK;
-  if (mStreamType != nsPluginStreamType_Seek) {
-    NPReason reason = NPRES_DONE;
-
-    if (NS_FAILED(status))
-      reason = NPRES_NETWORK_ERR;   // since the stream failed, we need to tell the plugin that
-
+  NPReason reason = NS_FAILED(status) ? NPRES_NETWORK_ERR : NPRES_DONE;
+  if (mStreamType != NP_SEEK ||
+      (NP_SEEK == mStreamType && NS_BINDING_ABORTED == status)) {
     rv = CleanUpStream(reason);
   }
 
-  if (rv != NPERR_NO_ERROR)
-    return NS_ERROR_FAILURE;
-
-  return NS_OK;
+  return rv;
 }
 
 NS_IMETHODIMP
@@ -1172,7 +1180,7 @@ NS_IMETHODIMP nsNPAPIPluginInstance::Stop(void)
 
   // clean up open streams
   for (nsInstanceStream *is = mStreams; is != nsnull;) {
-    nsNPAPIPluginStreamListener * listener = is->mPluginStreamListener;
+    nsRefPtr<nsNPAPIPluginStreamListener> listener = is->mPluginStreamListener;
 
     nsInstanceStream *next = is->mNext;
     delete is;
