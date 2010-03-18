@@ -852,7 +852,7 @@ nsNPAPIPlugin::GetMIMEDescription(const char* *resultingDesc)
     return mShadow->GetMIMEDescription(resultingDesc);
 #endif
 
-  nsresult gmdResult = fLibrary->NP_GetMIMEDescription((char**)resultingDesc);
+  nsresult gmdResult = fLibrary->NP_GetMIMEDescription(resultingDesc);
   if (gmdResult != NS_OK) {
     return gmdResult;
   }
@@ -872,7 +872,7 @@ nsNPAPIPlugin::GetValue(nsPluginVariable variable, void *value)
   ("nsNPAPIPlugin::GetValue called: this=%p, variable=%d\n", this, variable));
 
   NPError gvError;
-  fLibrary->NP_GetValue(nsnull, variable, value, &gvError);
+  fLibrary->NP_GetValue(nsnull, (NPPVariable) variable, value, &gvError);
 
   return gvError;
 }
@@ -2560,7 +2560,7 @@ _requestread(NPStream *pstream, NPByteRange *rangeList)
     return NPERR_GENERIC_ERROR;
 
   nsresult rv = streamlistener->mStreamInfo
-    ->RequestRead((NPByteRange *)rangeList);
+    ->RequestRead((nsByteRange*) rangeList);
   if (NS_FAILED(rv))
     return NPERR_GENERIC_ERROR;
 

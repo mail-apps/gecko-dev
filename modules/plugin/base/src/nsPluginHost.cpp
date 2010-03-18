@@ -1147,7 +1147,7 @@ public:
 
   // Called by RequestRead
   void
-  MakeByteRangeString(NPByteRange* aRangeList, nsACString &string, PRInt32 *numRequests);
+  MakeByteRangeString(nsByteRange* aRangeList, nsACString &string, PRInt32 *numRequests);
 
   PRBool UseExistingPluginCacheFile(nsPluginStreamListenerPeer* psi);
 
@@ -1290,7 +1290,7 @@ nsPluginStreamListenerPeer::GetLastModified(PRUint32* result)
 NS_IMETHODIMP
 nsPluginStreamListenerPeer::GetURL(const char** result)
 {
-  *result = mURL;
+  *result = mURLSpec.get();
   return NS_OK;
 }
 
@@ -1620,7 +1620,7 @@ nsPluginStreamListenerPeer::SetupPluginCacheFile(nsIChannel* channel)
   // The file will be deleted in |nsPluginStreamListenerPeer::~nsPluginStreamListenerPeer|
   PRBool useExistingCacheFile = PR_FALSE;
   nsPluginInstanceTag *pActivePlugins = gActivePluginList->mFirst;
-  while (pActivePlugins && pActivePlugins->mStreams && !useExistingCacheFile) {
+  while (pActivePlugins && !useExistingCacheFile) {
     // most recent streams are at the end of list
     for (PRInt32 i = pActivePlugins->mStreams.Count() - 1; i >= 0; --i) {
       nsPluginStreamListenerPeer *lp =
@@ -6257,8 +6257,9 @@ nsPluginHost::PluginCrashed(nsNPAPIPlugin* aPlugin)
     if (instancetag->mPluginTag == plugin) {
       // notify the content node (nsIObjectLoadingContent) that the plugin has crashed
       nsCOMPtr<nsIDOMElement> domElement;
-      instancetag->mInstance->GetDOMElement(getter_AddRefs(domElement));
-      nsCOMPtr<nsIObjectLoadingContent> objectContent(do_QueryInterface(domElement));
+      static_cast<nsNPAPIPluginInstance*>(instancetag->mInstance)
+        ->GetDOMElement(getter_AddRefs(domElement));
+      nsCOMPtr<nsIObjectLoadingContent_MOZILLA_1_9_2_BRANCH> objectContent(do_QueryInterface(domElement));
       if (objectContent) {
         objectContent->PluginCrashed();
       }
