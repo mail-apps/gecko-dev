@@ -1,6 +1,6 @@
-<body>
+<html>
 <head>
-  <title>NPAPI Seekable NPStream Test</title>
+  <title>NPAPI NPN_NewStream NPStream Test</title>
   <script type="text/javascript" 
           src="/MochiKit/packed.js"></script>
   <script type="text/javascript" 
@@ -16,15 +16,14 @@
   <iframe id="testframe" name="testframe" onload="frameLoaded()"></iframe>
 
   <!--
-   - Tests a seekable stream.  Calls NPN_RequestRead with the specified
-   - range, and verifies that an NPP_Write call is made with the correct 
-   - parameters, including the buffer data for the byte range.  Once all 
-   - calls to NPP_Write have finished, the plugin calls NPN_DestroyStream 
-   - and then displays the entire stream's content in a browser frame via 
-   - NPN_GetURL.
+   - A stream is sent to the browser via NPP_NewStream, NP_NORMAL.
+   - When NPP_DestroyStream is called, the plugin sends the stream
+   - content back to the browser by calling NPN_NewStream and 
+   - NPN_Write.  The stream content should be displayed in the specified
+   - frame.
    -->
-  <embed src="loremipsum.txt" streammode="seek"
-         frame="testframe" streamchunksize="1024" range="100,100"
+  <embed src="loremipsum.txt" streammode="normal"
+         newstream="true" frame="testframe"
          id="embedtest" style="width: 400px; height: 100px;"
          type="application/x-test"></embed>
 </body>
