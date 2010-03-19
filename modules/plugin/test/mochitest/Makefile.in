@@ -72,7 +72,6 @@ _MOCHITEST_FILES = \
   test_streamNotify.html \
   test_instantiation.html \
   test_cookies.html \
-  test_npn_timers.html \
   test_npn_asynccall.html \
   test_bug532208.html \
   large-pic.jpg \
