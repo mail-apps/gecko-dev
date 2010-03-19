@@ -225,7 +225,6 @@ nsNPAPIPlugin::nsNPAPIPlugin(nsIPluginOld *aShadow)
 {
   mShadow = aShadow;
   fLibrary = nsnull;
-  fShutdownEntry = nsnull;
   memset((void*) &fCallbacks, 0, sizeof(fCallbacks));
   CheckClassInitialized();
 }
@@ -908,13 +907,13 @@ MakeNewNPAPIStreamInternal(NPP npp, const char *relativeURL, const char *target,
   switch (type) {
   case eNPPStreamTypeInternal_Get:
     {
-      if (NS_FAILED(pluginHost->GetURL(inst, relativeURL, target, listener)))
+      if (NS_FAILED(pluginHost->GetURL(static_cast<nsIPluginInstance*>(inst), relativeURL, target, listener)))
         return NPERR_GENERIC_ERROR;
       break;
     }
   case eNPPStreamTypeInternal_Post:
     {
-      if (NS_FAILED(pluginHost->PostURL(inst, relativeURL, len, buf, file, target,
+      if (NS_FAILED(pluginHost->PostURL(static_cast<nsIPluginInstance*>(inst), relativeURL, len, buf, file, target,
                                 listener)))
         return NPERR_GENERIC_ERROR;
       break;
