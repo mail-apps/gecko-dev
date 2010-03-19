@@ -123,7 +123,7 @@ interface nsIObjectLoadingContent_MOZILLA_1_9_2_BRANCH : nsISupports
                                  in nsIDOMClientRect position,
                                  in nsIDOMClientRect clip);
 
-  [noscript] void pluginCrashed(nsIPluginTag pluginTag,
+  [noscript] void pluginCrashed(in nsIPluginTag pluginTag,
                                 in AString minidumpID,
                                 in boolean submittedCrashReport);
 };
