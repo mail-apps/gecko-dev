@@ -1756,7 +1756,7 @@ nsObjectFrame::PaintPlugin(nsIRenderingContext& aRenderingContext,
         if (!mDoublePassEvent)
           mDoublePassEvent = ::RegisterWindowMessage(NS_OOPP_DOUBLEPASS_MSGID);
         if (mDoublePassEvent) {
-          NPEvent pluginEvent;
+          nsPluginEvent pluginEvent;
           pluginEvent.event = mDoublePassEvent;
           pluginEvent.wParam = 0;
           pluginEvent.lParam = 0;
