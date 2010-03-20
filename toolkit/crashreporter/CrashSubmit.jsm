@@ -35,8 +35,6 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-Components.utils.import("resource://gre/modules/Services.jsm");
-
 let EXPORTED_SYMBOLS = [
   "CrashSubmit"
 ];
@@ -309,7 +307,9 @@ Submitter.prototype = {
                   createInstance(Ci.nsIWritablePropertyBag2);
     propBag.setPropertyAsAString("minidumpID", this.id);
 
-    Services.obs.notifyObservers(propBag, "crash-report-status", status);
+    Cc["@mozilla.org/observer-service;1"]
+      .getService(Ci.nsIObserverService)
+      .notifyObservers(propBag, "crash-report-status", status);
 
     switch (status) {
       case SUCCESS:
