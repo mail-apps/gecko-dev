@@ -106,12 +106,6 @@ _MOCHICHROME_FILES = \
   test_wmode.xul \
   $(NULL)
 
-ifeq (cocoa,$(MOZ_WIDGET_TOOLKIT))
-_MOCHICHROME_FILES += \
-  test_convertpoint.xul \
-  $(NULL)
-endif
-
 ifeq (gtk2,$(MOZ_WIDGET_TOOLKIT))
 _MOCHITEST_FILES += \
 		test_copyText.html \
