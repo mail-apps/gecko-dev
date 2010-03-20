@@ -994,6 +994,25 @@ static PLDHashOperator EnumerateChildAnnotations(const nsACString& key,
   return PL_DHASH_NEXT;
 }
 
+static bool
+MoveToPending(nsIFile* dumpFile, nsIFile* extraFile)
+{
+  nsCOMPtr<nsIProperties> dirSvc
+    = do_GetService(NS_DIRECTORY_SERVICE_CONTRACTID);
+  if (!dirSvc)
+    return false;
+  nsCOMPtr<nsILocalFile> pendingDir;
+  if (NS_FAILED(dirSvc->Get("UAppData",
+                            NS_GET_IID(nsILocalFile),
+                            getter_AddRefs(pendingDir))) ||
+      NS_FAILED(pendingDir->Append(NS_LITERAL_STRING("Crash Reports"))) ||
+      NS_FAILED(pendingDir->Append(NS_LITERAL_STRING("pending"))))
+      return false;
+
+  return NS_FAILED(dumpFile->MoveTo(pendingDir, EmptyString())) ||
+    NS_FAILED(extraFile->MoveTo(pendingDir, EmptyString()));
+}
+
 static void
 OnChildProcessDumpRequested(void* aContext,
                             const ClientInfo* aClientInfo,
@@ -1052,6 +1071,14 @@ OnChildProcessDumpRequested(void* aContext,
   stream->Write(crashTimeString, strlen(crashTimeString), &written);
   stream->Write("\n", 1, &written);
   stream->Close();
+
+  bool doReport = true;
+  char* e = getenv("MOZ_CRASHREPORTER_NO_REPORT");
+  if (e && *e)
+    doReport = false;
+
+  if (doReport)
+    MoveToPending(lf, extraFile);
 
   {
     MutexAutoLock lock(*dumpMapLock);
