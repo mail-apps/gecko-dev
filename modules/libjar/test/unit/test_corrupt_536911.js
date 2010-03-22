@@ -1,5 +1,3 @@
-/* -*- Mode: Java; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim:set ts=2 sw=2 sts=2 et: */
 /* ***** BEGIN LICENSE BLOCK *****
  * Version: MPL 1.1/GPL 2.0/LGPL 2.1
  *
@@ -17,11 +15,8 @@
  *
  * The Initial Developer of the Original Code is
  * Mozilla Foundation.
- * Portions created by the Initial Developer are Copyright (C) 2009
+ * Portions created by the Initial Developer are Copyright (C) 2006
  * the Initial Developer. All Rights Reserved.
- * 
- * Contributor(s):
- *  Taras Glek <tglek@mozilla.com>
  *
  * Alternatively, the contents of this file may be used under the terms of
  * either the GNU General Public License Version 2 or later (the "GPL"), or
@@ -37,22 +32,35 @@
  *
  * ***** END LICENSE BLOCK ***** */
 
-// Check that we refuse to open weird files
+function wrapInputStream(input)
+{
+  var nsIScriptableInputStream = Components.interfaces.nsIScriptableInputStream;
+  var factory = Components.classes["@mozilla.org/scriptableinputstream;1"];
+  var wrapper = factory.createInstance(nsIScriptableInputStream);
+  wrapper.init(input);
+  return wrapper;
+}
+
+// Check that files can be read from after closing zipreader
 function run_test() {
   const Cc = Components.classes;
   const Ci = Components.interfaces;
-  // open a bogus file
-  var file = do_get_file("/");
+
+  // the build script have created the zip we can test on in the current dir.
+  var file = do_get_file("data/test_corrupt.zip");
 
   var zipreader = Cc["@mozilla.org/libjar/zip-reader;1"].
                   createInstance(Ci.nsIZipReader);
+  zipreader.open(file);
+  //  var entries = zipreader.findEntries(null);
+  // the signature for file is corrupt, should not segfault
   var failed = false;
   try {
-    zipreader.open(file);
-  } catch (e) {
+    var stream = wrapInputStream(zipreader.getInputStream("file"));
+    stream.read(1024);
+  } catch (ex) {
     failed = true;
   }
   do_check_true(failed);
-  zipreader = null;
 }
 
