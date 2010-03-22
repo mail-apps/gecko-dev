@@ -95,6 +95,7 @@ function run_test()
   do_check_eq(gDownloadLastDir.file, null);
 
   pb.privateBrowsingEnabled = true;
+  gDownloadLastDir.file = tmpDir;
   do_check_neq(gDownloadLastDir.file, null);
   clearHistory();
   do_check_eq(gDownloadLastDir.file, null);
