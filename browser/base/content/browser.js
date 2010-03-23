@@ -1109,7 +1109,7 @@ function prepareForStartup() {
   gBrowser.addEventListener("PluginOutdated", gMissingPluginInstaller.newMissingPlugin, true, true);
   gBrowser.addEventListener("PluginDisabled", gMissingPluginInstaller.newDisabledPlugin, true, true);
   gBrowser.addEventListener("NewPluginInstalled", gMissingPluginInstaller.refreshBrowser, false);
-  os.addObserver(gMissingPluginInstaller.pluginCrashed, "plugin-crashed", false);
+  os.addObserver(gMissingPluginInstaller, "plugin-crashed", false);
   gBrowser.addEventListener("NewTab", BrowserOpenTab, false);
   window.addEventListener("AppCommand", HandleAppCommandEvent, true);
 
@@ -1406,7 +1406,7 @@ function BrowserShutdown()
     .getService(Components.interfaces.nsIObserverService);
   os.removeObserver(gSessionHistoryObserver, "browser:purge-session-history");
   os.removeObserver(gXPInstallObserver, "xpinstall-install-blocked");
-  os.removeObserver(gMissingPluginInstaller.pluginCrashed, "plugin-crashed");
+  os.removeObserver(gMissingPluginInstaller, "plugin-crashed");
 
   try {
     gBrowser.removeProgressListener(window.XULBrowserWindow);
@@ -6169,7 +6169,10 @@ var gMissingPluginInstaller = {
 
   // Crashed-plugin observer. Notified once per plugin crash, before events
   // are dispatched to individual plugin instances.
-  pluginCrashed : function(subject, topic, data) {
+  observe: function(subject, topic, data) {
+    if (topic != "plugin-crashed")
+      return;
+
     let propertyBag = subject;
     if (!(propertyBag instanceof Ci.nsIPropertyBag2) ||
         !(propertyBag instanceof Ci.nsIWritablePropertyBag2))
@@ -6286,8 +6289,10 @@ var gMissingPluginInstaller = {
         }
       }
 
+      let obs = Cc["@mozilla.org/observer-service;1"].
+                getService(Ci.nsIObserverService);
       // Use a weak reference, so we don't have to remove it...
-      Services.obs.addObserver(observer, "crash-report-status", true);
+      obs.addObserver(observer, "crash-report-status", true);
       // ...alas, now we need something to hold a strong reference to prevent
       // it from being GC. But I don't want to manually manage the reference's
       // lifetime (which should be no greater than the page).
