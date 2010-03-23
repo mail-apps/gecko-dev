@@ -47,6 +47,8 @@
 %advancedDTD;
 <!ENTITY % privacyDTD SYSTEM "chrome://browser/locale/preferences/privacy.dtd">
 %privacyDTD;
+<!ENTITY submitCrashes.label "Submit crash reports">
+<!ENTITY submitCrashes.accesskey "S">
 ]>
 
 <overlay id="AdvancedPaneOverlay"

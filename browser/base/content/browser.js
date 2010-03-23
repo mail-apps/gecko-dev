@@ -6215,7 +6215,12 @@ var gMissingPluginInstaller = {
     // Force a style flush, so that we ensure our binding is attached.
     plugin.clientTop;
 
-    let messageString = gNavigatorBundle.getFormattedString("crashedpluginsMessage.title", [pluginName]);
+    let messageString;
+    try {
+      messageString = gNavigatorBundle.getFormattedString("crashedpluginsMessage.title", [pluginName]);
+    } catch (e) {
+      messageString = "The " + pluginName + " plugin has crashed.";
+    }
 
     //
     // Configure the crashed-plugin placeholder.
@@ -6339,10 +6344,19 @@ var gMissingPluginInstaller = {
       // Configure the notification bar
       let priority = notificationBox.PRIORITY_WARNING_MEDIUM;
       let iconURL = "chrome://mozapps/skin/plugins/pluginGeneric-16.png";
-      let reloadLabel = gNavigatorBundle.getString("crashedpluginsMessage.reloadButton.label");
-      let reloadKey   = gNavigatorBundle.getString("crashedpluginsMessage.reloadButton.accesskey");
-      let submitLabel = gNavigatorBundle.getString("crashedpluginsMessage.submitButton.label");
-      let submitKey   = gNavigatorBundle.getString("crashedpluginsMessage.submitButton.accesskey");
+
+      let reloadLabel, reloadKey, submitLabel, submitKey;
+      try {
+        reloadLabel = gNavigatorBundle.getString("crashedpluginsMessage.reloadButton.label");
+        reloadKey   = gNavigatorBundle.getString("crashedpluginsMessage.reloadButton.accesskey");
+        submitLabel = gNavigatorBundle.getString("crashedpluginsMessage.submitButton.label");
+        submitKey   = gNavigatorBundle.getString("crashedpluginsMessage.submitButton.accesskey");
+      } catch (e) {
+        reloadLabel = "Reload page";
+        reloadKey   = "R";
+        submitLabel = "Submit a crash report";
+        submitKey   = "S";
+      }
 
       let buttons = [{
         label: reloadLabel,
@@ -6368,7 +6382,13 @@ var gMissingPluginInstaller = {
       let XULNS = "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul";
       let link = notification.ownerDocument.createElementNS(XULNS, "label");
       link.className = "text-link";
-      link.setAttribute("value", gNavigatorBundle.getString("crashedpluginsMessage.learnMore"));
+      let learnMore;
+      try {
+        learnMore = gNavigatorBundle.getString("crashedpluginsMessage.learnMore");
+      } catch (e) {
+        learnMore = "Learn More\u2026";
+      }
+      link.setAttribute("value", learnMore);
       link.href = gMissingPluginInstaller.crashReportHelpURL;
       let description = notification.ownerDocument.getAnonymousElementByAttribute(notification, "anonid", "messageText");
       description.appendChild(link);
