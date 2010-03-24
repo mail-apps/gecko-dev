@@ -56,6 +56,7 @@
               xmlns:html="http://www.w3.org/1999/xhtml">
 <binding id="pluginProblem" inheritstyle="false">
     <resources>
+        <stylesheet src="chrome://mozapps/content/plugins/pluginProblemLorentz.css"/>
         <stylesheet src="chrome://mozapps/skin/plugins/pluginProblem.css"/>
         <stylesheet src="chrome://mozapps/content/plugins/pluginProblemContent.css"/>
     </resources>
