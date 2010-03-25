@@ -634,7 +634,7 @@ class nsXULAppInfo : public nsIXULAppInfo,
                      public nsIWinAppHelper,
 #endif
 #ifdef MOZ_CRASHREPORTER
-                     public nsICrashReporter,
+                     public nsICrashReporter_MOZILLA_1_9_2_BRANCH,
 #endif
                      public nsIXULRuntime
 
@@ -645,6 +645,7 @@ public:
   NS_DECL_NSIXULRUNTIME
 #ifdef MOZ_CRASHREPORTER
   NS_DECL_NSICRASHREPORTER
+  NS_DECL_NSICRASHREPORTER_MOZILLA_1_9_2_BRANCH
 #endif
 #ifdef XP_WIN
   NS_DECL_NSIWINAPPHELPER
@@ -659,6 +660,7 @@ NS_INTERFACE_MAP_BEGIN(nsXULAppInfo)
 #endif
 #ifdef MOZ_CRASHREPORTER
   NS_INTERFACE_MAP_ENTRY(nsICrashReporter)
+  NS_INTERFACE_MAP_ENTRY(nsICrashReporter_MOZILLA_1_9_2_BRANCH)
 #endif
   NS_INTERFACE_MAP_ENTRY_CONDITIONAL(nsIXULAppInfo, gAppData)
 NS_INTERFACE_MAP_END

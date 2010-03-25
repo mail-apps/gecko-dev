@@ -150,7 +150,7 @@ var gAdvancedPane = {
     var checkbox = document.getElementById("submitCrashesBox");
     try {
       var cr = Components.classes["@mozilla.org/toolkit/crash-reporter;1"].
-               getService(Components.interfaces.nsICrashReporter);
+               getService(Components.interfaces.nsICrashReporter_MOZILLA_1_9_2_BRANCH);
       checkbox.checked = cr.submitReports;
     } catch (e) {
       checkbox.style.display = "none";
