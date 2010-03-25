@@ -5957,17 +5957,18 @@ var gMissingPluginInstaller = {
     return this.crashReportHelpURL;
   },
 
-  addLinkClickCallback: function (linkNode, callbackName, callbackArg) {
+  addLinkClickCallback: function (linkNode, callbackName /*callbackArgs...*/) {
     // XXX just doing (callback)(arg) was giving a same-origin error. bug?
     let self = this;
+    let callbackArgs = Array.prototype.slice.call(arguments).slice(2);
     linkNode.addEventListener("click",
                               function(evt) {
                                 if (!evt.isTrusted)
                                   return;
                                 evt.preventDefault();
-                                if (callbackArg == undefined)
-                                  callbackArg = evt;
-                                (self[callbackName])(callbackArg);
+                                if (callbackArgs.length == 0)
+                                  callbackArgs = [ evt ];
+                                (self[callbackName]).apply(self, callbackArgs);
                               },
                               true);
 
@@ -5977,10 +5978,10 @@ var gMissingPluginInstaller = {
                                   return;
                                 if (evt.keyCode == evt.DOM_VK_RETURN) {
                                   evt.preventDefault();
-                                  if (callbackArg == undefined)
-                                    callbackArg = evt;
+                                  if (callbackArgs.length == 0)
+                                    callbackArgs = [ evt ];
                                   evt.preventDefault();
-                                  (self[callbackName])(callbackArg);
+                                  (self[callbackName]).apply(self, callbackArgs);
                                 }
                               },
                               true);
@@ -6004,10 +6005,12 @@ var gMissingPluginInstaller = {
   },
 
   // Callback for user clicking "submit a report" link
-  submitReport : function(minidumpID) {
+  submitReport : function(pluginDumpID, browserDumpID) {
     // The crash reporter wants a DOM element it can append an IFRAME to,
     // which it uses to submit a form. Let's just give it gBrowser.
-    this.CrashSubmit.submit(minidumpID, gBrowser, null, null);
+    this.CrashSubmit.submit(pluginDumpID, gBrowser, null, null);
+    if (browserDumpID)
+      this.CrashSubmit.submit(browserDumpID, gBrowser, null, null);
   },
 
   // Callback for user clicking a "reload page" link
@@ -6152,7 +6155,7 @@ var gMissingPluginInstaller = {
         popup: null,
         callback: showPluginsMissing
       }];
-    
+
       notificationBox.appendNotification(messageString, "missing-plugins",
                                          iconURL, priority, buttons);
     }
@@ -6179,13 +6182,14 @@ var gMissingPluginInstaller = {
      return;
 
 #ifdef MOZ_CRASHREPORTER
-    let minidumpID   = propertyBag.getPropertyAsAString("minidumpID");
+    let pluginDumpID = propertyBag.getPropertyAsAString("pluginDumpID");
+    let browserDumpID= propertyBag.getPropertyAsAString("browserDumpID");
     let shouldSubmit = gCrashReporter.submitReports;
     let doPrompt     = true; // XXX followup to get via gCrashReporter
 
     // Submit automatically when appropriate.
-    if (minidumpID && shouldSubmit && !doPrompt) {
-      this.submitReport(minidumpID);
+    if (pluginDumpID && shouldSubmit && !doPrompt) {
+      this.submitReport(pluginDumpID, browserDumpID);
       // Submission is async, so we can't easily show failure UI.
       propertyBag.setPropertyAsBool("submittedCrashReport", true);
     }
@@ -6208,7 +6212,8 @@ var gMissingPluginInstaller = {
     let doPrompt        = true; // XXX followup for .getData("doPrompt");
     let submitReports   = true; // XXX followup for .getData("submitReports");
     let pluginName      = aEvent.getData("pluginName");
-    let minidumpID      = aEvent.getData("minidumpID");
+    let pluginDumpID    = aEvent.getData("pluginDumpID");
+    let browserDumpID   = aEvent.getData("browserDumpID");
 
     // We're expecting this to be a plugin.
     let plugin = aEvent.target;
@@ -6250,12 +6255,13 @@ var gMissingPluginInstaller = {
       // XXX can we make the link target actually be blank?
       let pleaseLink = doc.getAnonymousElementByAttribute(
                             plugin, "class", "pleaseSubmitLink");
-      self.addLinkClickCallback(pleaseLink, "submitReport", minidumpID);
+      self.addLinkClickCallback(pleaseLink, "submitReport",
+                                pluginDumpID, browserDumpID);
     }
 
     // If we don't have a minidumpID, we can't (or didn't) submit anything.
     // This can happen if the plugin is killed from the task manager.
-    if (!minidumpID) {
+    if (!pluginDumpID) {
         showClass = "msg msgNoCrashReport";
     }
 
@@ -6279,7 +6285,7 @@ var gMissingPluginInstaller = {
           if (!(propertyBag instanceof Ci.nsIPropertyBag2))
             return;
           // Ignore notifications for other crashes.
-          if (propertyBag.get("minidumpID") != minidumpID)
+          if (propertyBag.get("minidumpID") != pluginDumpID)
             return;
           self.updateSubmissionStatus(plugin, propertyBag, data);
         },
@@ -6325,7 +6331,7 @@ var gMissingPluginInstaller = {
         // If another plugin on the page was large enough to show our UI, we
         // don't want to show a notification bar.
         if (!doc.mozNoPluginCrashedNotification)
-          showNotificationBar(minidumpID);
+          showNotificationBar(pluginDumpID, browserDumpID);
     } else {
         // If a previous plugin on the page was too small and resulted in
         // adding a notification bar, then remove it because this plugin
@@ -6340,7 +6346,7 @@ var gMissingPluginInstaller = {
         notificationBox.removeNotification(notification, true);
     }
 
-    function showNotificationBar(minidumpID) {
+    function showNotificationBar(pluginDumpID, browserDumpID) {
       // If there's already an existing notification bar, don't do anything.
       let notification = notificationBox.getNotificationWithValue("plugin-crashed");
       if (notification)
@@ -6374,7 +6380,7 @@ var gMissingPluginInstaller = {
         label: submitLabel,
         accessKey: submitKey,
         popup: null,
-        callback: function() { gMissingPluginInstaller.submitReport(minidumpID); },
+          callback: function() { gMissingPluginInstaller.submitReport(pluginDumpID, browserDumpID); },
       };
       if (minidumpID)
         buttons.push(submitButton);
@@ -6454,7 +6460,7 @@ function convertFromUnicode(charset, str)
     str = unicodeConverter.ConvertFromUnicode(str);
     return str + unicodeConverter.Finish();
   } catch(ex) {
-    return null; 
+    return null;
   }
 }
 

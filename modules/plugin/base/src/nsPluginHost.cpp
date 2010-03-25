@@ -6242,7 +6242,9 @@ nsresult nsPluginHost::AddUnusedLibrary(PRLibrary * aLibrary)
 
 #ifdef MOZ_IPC
 void
-nsPluginHost::PluginCrashed(nsNPAPIPlugin* aPlugin, const nsAString& dumpID)
+nsPluginHost::PluginCrashed(nsNPAPIPlugin* aPlugin,
+                            const nsAString& pluginDumpID,
+                            const nsAString& browserDumpID)
 {
   nsPluginTag* plugin = FindTagForPlugin(aPlugin);
   if (!plugin) {
@@ -6250,16 +6252,24 @@ nsPluginHost::PluginCrashed(nsNPAPIPlugin* aPlugin, const nsAString& dumpID)
     return;
   }
 
-  // Notify the app's observer that a plugin crashed so it can submit a crashreport.
+  // Notify the app's observer that a plugin crashed so it can submit
+  // a crashreport.
   PRBool submittedCrashReport = PR_FALSE;
-  nsCOMPtr<nsIObserverService> obsService = do_GetService("@mozilla.org/observer-service;1");
-  nsCOMPtr<nsIWritablePropertyBag2> propbag = do_CreateInstance("@mozilla.org/hash-property-bag;1");
+  nsCOMPtr<nsIObserverService> obsService =
+    do_GetService("@mozilla.org/observer-service;1");
+  nsCOMPtr<nsIWritablePropertyBag2> propbag =
+    do_CreateInstance("@mozilla.org/hash-property-bag;1");
   if (obsService && propbag) {
-    propbag->SetPropertyAsAString(NS_LITERAL_STRING("minidumpID"), dumpID);
-    propbag->SetPropertyAsBool(NS_LITERAL_STRING("submittedCrashReport"), submittedCrashReport);
+    propbag->SetPropertyAsAString(NS_LITERAL_STRING("pluginDumpID"),
+                                  pluginDumpID);
+    propbag->SetPropertyAsAString(NS_LITERAL_STRING("browserDumpID"),
+                                  browserDumpID);
+    propbag->SetPropertyAsBool(NS_LITERAL_STRING("submittedCrashReport"),
+                               submittedCrashReport);
     obsService->NotifyObservers(propbag, "plugin-crashed", nsnull);
     // see if an observer submitted a crash report.
-    propbag->GetPropertyAsBool(NS_LITERAL_STRING("submittedCrashReport"), &submittedCrashReport);
+    propbag->GetPropertyAsBool(NS_LITERAL_STRING("submittedCrashReport"),
+                               &submittedCrashReport);
   }
 
   // Invalidate each nsPluginInstanceTag for the crashed plugin
@@ -6268,13 +6278,15 @@ nsPluginHost::PluginCrashed(nsNPAPIPlugin* aPlugin, const nsAString& dumpID)
   while (*pinstancetag) {
     nsPluginInstanceTag* instancetag = *pinstancetag;
     if (instancetag->mPluginTag == plugin) {
-      // notify the content node (nsIObjectLoadingContent) that the plugin has crashed
+      // notify the content node (nsIObjectLoadingContent) that the
+      // plugin has crashed
       nsCOMPtr<nsIDOMElement> domElement;
       static_cast<nsNPAPIPluginInstance*>(instancetag->mInstance)
         ->GetDOMElement(getter_AddRefs(domElement));
       nsCOMPtr<nsIObjectLoadingContent_MOZILLA_1_9_2_BRANCH> objectContent(do_QueryInterface(domElement));
       if (objectContent) {
-        objectContent->PluginCrashed(plugin, dumpID, submittedCrashReport);
+        objectContent->PluginCrashed(pluginTag, pluginDumpID, browserDumpID,
+                                     submittedCrashReport);
       }
 
       instancetag->mInstance->Stop();

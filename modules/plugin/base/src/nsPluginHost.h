@@ -323,7 +323,9 @@ public:
   static nsresult GetPrompt(nsIPluginInstanceOwner *aOwner, nsIPrompt **aPrompt);
 
 #ifdef MOZ_IPC
-  void PluginCrashed(nsNPAPIPlugin* plugin, const nsAString& dumpID);
+  void PluginCrashed(nsNPAPIPlugin* plugin,
+                     const nsAString& pluginDumpID,
+                     const nsAString& browserDumpID);
 #endif
 
 private:
