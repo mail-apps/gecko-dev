@@ -6285,7 +6285,7 @@ nsPluginHost::PluginCrashed(nsNPAPIPlugin* aPlugin,
         ->GetDOMElement(getter_AddRefs(domElement));
       nsCOMPtr<nsIObjectLoadingContent_MOZILLA_1_9_2_BRANCH> objectContent(do_QueryInterface(domElement));
       if (objectContent) {
-        objectContent->PluginCrashed(pluginTag, pluginDumpID, browserDumpID,
+        objectContent->PluginCrashed(plugin, pluginDumpID, browserDumpID,
                                      submittedCrashReport);
       }
 
