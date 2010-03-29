@@ -63,7 +63,13 @@
 #include <gtk/gtk.h>
 #ifdef MOZ_X11
 #include <gdk/gdkx.h>
+
+#ifdef AIX
+#include <X11/keysym.h>
+#else
 #include <X11/XF86keysym.h>
+#endif
+
 #include "gtk2xtbin.h"
 #endif /* MOZ_X11 */
 #include <gdk/gdkkeysyms.h>
@@ -3101,6 +3107,7 @@ nsWindow::OnKeyPressEvent(GtkWidget *aWidget, GdkEventKey *aEvent)
     }
 
 #ifdef MOZ_X11
+#if ! defined AIX // no XFree86 on AIX 5L
     // Look for specialized app-command keys
     switch (aEvent->keyval) {
         case XF86XK_Back:
@@ -3118,6 +3125,7 @@ nsWindow::OnKeyPressEvent(GtkWidget *aWidget, GdkEventKey *aEvent)
         case XF86XK_HomePage:
             return DispatchCommandEvent(nsWidgetAtoms::Home);
     }
+#endif /* ! AIX */
 #endif /* MOZ_X11 */
 
     nsKeyEvent event(PR_TRUE, NS_KEY_PRESS, this);
