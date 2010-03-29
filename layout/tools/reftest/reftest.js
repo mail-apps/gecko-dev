@@ -56,7 +56,6 @@ const NS_NETWORK_PROTOCOL_CONTRACTID_PREFIX =
 const NS_XREAPPINFO_CONTRACTID =
           "@mozilla.org/xre/app-info;1";
 
-
 var gLoadTimeout = 0;
 
 // "<!--CLEAR-->"
@@ -305,6 +304,14 @@ function ReadManifest(aURL)
       },
       _prefs:      prefs,
       getBoolPref: function(p) { return this._prefs.getBoolPref(p); }
+    }
+
+    new XPCSafeJSObjectWrapper(sandbox).prefs = {
+      __exposedProps__: {
+        getIntPref: 'r',
+      },
+      _prefs:      prefs,
+      getIntPref:  function(p) { return this._prefs.getIntPref(p) }
     }
 
     var line = {value:null};
