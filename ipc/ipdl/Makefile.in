@@ -82,8 +82,10 @@ CPPSRCS =					\
   $(PROTOCOLS:%.ipdl=%Child.cpp)		\
   $(NULL)
 
-LOCAL_INCLUDES += -I$(DEPTH)/ipc/ipdl/_ipdlheaders
-
+LOCAL_INCLUDES += \
+  -I$(DEPTH)/ipc/ipdl/_ipdlheaders \
+  -I$(topsrcdir)/toolkit/crashreporter \
+  $(NULL)
 
 include $(topsrcdir)/config/config.mk
 include $(topsrcdir)/ipc/chromium/chromium-config.mk
