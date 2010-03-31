@@ -53,6 +53,9 @@
 #include "nsThreadUtils.h"
 #include "prlog.h"
 #include "nsHashKeys.h"
+#ifdef MOZ_CRASHREPORTER
+#  include "nsExceptionHandler.h"
+#endif
 
 namespace mozilla {
 
