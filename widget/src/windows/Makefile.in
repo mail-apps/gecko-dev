@@ -143,6 +143,7 @@ LOCAL_INCLUDES	= \
 		-I$(srcdir)/../xpwidgets \
 		-I$(srcdir) \
 		-I$(topsrcdir)/toolkit/xre \
+		-I$(topsrcdir)/toolkit/crashreporter \
 		$(NULL)
 
 FORCE_STATIC_LIB = 1
