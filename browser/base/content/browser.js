@@ -6384,7 +6384,7 @@ var gMissingPluginInstaller = {
         popup: null,
           callback: function() { gMissingPluginInstaller.submitReport(pluginDumpID, browserDumpID); },
       };
-      if (minidumpID)
+      if (pluginDumpID)
         buttons.push(submitButton);
 #endif
 
