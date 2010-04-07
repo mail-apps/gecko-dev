@@ -3537,13 +3537,17 @@ JS_FRIEND_API(JSBool)
 js_CoerceArrayToCanvasImageData(JSObject *obj, jsuint offset, jsuint count,
                                 JSUint8 *dest)
 {
-    uint32 length;
+    uint32 length, capacity;
 
     if (!obj || !js_IsDenseArray(obj))
         return JS_FALSE;
 
     length = obj->fslots[JSSLOT_ARRAY_LENGTH];
     if (length < offset + count)
+        return JS_FALSE;
+
+    capacity = js_DenseArrayCapacity(obj);
+    if (capacity < offset + count)
         return JS_FALSE;
 
     JSUint8 *dp = dest;
