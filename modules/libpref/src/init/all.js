@@ -1218,6 +1218,12 @@ pref("editor.positioning.offset",            0);
 pref("dom.max_chrome_script_run_time", 20);
 pref("dom.max_script_run_time", 10);
 
+// How long a plugin is allowed to process a synchronous IPC message
+// before we consider it "hung".
+//
+//  NB: chosen to match dom.max_script_run_time by default
+pref("dom.ipc.plugins.timeoutSecs", 10);
+
 pref("svg.enabled", true);
 pref("svg.smil.enabled", false);
 

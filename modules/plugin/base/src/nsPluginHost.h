@@ -50,6 +50,7 @@
 #endif
 #include "nsIObserver.h"
 #include "nsCOMPtr.h"
+#include "nsCOMArray.h"
 #include "prlink.h"
 #include "prclist.h"
 #include "npapi.h"
@@ -159,7 +160,7 @@ struct nsPluginInstanceTag
   PRPackedBool           mDefaultPlugin;
   PRPackedBool           mXPConnected;
   // Array holding all opened stream listeners for this entry
-  nsCOMPtr <nsISupportsArray> mStreams; 
+  nsCOMArray<nsIPluginStreamInfo> mStreams;
 
   nsPluginInstanceTag(nsPluginTag* aPluginTag,
                       nsIPluginInstance* aInstance, 
@@ -321,6 +322,12 @@ public:
 
   static nsresult GetPrompt(nsIPluginInstanceOwner *aOwner, nsIPrompt **aPrompt);
 
+#ifdef MOZ_IPC
+  void PluginCrashed(nsNPAPIPlugin* plugin,
+                     const nsAString& pluginDumpID,
+                     const nsAString& browserDumpID);
+#endif
+
 private:
   nsresult
   TrySetUpPluginInstance(const char *aMimeType, nsIURI *aURL, nsIPluginInstanceOwner *aOwner);
@@ -343,6 +350,10 @@ private:
 
   nsPluginTag*
   FindPluginEnabledForExtension(const char* aExtension, const char* &aMimeType);
+
+  // Return the tag for |plugin| if found, nsnull if not.
+  nsPluginTag*
+  FindTagForPlugin(nsIPlugin* aPlugin);
 
   nsresult
   FindStoppedPluginForURL(nsIURI* aURL, nsIPluginInstanceOwner *aOwner);
