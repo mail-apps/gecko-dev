@@ -38,7 +38,9 @@
    - ***** END LICENSE BLOCK ***** -->
 <!DOCTYPE bindings [
 <!ENTITY % bindingsDTD SYSTEM "chrome://mozapps/locale/plugins/plugins.dtd">
+<!ENTITY % globalDTD SYSTEM "chrome://global/locale/global.dtd">
 %bindingsDTD;
+%globalDTD;
 <!ENTITY reloadPlugin.pre    "">
 <!ENTITY reloadPlugin.middle "Reload the page">
 <!ENTITY reloadPlugin.post   " to try again">
@@ -62,7 +64,7 @@
     </resources>
 
     <content>
-        <xul:vbox class="mainBox" role="link" flex="1">
+        <xul:vbox class="mainBox" role="link" flex="1" chromedir="&locale.dir;">
             <xul:spacer flex="1"/>
             <xul:box class="icon"/>
             <html:div class="msg msgUnsupported">&missingPlugin.label;</html:div>
