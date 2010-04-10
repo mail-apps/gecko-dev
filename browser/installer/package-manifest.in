@@ -55,7 +55,7 @@
 @BINPATH@/@DLL_PREFIX@xul@DLL_SUFFIX@
 #endif
 #ifdef MOZ_IPC
-@BINPATH@/mozilla-runtime@BIN_SUFFIX@
+@BINPATH@/@MOZ_CHILD_PROCESS_NAME@
 #endif
 #ifdef WINCE
 @BINPATH@/mozce_shunt.dll
