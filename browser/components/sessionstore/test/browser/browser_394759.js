@@ -63,7 +63,7 @@ function test() {
         newWin.gBrowser.removeEventListener("load", arguments.callee, true);
 
         executeSoon(function() {
-          newWin.gBrowser.addTab().linkedBrowser.stop();
+          newWin.gBrowser.addTab();
           executeSoon(function() {
             // mark the window with some unique data to be restored later on
             ss.setWindowValue(newWin, uniqueKey, uniqueValue);
