@@ -42,6 +42,7 @@
 #include "nsIDOMNSEvent.h"
 #include "nsIPrivateDOMEvent.h"
 #include "nsDOMWindowUtils.h"
+#include "nsQueryContentEventResult.h"
 #include "nsGlobalWindow.h"
 #include "nsIDocument.h"
 #include "nsFocusManager.h"
@@ -922,3 +923,63 @@ nsDOMWindowUtils::DispatchDOMEventViaPresShell(nsIDOMNode* aTarget,
   *aRetVal = (status != nsEventStatus_eConsumeNoDefault);
   return NS_OK;
 }
+
+static void
+InitEvent(nsGUIEvent &aEvent, nsIntPoint *aPt = nsnull)
+{
+  if (aPt) {
+    aEvent.refPoint = *aPt;
+  }
+  aEvent.time = PR_IntervalNow();
+}
+
+NS_IMETHODIMP
+nsDOMWindowUtils::SendQueryContentEvent(PRUint32 aType,
+                                        PRUint32 aOffset, PRUint32 aLength,
+                                        PRInt32 aX, PRInt32 aY,
+                                        nsIQueryContentEventResult **aResult)
+{
+  *aResult = nsnull;
+
+  PRBool hasCap = PR_FALSE;
+  if (NS_FAILED(nsContentUtils::GetSecurityManager()->IsCapabilityEnabled("UniversalXPConnect", &hasCap))
+      || !hasCap)
+    return NS_ERROR_DOM_SECURITY_ERR;
+
+  // get the widget to send the event to
+  nsCOMPtr<nsIWidget> widget = GetWidget();
+  if (!widget) {
+    return NS_ERROR_FAILURE;
+  }
+
+  if (aType != NS_QUERY_SELECTED_TEXT &&
+      aType != NS_QUERY_TEXT_CONTENT &&
+      aType != NS_QUERY_CARET_RECT &&
+      aType != NS_QUERY_TEXT_RECT &&
+      aType != NS_QUERY_EDITOR_RECT) {
+    return NS_ERROR_INVALID_ARG;
+  }
+
+  if (aType != NS_QUERY_CARET_RECT)
+    return NS_ERROR_NOT_IMPLEMENTED;
+
+  nsCOMPtr<nsIWidget> targetWidget = widget;
+  nsIntPoint pt(aX, aY);
+
+  pt += widget->WidgetToScreenOffset() - targetWidget->WidgetToScreenOffset();
+
+  nsQueryContentEvent queryEvent(PR_TRUE, aType, targetWidget);
+  InitEvent(queryEvent, &pt);
+  queryEvent.InitForQueryCaretRect(aOffset);
+
+  nsEventStatus status;
+  nsresult rv = targetWidget->DispatchEvent(&queryEvent, status);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  nsQueryContentEventResult* result = new nsQueryContentEventResult();
+  NS_ENSURE_TRUE(result, NS_ERROR_OUT_OF_MEMORY);
+  result->SetEventResult(widget, queryEvent);
+  NS_ADDREF(*aResult = result);
+  return NS_OK;
+}
+
