@@ -8,7 +8,6 @@ https://bugzilla.mozilla.org/show_bug.cgi?id=544765
 -->
 <window title="Mozilla bug 544765"
   onload="start();"
-  xmlns:html="http://www.w3.org/1999/xhtml"
   xmlns="http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul">
 
   <script type="application/javascript"
@@ -18,7 +17,10 @@ https://bugzilla.mozilla.org/show_bug.cgi?id=544765
   <script type="application/javascript"
           src="chrome://mochikit/content/tests/SimpleTest/EventUtils.js" />
 
-  <textbox id="textbox">test caret position</textbox>
+
+  <body  xmlns="http://www.w3.org/1999/xhtml">
+    <textarea id="textarea">test caret position</textarea>
+  </body>
 
   <script class="testbody" type="application/javascript"><![CDATA[
 
@@ -52,11 +54,11 @@ https://bugzilla.mozilla.org/show_bug.cgi?id=544765
   }
 
   function start() {
-    var textbox = document.getElementById("textbox");
-    textbox.focus();
+    var textarea = document.getElementById("textarea");
+    textarea.focus();
 
     let rect = synthesizeQueryCaretRect(0);
-    checkRectContainsRect(rect, textbox.getBoundingClientRect(), "Textbox contains caret rect");
+    checkRectContainsRect(rect, textarea.getBoundingClientRect(), "Textarea contains caret rect");
     SimpleTest.finish();
   }
 
