@@ -10809,6 +10809,26 @@ TraceRecorder::setProp(jsval &l, JSPropCacheEntry* entry, JSScopeProperty* sprop
 }
 
 JS_REQUIRES_STACK JSRecordingStatus
+TraceRecorder::setUpwardTrackedVar(jsval* stackVp, jsval v, LIns* v_ins)
+{
+    JSTraceType stackT = determineSlotType(stackVp);
+    JSTraceType otherT = getCoercedType(v);
+
+    bool promote = true;
+
+    if (stackT != otherT) {
+        if (stackT == TT_DOUBLE && otherT == TT_INT32 && isPromoteInt(v_ins))
+            promote = false;
+        else
+            ABORT_TRACE("can't trace this upvar mutation");
+    }
+
+    set(stackVp, v_ins, promote);
+
+    return JSRS_CONTINUE;
+}
+
+JS_REQUIRES_STACK JSRecordingStatus
 TraceRecorder::setCallProp(JSObject *callobj, LIns *callobj_ins, JSScopeProperty *sprop,
                            LIns *v_ins, jsval v)
 {
@@ -10818,12 +10838,12 @@ TraceRecorder::setCallProp(JSObject *callobj, LIns *callobj_ins, JSScopeProperty
         jsint slot = JSVAL_TO_INT(SPROP_USERID(sprop));
         if (sprop->setter == SetCallArg) {
             jsval *vp2 = &fp->argv[slot];
-            set(vp2, v_ins);
+            CHECK_STATUS(setUpwardTrackedVar(vp2, v, v_ins));
             return JSRS_CONTINUE;
         }
         if (sprop->setter == SetCallVar) {
             jsval *vp2 = &fp->slots[slot];
-            set(vp2, v_ins);
+            CHECK_STATUS(setUpwardTrackedVar(vp2, v, v_ins));
             return JSRS_CONTINUE;
         }
         ABORT_TRACE("can't trace special CallClass setter");
