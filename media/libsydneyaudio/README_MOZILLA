@@ -23,3 +23,5 @@ bug495794_closeAudio.patch fixes a crash when destroying the sa_stream_t after
 a failed attempt to open the stream.
 
 bug495558_alsa_endian.patch adds support for big endian ALSA platforms.
+
+sydney_aix.patch:      Bug 499266 - add AIX support
