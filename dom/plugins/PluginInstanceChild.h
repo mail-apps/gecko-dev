@@ -188,6 +188,8 @@ public:
 
     void InvalidateRect(NPRect* aInvalidRect);
 
+    void AsyncCall(PluginThreadCallback aFunc, void* aUserData);
+
 private:
     friend class PluginModuleChild;
 
@@ -322,6 +324,8 @@ private:
 #endif
 
     friend class ChildAsyncCall;
+
+    Mutex mAsyncCallMutex;
     nsTArray<ChildAsyncCall*> mPendingAsyncCalls;
 
     /**
