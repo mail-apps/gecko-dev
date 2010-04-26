@@ -354,8 +354,6 @@ void nsPluginInstanceTag::setStopped(PRBool stopped)
 nsPluginInstanceTagList::nsPluginInstanceTagList()
 {
   mFirst = nsnull;
-  mLast = nsnull;
-  mCount = 0;
 }
 
 nsPluginInstanceTagList::~nsPluginInstanceTagList()
@@ -376,23 +374,12 @@ void nsPluginInstanceTagList::shutdown()
     plugin = next;
   }
   mFirst = nsnull;
-  mLast = nsnull;
 }
 
-PRInt32 nsPluginInstanceTagList::add(nsPluginInstanceTag * plugin)
+void nsPluginInstanceTagList::add(nsPluginInstanceTag * plugin)
 {
-  if (!mFirst) {
-    mFirst = plugin;
-    mLast = plugin;
-    mFirst->mNext = nsnull;
-  }
-  else {
-    mLast->mNext = plugin;
-    mLast = plugin;
-  }
-  mLast->mNext = nsnull;
-  mCount++;
-  return mCount;
+  plugin->mNext = mFirst;
+  mFirst = plugin;
 }
 
 PRBool nsPluginInstanceTagList::IsLastInstance(nsPluginInstanceTag * plugin)
@@ -410,10 +397,10 @@ PRBool nsPluginInstanceTagList::IsLastInstance(nsPluginInstanceTag * plugin)
   return PR_TRUE;
 }
 
-PRBool nsPluginInstanceTagList::remove(nsPluginInstanceTag * plugin)
+void nsPluginInstanceTagList::remove(nsPluginInstanceTag * plugin)
 {
   if (!mFirst)
-    return PR_FALSE;
+    return;
 
   nsPluginInstanceTag * prev = nsnull;
   for (nsPluginInstanceTag * p = mFirst; p != nsnull; p = p->mNext) {
@@ -426,15 +413,13 @@ PRBool nsPluginInstanceTagList::remove(nsPluginInstanceTag * plugin)
       else
         prev->mNext = p->mNext;
 
-      if (prev && !prev->mNext)
-        mLast = prev;
-
       delete p;
 
       if (lastInstance && pluginTag) {
         nsresult rv;
         nsCOMPtr<nsIPrefBranch> pref(do_GetService(NS_PREFSERVICE_CONTRACTID, &rv));
-        NS_ENSURE_SUCCESS(rv, rv);
+        if (NS_FAILED(rv))
+          return;
 
         PRBool unloadPluginsASAP = PR_FALSE;
         rv = pref->GetBoolPref("plugins.unloadASAP", &unloadPluginsASAP);
@@ -442,12 +427,11 @@ PRBool nsPluginInstanceTagList::remove(nsPluginInstanceTag * plugin)
           pluginTag->TryUnloadPlugin();
       }
 
-      mCount--;
-      return PR_TRUE;
+      return;
     }
     prev = p;
   }
-  return PR_FALSE;
+  return;
 }
 
 // This method terminates all running instances of plugins and collects their
@@ -2418,8 +2402,8 @@ PRBool nsPluginHost::IsRunningPlugin(nsPluginTag * plugin)
 nsresult nsPluginHost::ReloadPlugins(PRBool reloadPages)
 {
   PLUGIN_LOG(PLUGIN_LOG_NORMAL,
-  ("nsPluginHost::ReloadPlugins Begin reloadPages=%d, active_instance_count=%d\n",
-  reloadPages, mPluginInstanceTagList.mCount));
+  ("nsPluginHost::ReloadPlugins Begin reloadPages=%d\n",
+  reloadPages));
 
   nsresult rv = NS_OK;
 
@@ -2510,8 +2494,7 @@ nsresult nsPluginHost::ReloadPlugins(PRBool reloadPages)
   }
 
   PLUGIN_LOG(PLUGIN_LOG_NORMAL,
-  ("nsPluginHost::ReloadPlugins End active_instance_count=%d\n",
-  mPluginInstanceTagList.mCount));
+  ("nsPluginHost::ReloadPlugins End\n"));
 
   return rv;
 }

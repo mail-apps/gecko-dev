@@ -175,15 +175,13 @@ class nsPluginInstanceTagList
 {
 public:
   nsPluginInstanceTag *mFirst;
-  nsPluginInstanceTag *mLast;
-  PRInt32 mCount;
 
   nsPluginInstanceTagList();
   ~nsPluginInstanceTagList();
 
   void shutdown();
-  PRBool add(nsPluginInstanceTag *plugin);
-  PRBool remove(nsPluginInstanceTag *plugin);
+  void add(nsPluginInstanceTag *plugin);
+  void remove(nsPluginInstanceTag *plugin);
   nsPluginInstanceTag *find(nsIPluginInstance *instance);
   nsPluginInstanceTag *find(const char *mimetype);
   nsPluginInstanceTag *findStopped(const char *url);
