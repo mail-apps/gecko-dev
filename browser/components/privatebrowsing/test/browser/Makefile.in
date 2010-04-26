@@ -48,6 +48,8 @@ _BROWSER_TEST_FILES =  \
 		browser_console_clear.js \
 		browser_privatebrowsing_beforeunload.js \
 		browser_privatebrowsing_certexceptionsui.js \
+		browser_privatebrowsing_contextmenu_blockimage.js \
+		browser_privatebrowsing_cookieacceptdialog.js \
 		browser_privatebrowsing_crh.js \
 		browser_privatebrowsing_findbar.js \
 		browser_privatebrowsing_forgetthissite.js \
@@ -57,6 +59,7 @@ _BROWSER_TEST_FILES =  \
 		browser_privatebrowsing_opendir.js \
 		browser_privatebrowsing_openlocation.js \
 		browser_privatebrowsing_pageinfo.js \
+		browser_privatebrowsing_popupblocker.js \
 		browser_privatebrowsing_popupmode.js \
 		browser_privatebrowsing_searchbar.js \
 		browser_privatebrowsing_sslsite_transition.js \
