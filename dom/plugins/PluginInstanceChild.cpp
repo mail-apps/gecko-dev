@@ -78,6 +78,9 @@ using mozilla::gfx::SharedDIB;
 
 #define NS_OOPP_DOUBLEPASS_MSGID TEXT("MozDoublePassMsg")
 
+#ifndef WM_MOUSEHWHEEL
+#define WM_MOUSEHWHEEL                    0x020E
+#endif
 #endif // defined(OS_WIN)
 
 PluginInstanceChild::PluginInstanceChild(const NPPluginFuncs* aPluginIface,
@@ -823,11 +826,18 @@ PluginInstanceChild::PluginWindowProc(HWND hWnd,
         self->CallPluginGotFocus();
 
     // Prevent lockups due to plugins making rpc calls when the parent
-    // is making a synchronous SetFocus api call. (bug 541362) Add more
-    // windowing events as needed for other api.
-    if (message == WM_KILLFOCUS && 
-        ((InSendMessageEx(NULL) & (ISMEX_REPLIED|ISMEX_SEND)) == ISMEX_SEND)) {
-        ReplyMessage(0); // Unblock the caller
+    // is making a synchronous SendMessage call to the child window. Add
+    // more messages as needed.
+    if ((InSendMessageEx(NULL)&(ISMEX_REPLIED|ISMEX_SEND)) == ISMEX_SEND) {
+        switch(message) {
+            case WM_KILLFOCUS:
+            case WM_MOUSEHWHEEL:
+            case WM_MOUSEWHEEL:
+            case WM_HSCROLL:
+            case WM_VSCROLL:
+            ReplyMessage(0);
+            break;
+        }
     }
 
     LRESULT res = CallWindowProc(self->mPluginWndProc, hWnd, message, wParam,
