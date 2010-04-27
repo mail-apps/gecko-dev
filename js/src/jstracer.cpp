@@ -11448,6 +11448,9 @@ TraceRecorder::record_JSOP_SETELEM()
     if (JS_InstanceOf(cx, obj, &js_ArgumentsClass, NULL))
         ABORT_TRACE("can't trace setting elements of the |arguments| object");
 
+    if (obj == globalObj)
+        ABORT_TRACE("can't trace setting elements on the global object");
+
     if (!JSVAL_IS_INT(idx)) {
         if (!JSVAL_IS_PRIMITIVE(idx))
             ABORT_TRACE("non-primitive index");
