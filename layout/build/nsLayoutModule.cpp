@@ -100,6 +100,7 @@
 #include "nsILanguageAtomService.h"
 #include "nsStyleSheetService.h"
 #include "nsXULPopupManager.h"
+#include "nsIContentUtils.h"
 
 // Transformiix stuff
 #include "nsXPathEvaluator.h"
@@ -541,6 +542,8 @@ MAKE_CTOR(CreatePluginDocument,           nsIDocument,                 NS_NewPlu
 #ifdef MOZ_MEDIA
 MAKE_CTOR(CreateVideoDocument,            nsIDocument,                 NS_NewVideoDocument)
 #endif
+
+NS_GENERIC_FACTORY_CONSTRUCTOR(nsIContentUtils)
 
 #ifdef MOZ_ENABLE_CANVAS
 MAKE_CTOR(CreateCanvasRenderingContext2D, nsIDOMCanvasRenderingContext2D, NS_NewCanvasRenderingContext2D)
@@ -1475,6 +1478,10 @@ static const nsModuleComponentInfo gComponents[] = {
       "@mozilla.org/geolocation/service;1",
       nsGeolocationServiceConstructor },
 
+    { "Content Utils",
+      NS_ICONTENTUTILS_CID,
+      "@mozilla.org/content/contentutils;1",
+      nsIContentUtilsConstructor },
 
 };
 
