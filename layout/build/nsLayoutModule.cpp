@@ -99,6 +99,7 @@
 #include "nsStyleSheetService.h"
 #include "nsXULPopupManager.h"
 #include "nsFocusManager.h"
+#include "nsIContentUtils.h"
 
 #include "nsIEventListenerService.h"
 // Transformiix stuff
@@ -547,6 +548,8 @@ MAKE_CTOR(CreatePluginDocument,           nsIDocument,                 NS_NewPlu
 MAKE_CTOR(CreateVideoDocument,            nsIDocument,                 NS_NewVideoDocument)
 #endif
 MAKE_CTOR(CreateFocusManager,             nsIFocusManager,      NS_NewFocusManager)
+
+NS_GENERIC_FACTORY_CONSTRUCTOR(nsIContentUtils)
 
 #ifdef MOZ_ENABLE_CANVAS
 MAKE_CTOR(CreateCanvasRenderingContext2D, nsIDOMCanvasRenderingContext2D, NS_NewCanvasRenderingContext2D)
@@ -1490,6 +1493,10 @@ static const nsModuleComponentInfo gComponents[] = {
       "@mozilla.org/focus-manager;1",
       CreateFocusManager },
 
+    { "Content Utils",
+      NS_ICONTENTUTILS_CID,
+      "@mozilla.org/content/contentutils;1",
+      nsIContentUtilsConstructor },
 
     { "Event Listener Service",
       NS_EVENTLISTENERSERVICE_CID,
