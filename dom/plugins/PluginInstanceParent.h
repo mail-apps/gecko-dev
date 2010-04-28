@@ -227,8 +227,8 @@ public:
     virtual bool
     AnswerPluginGotFocus();
 
-    virtual bool
-    RecvSetNestedEventState(const bool& aState);
+    NS_OVERRIDE virtual bool
+    RecvProcessNativeEventsInRPCCall();
 
 private:
     bool InternalGetValueForNPObject(NPNVariable aVariable,
