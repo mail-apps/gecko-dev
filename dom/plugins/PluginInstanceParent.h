@@ -227,9 +227,6 @@ public:
     virtual bool
     AnswerPluginGotFocus();
 
-    NS_OVERRIDE virtual bool
-    RecvProcessNativeEventsInRPCCall();
-
 private:
     bool InternalGetValueForNPObject(NPNVariable aVariable,
                                      PPluginScriptableObjectParent** aValue,

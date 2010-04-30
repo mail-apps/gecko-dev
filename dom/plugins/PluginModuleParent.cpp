@@ -781,3 +781,17 @@ PluginModuleParent::AnswerProcessSomeEvents()
     return true;
 }
 #endif
+
+bool
+PluginModuleParent::RecvProcessNativeEventsInRPCCall()
+{
+    PLUGIN_LOG_DEBUG(("%s", FULLFUNCTION));
+#if defined(OS_WIN)
+    ProcessNativeEventsInRPCCall();
+    return true;
+#else
+    NS_NOTREACHED(
+        "PluginInstanceParent::AnswerSetNestedEventState not implemented!");
+    return false;
+#endif
+}
