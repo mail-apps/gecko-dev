@@ -165,8 +165,6 @@ parent:
 parent:
   rpc PluginGotFocus();
 
-  async ProcessNativeEventsInRPCCall();
-
 child:
   rpc SetPluginFocus();
   rpc UpdateWindow();
