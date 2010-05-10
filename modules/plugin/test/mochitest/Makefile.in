@@ -83,6 +83,7 @@ _MOCHITEST_FILES = \
   neverending.sjs \
   test_newstreamondestroy.html \
   test_propertyAndMethod.html \
+  test_enumerate.html \
   $(NULL)
 
 #  test_npruntime_npnsetexception.html \ Disabled for e10s
