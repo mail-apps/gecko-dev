@@ -1626,6 +1626,13 @@ nsFocusManager::Focus(nsPIDOMWindow* aWindow,
                            aContent, aFlags & FOCUSMETHOD_MASK);
 
       nsIMEStateManager::OnTextStateFocus(presContext, aContent);
+    } else {
+      nsPresContext* presContext = presShell->GetPresContext();
+      nsIMEStateManager::OnTextStateBlur(presContext, nsnull);
+      nsIMEStateManager::OnChangeFocus(presContext, nsnull);
+      
+      if (!aWindowRaised)
+        aWindow->UpdateCommands(NS_LITERAL_STRING("focus"));
     }
   }
   else {
