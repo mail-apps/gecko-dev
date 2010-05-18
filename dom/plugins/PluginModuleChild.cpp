@@ -77,6 +77,9 @@ static QApplication *gQApp = nsnull;
 #ifndef WM_MOUSEHWHEEL
 #define WM_MOUSEHWHEEL     0x020E
 #endif
+// Used with fix for flash fullscreen window losing focus.
+const PRUnichar * kFlashFullscreenClass = L"ShockwaveFlashFullScreen";
+static bool gDelayFlashFocusReplyUntilEval = false;
 #endif
 
 PluginModuleChild::PluginModuleChild() :
@@ -1152,6 +1155,13 @@ _evaluate(NPP aNPP,
         return false;
     }
 
+#ifdef XP_WIN
+    if (gDelayFlashFocusReplyUntilEval) {
+        ReplyMessage(0);
+        gDelayFlashFocusReplyUntilEval = false;
+    }
+#endif
+
     return actor->Evaluate(aScript, aResult);
 }
 
@@ -1826,6 +1836,8 @@ PluginModuleChild::ExitedCall()
 LRESULT CALLBACK
 PluginModuleChild::CallWindowProcHook(int nCode, WPARAM wParam, LPARAM lParam)
 {
+    gDelayFlashFocusReplyUntilEval = false;
+
     // Trap and reply to anything we recognize as the source of a
     // potential send message deadlock.
     if (nCode >= 0 &&
@@ -1834,7 +1846,6 @@ PluginModuleChild::CallWindowProcHook(int nCode, WPARAM wParam, LPARAM lParam)
         switch(pCwp->message) {
             // Sync messages we can reply to:
             case WM_SETFOCUS:
-            case WM_KILLFOCUS:
             case WM_MOUSEHWHEEL:
             case WM_MOUSEWHEEL:
             case WM_HSCROLL:
@@ -1843,6 +1854,23 @@ PluginModuleChild::CallWindowProcHook(int nCode, WPARAM wParam, LPARAM lParam)
             case WM_IME_SETCONTEXT:
             case WM_WINDOWPOSCHANGED:
                 ReplyMessage(0);
+            break;
+            case WM_KILLFOCUS:
+            {
+                // Fix for flash fullscreen window loosing focus. On single
+                // core systems, sync killfocus events need to be handled
+                // after the flash fullscreen window procedure processes this
+                // message, otherwise fullscreen focus will not work correctly.
+                PRUnichar szClass[26];
+                if (GetClassNameW(pCwp->hwnd, szClass,
+                                  sizeof(szClass)/sizeof(PRUnichar)) &&
+                    !wcscmp(szClass, kFlashFullscreenClass)) {
+                    gDelayFlashFocusReplyUntilEval = true;
+                }
+                else {
+                    ReplyMessage(0);
+                }
+            }
             break;
             // Sync message that can't be handled:
             case WM_WINDOWPOSCHANGING:
