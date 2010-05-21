@@ -2688,6 +2688,7 @@ nsTextControlFrame::SetValue(const nsAString& aValue)
           if (plaintextEditor)
             plaintextEditor->InsertText(currentValue);
         }
+        NS_ENSURE_STATE(weakFrame.IsAlive());
 
         plaintextEditor->SetMaxTextLength(savedMaxLength);
         editor->SetFlags(savedFlags);
@@ -2695,6 +2696,7 @@ nsTextControlFrame::SetValue(const nsAString& aValue)
           selPriv->EndBatchChanges();
       }
 
+      // This second check _shouldn't_ be necessary, but let's be safe.
       NS_ENSURE_STATE(weakFrame.IsAlive());
       if (outerTransaction)
         mNotifyOnInput = PR_TRUE;
