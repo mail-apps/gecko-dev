@@ -64,6 +64,10 @@
 
 #include "nsNPAPIPlugin.h"
 
+#ifdef XP_WIN
+#include "COMMessageFilter.h"
+#endif
+
 using namespace mozilla::plugins;
 
 namespace {
@@ -128,6 +132,10 @@ PluginModuleChild::Init(const std::string& aPluginFilename,
                         IPC::Channel* aChannel)
 {
     PLUGIN_LOG_DEBUG_METHOD;
+
+#ifdef XP_WIN
+    COMMessageFilter::Initialize(this);
+#endif
 
     NS_ASSERTION(aChannel, "need a channel");
 
