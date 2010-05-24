@@ -205,7 +205,6 @@ protected:
      */
     bool OnMaybeDequeueOne();
 
-    void OnMaybeDequeueOne();
     void Incall(const Message& call, size_t stackDepth);
     void DispatchIncall(const Message& call);
 
