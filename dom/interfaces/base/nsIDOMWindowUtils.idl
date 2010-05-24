@@ -395,7 +395,7 @@ interface nsIDOMWindowUtils : nsISupports {
   readonly attribute float screenPixelsPerCSSPixel;
 };
 
-[scriptable, uuid(ed91df0d-9935-4059-9363-a7819d44fdd7)]
+[scriptable, uuid(58811d53-e585-458b-b422-9b0b8e31031e)]
 interface nsIDOMWindowUtils_1_9_2 : nsISupports
 {
   /**
@@ -536,4 +536,10 @@ interface nsIDOMWindowUtils_1_9_2 : nsISupports
    *         result are available.
    */
   const unsigned long QUERY_CHARACTER_AT_POINT                  = 3208;
+
+  /**
+   * Exposes the CSS parser's "initial syntax is valid" heuristic for
+   * testing.
+   */
+  boolean cssInitialSyntaxIsValid(in AString aSheet);
 };
