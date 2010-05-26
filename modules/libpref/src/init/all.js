@@ -733,6 +733,7 @@ pref("network.IDN.whitelist.li", true);
 pref("network.IDN.whitelist.lt", true);
 pref("network.IDN.whitelist.lu", true);
 pref("network.IDN.whitelist.no", true);
+pref("network.IDN.whitelist.nu", true);
 pref("network.IDN.whitelist.pl", true);
 pref("network.IDN.whitelist.pr", true);
 pref("network.IDN.whitelist.se", true);
