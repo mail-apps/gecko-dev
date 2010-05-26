@@ -11247,7 +11247,7 @@ TraceRecorder::record_JSOP_GETELEM()
 
                 // Guard that the argument has the same type on trace as during recording.
                 LIns* typemap_ins;
-                if (callDepth == depth) {
+                if (depth == 0) {
                     // In this case, we are in the same frame where the arguments object was created.
                     // The entry type map is not necessarily up-to-date, so we capture a new type map
                     // for this point in the code.
