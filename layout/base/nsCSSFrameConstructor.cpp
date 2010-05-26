@@ -9108,6 +9108,16 @@ nsCSSFrameConstructor::MaybeRecreateContainerForFrameRemoval(nsIFrame* aFrame,
     }
   }
 
+#ifdef MOZ_XUL
+  if (aFrame->GetType() == nsGkAtoms::popupSetFrame) {
+    nsIRootBox* rootBox = nsIRootBox::GetRootBox(mPresShell);
+    if (rootBox && rootBox->GetPopupSetFrame() == aFrame) {
+      *aResult = ReconstructDocElementHierarchy();
+      return PR_TRUE;
+    }
+  }
+#endif
+
   // Might need to reconstruct things if this frame's nextSibling is a table
   // pseudo, since removal of this frame might mean that this pseudo needs to
   // get merged with the frame's prevSibling.
