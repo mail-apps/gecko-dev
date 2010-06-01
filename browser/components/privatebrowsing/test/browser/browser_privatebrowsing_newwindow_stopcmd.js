@@ -48,18 +48,16 @@ function test() {
 
   let win = OpenBrowserWindow();
   win.addEventListener("load", function() {
-    let _delayedStartup = win.delayedStartup;
-    win.delayedStartup = function() {
-      _delayedStartup.apply(win, arguments);
-      win.delayedStartup = _delayedStartup;
+    executeSoon(function() {
+      executeSoon(function() {
+        let cmd = win.document.getElementById("Tools:PrivateBrowsing");
+        ok(!cmd.hasAttribute("disabled"),
+           "The Private Browsing command in a new window should be enabled");
 
-      let cmd = win.document.getElementById("Tools:PrivateBrowsing");
-      ok(!cmd.hasAttribute("disabled"),
-         "The Private Browsing command in a new window should be enabled");
-
-      win.close();
-      pb.privateBrowsingEnabled = false;
-      finish();
-    };
+        win.close();
+        pb.privateBrowsingEnabled = false;
+        finish();
+      });
+    });
   }, false);
 }
