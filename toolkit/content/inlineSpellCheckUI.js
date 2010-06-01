@@ -222,7 +222,8 @@ var InlineSpellCheckerUI = {
 
       this.mDictionaryNames.push(list[i]);
       var item = document.createElement("menuitem");
-      item.setAttribute("label", displayName);
+      item.setAttribute("id", "spell-check-dictionary-" + list[i]);
+      item.label = displayName;
       item.setAttribute("type", "checkbox");
       this.mDictionaryItems.push(item);
       if (curlang == list[i]) {
