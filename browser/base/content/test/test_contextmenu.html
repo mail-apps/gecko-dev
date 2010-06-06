@@ -57,7 +57,7 @@ function getVisibleMenuItems(aMenu) {
             }
             if (isSpellSuggestion) {
               is(key, "", "Spell suggestions shouldn't have an access key");
-              items.push("*" + item.label);
+              items.push("*" + item.getAttribute("label"));
             } else if (item.id.indexOf("spell-check-dictionary-") != 0 &&
                        item.id != "spell-no-suggestions" &&
                        item.id != "context-video-fullscreen") {
