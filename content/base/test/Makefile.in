@@ -334,6 +334,9 @@ _TEST_FILES = 	test_bug5141.html \
 		file_bug503481b_inner.html \
 		test_bug545644.html \
 		test_bug545644.xhtml \
+		test_bug541937.html \
+		file_bug541937.html \
+		file_bug541937.xhtml \
 		$(NULL)
 # Disabled; see bug 492181
 #		test_plugin_freezing.html
