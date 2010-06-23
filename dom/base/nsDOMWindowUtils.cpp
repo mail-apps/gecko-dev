@@ -81,6 +81,7 @@ NS_INTERFACE_MAP_BEGIN(nsDOMWindowUtils)
   NS_INTERFACE_MAP_ENTRY(nsIDOMWindowUtils)
   NS_INTERFACE_MAP_ENTRY(nsISupportsWeakReference)
   NS_INTERFACE_MAP_ENTRY(nsIDOMWindowUtils_1_9_2)
+  NS_INTERFACE_MAP_ENTRY(nsIDOMWindowUtils_1_9_2_5)
   NS_DOM_INTERFACE_MAP_ENTRY_CLASSINFO(WindowUtils)
 NS_INTERFACE_MAP_END
 
@@ -591,7 +592,7 @@ nsDOMWindowUtils::NodesFromRect(float aX, float aY,
                                 PRBool aFlushLayout,
                                 nsIDOMNodeList** aReturn)
 {
-  nsCOMPtr<nsIDocument> doc(do_QueryInterface(mWindow->GetExtantDocument()));
+  nsCOMPtr<nsIDocument_MOZILLA_1_9_2_5_BRANCH> doc(do_QueryInterface(mWindow->GetExtantDocument()));
   NS_ENSURE_STATE(doc);
 
   return doc->NodesFromRectHelper(aX, aY, aTopSize, aRightSize, aBottomSize, aLeftSize, 

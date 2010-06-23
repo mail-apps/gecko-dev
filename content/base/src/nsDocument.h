@@ -578,7 +578,8 @@ class nsDocument : public nsIDocument,
                    public nsIApplicationCacheContainer,
                    public nsIDOMXPathNSResolver,
                    public nsStubMutationObserver,
-                   public nsIDocument_MOZILLA_1_9_2_BRANCH
+                   public nsIDocument_MOZILLA_1_9_2_BRANCH,
+                   public nsIDocument_MOZILLA_1_9_2_5_BRANCH
 {
 public:
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS

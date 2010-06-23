@@ -105,8 +105,8 @@ class nsIBoxObject;
 
 // IID for the nsIDocument interface
 #define NS_IDOCUMENT_IID      \
-  { 0x3e162645, 0x4827, 0x4600, \
-      { 0x9c, 0xaa, 0xe8, 0xdd, 0xcb, 0x05, 0xfd, 0x85 } }
+  { 0x2ca82a51, 0x4a6a, 0x4dfa, \
+      { 0xa6, 0x5f, 0x49, 0x52, 0xa3, 0xaa, 0x02, 0xef } }
 
 // Flag for AddStyleSheet().
 #define NS_STYLESHEET_FROM_CATALOG                (1 << 0)
@@ -952,13 +952,6 @@ public:
                                           PRBool aFlushLayout,
                                           nsIDOMElement** aReturn) = 0;
 
-  virtual nsresult NodesFromRectHelper(float aX, float aY,
-                                       float aTopSize, float aRightSize,
-                                       float aBottomSize, float aLeftSize,
-                                       PRBool aIgnoreRootScrollFrame,
-                                       PRBool aFlushLayout,
-                                       nsIDOMNodeList** aReturn) = 0;
-
   /**
    * See FlushSkinBindings on nsBindingManager
    */
@@ -1338,6 +1331,25 @@ public:
 
 NS_DEFINE_STATIC_IID_ACCESSOR(nsIDocument_MOZILLA_1_9_2_BRANCH,
                               NS_IDOCUMENT_MOZILLA_1_9_2_BRANCH_IID)
+
+
+#define NS_IDOCUMENT_MOZILLA_1_9_2_5_BRANCH_IID             \
+  { 0x654b6327, 0xed3f, 0x4fe2,                             \
+      { 0x83, 0x40, 0x11, 0xc4, 0x06, 0x36, 0x77, 0x53 } }
+class nsIDocument_MOZILLA_1_9_2_5_BRANCH : public nsISupports {
+public:
+  NS_DECLARE_STATIC_IID_ACCESSOR(NS_IDOCUMENT_MOZILLA_1_9_2_5_BRANCH_IID)
+
+  virtual nsresult NodesFromRectHelper(float aX, float aY,
+                                       float aTopSize, float aRightSize,
+                                       float aBottomSize, float aLeftSize,
+                                       PRBool aIgnoreRootScrollFrame,
+                                       PRBool aFlushLayout,
+                                       nsIDOMNodeList** aReturn) = 0;
+};
+
+NS_DEFINE_STATIC_IID_ACCESSOR(nsIDocument_MOZILLA_1_9_2_5_BRANCH,
+                              NS_IDOCUMENT_MOZILLA_1_9_2_5_BRANCH_IID)
 
 /**
  * mozAutoSubtreeModified batches DOM mutations so that a DOMSubtreeModified

@@ -395,7 +395,7 @@ interface nsIDOMWindowUtils : nsISupports {
   readonly attribute float screenPixelsPerCSSPixel;
 };
 
-[scriptable, uuid(58811d53-e585-458b-b422-9b0b8e31031e)]
+[scriptable, uuid(b0f803f7-98c0-4152-812c-d6678ba23049)]
 interface nsIDOMWindowUtils_1_9_2 : nsISupports
 {
   /**
@@ -413,7 +413,11 @@ interface nsIDOMWindowUtils_1_9_2 : nsISupports
   boolean dispatchDOMEventViaPresShell(in nsIDOMNode aTarget,
                                        in nsIDOMEvent aEvent,
                                        in boolean aTrusted);
+};
 
+[scriptable, uuid(915abb48-66d4-4135-a0d8-153fb87b99e6)]
+interface nsIDOMWindowUtils_1_9_2_5 : nsISupports
+{
   /**
    * Retrieve all nodes that intersect a rect in the window's document.
    *
