@@ -502,6 +502,7 @@ nsChildView::nsChildView() : nsBaseWidget()
 , mLiveResizeInProgress(PR_FALSE)
 , mPluginDrawing(PR_FALSE)
 , mPluginIsCG(PR_FALSE)
+, mPluginInstanceOwner(nsnull)
 {
 #ifdef PR_LOGGING
   if (!sCocoaLog) {
