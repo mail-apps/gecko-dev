@@ -782,7 +782,9 @@ row_callback(png_structp png_ptr, png_bytep new_row,
   if (decoder->mFrameIsHidden)
     return;
 
-  if (row_num >= decoder->mFrameRect.height)
+  PRInt32 height;
+  decoder->mFrame->GetHeight(&height);
+  if (row_num >= height)
     return;
 
   if (new_row) {
