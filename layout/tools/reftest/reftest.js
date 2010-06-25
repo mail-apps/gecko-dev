@@ -301,17 +301,11 @@ function ReadManifest(aURL)
     new XPCSafeJSObjectWrapper(sandbox).prefs = {
       __exposedProps__: {
         getBoolPref: 'r',
-      },
-      _prefs:      prefs,
-      getBoolPref: function(p) { return this._prefs.getBoolPref(p); }
-    }
-
-    new XPCSafeJSObjectWrapper(sandbox).prefs = {
-      __exposedProps__: {
         getIntPref: 'r',
       },
       _prefs:      prefs,
-      getIntPref:  function(p) { return this._prefs.getIntPref(p) }
+      getBoolPref: function(p) { return this._prefs.getBoolPref(p); },
+      getIntPref:  function(p) { return this._prefs.getIntPref(p); }
     }
 
     var line = {value:null};
