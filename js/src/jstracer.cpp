@@ -13176,7 +13176,7 @@ TraceRecorder::record_JSOP_ARGSUB()
     if (!(fp->fun->flags & JSFUN_HEAVYWEIGHT)) {
         uintN slot = GET_ARGNO(fp->regs->pc);
         if (slot >= fp->argc)
-            RETURN_STOP_A("can't trace out-of-range arguments");
+            ABORT_TRACE("can't trace out-of-range arguments");
         stack(0, get(&cx->fp->argv[slot]));
         return JSRS_CONTINUE;
     }
