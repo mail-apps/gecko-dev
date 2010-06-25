@@ -782,6 +782,9 @@ row_callback(png_structp png_ptr, png_bytep new_row,
   if (decoder->mFrameIsHidden)
     return;
 
+  if (row_num >= decoder->mFrameRect.height)
+    return;
+
   if (new_row) {
     PRInt32 width;
     decoder->mFrame->GetWidth(&width);
