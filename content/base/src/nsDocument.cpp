@@ -174,7 +174,9 @@ static NS_DEFINE_CID(kDOMEventGroupCID, NS_DOMEVENTGROUP_CID);
 #include "nsIPropertyBag2.h"
 #include "nsIDOMPageTransitionEvent.h"
 #include "nsFrameLoader.h"
+#ifdef MOZ_MEDIA
 #include "nsHTMLMediaElement.h"
+#endif // MOZ_MEDIA
 
 #include "mozAutoDocUpdate.h"
 
