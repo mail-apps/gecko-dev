@@ -8812,7 +8812,7 @@ TraceRecorder::test_property_cache(JSObject* obj, LIns* obj_ins, JSObject*& obj2
         obj_ins = stobj_get_proto(obj_ins);
     }
 
-    if (OBJ_IS_NATIVE(obj))
+    if (!OBJ_IS_NATIVE(obj))
         ABORT_TRACE("non-native object");
 
     LIns* map_ins = map(obj_ins);
