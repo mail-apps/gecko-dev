@@ -7086,7 +7086,7 @@ nsDocument::BlockOnload()
       ++mAsyncOnloadBlockCount;
       if (mAsyncOnloadBlockCount == 1) {
         nsContentUtils::AddScriptRunner(
-          NS_NewRunnableMethod(this, &nsDocument::AsyncBlockOnload));
+          NS_NEW_RUNNABLE_METHOD(nsDocument, this, AsyncBlockOnload));
       }
       return;
     }
