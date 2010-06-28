@@ -322,7 +322,7 @@ ResizeSlots(JSContext *cx, JSObject *obj, uint32 oldlen, uint32 newlen,
         return JS_TRUE;
     }
 
-    if (newlen > MAX_DSLOTS_LENGTH) {
+    if (newlen > MAX_DSLOTS_LENGTH32) {
         js_ReportAllocationOverflow(cx);
         return JS_FALSE;
     }
