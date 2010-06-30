@@ -122,7 +122,6 @@ ifdef MOZ_IPC
 _MOCHICHROME_FILES += \
   test_crash_notify.xul \
   test_crash_notify_no_report.xul \
-  test_crash_submit.xul \
   $(NULL)
 endif
 
