@@ -2682,13 +2682,26 @@ nsTextControlFrame::SetValue(const nsAString& aValue)
         plaintextEditor->GetMaxTextLength(&savedMaxLength);
         plaintextEditor->SetMaxTextLength(-1);
 
+        nsCOMPtr<nsIContent> content = GetContent();
+        NS_ASSERTION(content, "Where is our content?");
+
         if (currentValue.Length() < 1)
           editor->DeleteSelection(nsIEditor::eNone);
         else {
           if (plaintextEditor)
             plaintextEditor->InsertText(currentValue);
         }
-        NS_ENSURE_STATE(weakFrame.IsAlive());
+        if (!weakFrame.IsAlive()) {
+          nsCOMPtr<nsIDOMHTMLInputElement> inputElement = do_QueryInterface(content);
+          if (inputElement) {
+            return inputElement->SetValue(currentValue);
+          }
+          nsCOMPtr<nsIDOMHTMLTextAreaElement> textAreaElement = do_QueryInterface(content);
+          if (textAreaElement) {
+            return textAreaElement->SetValue(currentValue);
+          }
+          NS_NOTREACHED("The content node should either be an input or a textarea element");
+        }
 
         plaintextEditor->SetMaxTextLength(savedMaxLength);
         editor->SetFlags(savedFlags);
