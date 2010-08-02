@@ -70,11 +70,6 @@ public:
 
   nsresult        DispatchURLToNewBrowser(const char* url);
 
-  // Add a URL to the command line currently being set up via
-  // SetupMacCommandLine. Returns false if no command line is
-  // being set up or the addition fails for any other reason.
-  PRBool AddURLToCurrentCommandLine(const char* aURL);
-
 protected:
 
   nsresult        OpenURL(const char* aURL);
@@ -94,6 +89,7 @@ public:
 private:
 
   static nsMacCommandLine sMacCommandLine;
+  
 };
 
 void SetupMacCommandLine(int& argc, char**& argv);
