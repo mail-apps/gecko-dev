@@ -629,17 +629,16 @@ IndexOfDirectoryOfFile(nsISupportsArray* aSearchPath, nsILocalFile* aFile)
         NS_ASSERTION(count, "broken search path! bad count");
         for(PRUint32 i = 0; i < count; i++)
         {
-            nsCOMPtr<nsIFile> current, normalized;
+            nsCOMPtr<nsIFile> current;
             aSearchPath->QueryElementAt(i, NS_GET_IID(nsIFile), 
                                         getter_AddRefs(current));
             NS_ASSERTION(current, "broken search path! bad element");
             // nsIFile::Equals basically compares path strings so normalize
             // before the comparison.
             parent->Normalize();
-            current->Clone(getter_AddRefs(normalized));
-            normalized->Normalize();
+            current->Normalize();
             PRBool same;
-            if (NS_SUCCEEDED(parent->Equals(normalized, &same)) && same)
+            if (NS_SUCCEEDED(parent->Equals(current, &same)) && same)
                 return (int) i;
         }
     }
