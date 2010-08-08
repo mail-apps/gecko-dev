@@ -2163,7 +2163,7 @@ nsChromeRegistry::ProcessManifestBuffer(char *buf, PRInt32 length,
              !strcmp(token, "interfaces") ||
              !strcmp(token, "component") ||
              !strcmp(token, "contract") ||
-             !strcmp(token, "category")
+             !strcmp(token, "category") ||
              !strcmp(token, "manifest")){
       // Ignore directives used only in Gecko 2.0
       continue;
