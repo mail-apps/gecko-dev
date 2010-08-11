@@ -64,6 +64,7 @@
 #include "nsINameSpaceManager.h"
 #include "nsIDOMClassInfo.h"
 #include "nsTreeContentView.h"
+#include "nsDOMError.h"
 
 // For security check
 #include "nsIDocument.h"
