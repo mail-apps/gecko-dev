@@ -74,6 +74,7 @@
 #include "nsRootAccessible.h"
 #include "nsIDOMNSEventTarget.h"
 #include "nsIDOMDocumentEvent.h"
+#include "nsIPrivateDOMEvent.h"
 #include "nsFocusManager.h"
 
 #ifdef MOZ_XUL
@@ -570,8 +571,11 @@ void nsRootAccessible::FireCurrentFocusEvent()
       if (accService) {
         nsCOMPtr<nsIDOMNode> targetNode;
         accService->GetRelevantContentNodeFor(focusedNode,
-                                            getter_AddRefs(targetNode));
+                                              getter_AddRefs(targetNode));
         if (targetNode) {
+          nsCOMPtr<nsIPrivateDOMEvent> privateEvent(do_QueryInterface(event));
+          nsCOMPtr<nsIDOMEventTarget> target(do_QueryInterface(focusedNode));
+          privateEvent->SetTarget(target);
           HandleEventWithTarget(event, targetNode);
         }
       }
