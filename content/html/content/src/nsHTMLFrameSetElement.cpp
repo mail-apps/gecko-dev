@@ -43,6 +43,7 @@
 #include "nsIFrameSetElement.h"
 #include "nsIHTMLDocument.h"
 #include "nsIDocument.h"
+#include "prlog.h"
 
 class nsHTMLFrameSetElement : public nsGenericHTMLElement,
                               public nsIDOMHTMLFrameSetElement,
