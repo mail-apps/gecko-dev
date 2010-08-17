@@ -98,7 +98,7 @@ nsUXThemeData::Initialize()
   ::ZeroMemory(sThemes, sizeof(sThemes));
   NS_ASSERTION(!sThemeDLL, "nsUXThemeData being initialized twice!");
 
-  PRInt32 version = nsWindow::GetWindowsVersion();
+  PRInt32 version = ::GetWindowsVersion();
   sIsXPOrLater = version >= WINXP_VERSION;
   sIsVistaOrLater = version >= VISTA_VERSION;
 
