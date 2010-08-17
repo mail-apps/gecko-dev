@@ -1554,7 +1554,8 @@ nsTextControlFrame::InitEditor()
     if (NS_FAILED(rv))
       return rv;
 
-    SetValue(defaultValue);
+    rv = SetValue(defaultValue);
+    NS_ENSURE_SUCCESS(rv, rv);
 
     rv = mEditor->EnableUndo(PR_TRUE);
     NS_ASSERTION(NS_SUCCEEDED(rv),"Transaction Manager must have failed");
@@ -1894,10 +1895,10 @@ nsresult nsTextControlFrame::SetFormProperty(nsIAtom* aName, const nsAString& aV
       }
       SetValueChanged(PR_TRUE);
       nsresult rv = SetValue(aValue); // set new text value
+      NS_ENSURE_SUCCESS(rv, rv);
       if (isUserInput) {
         SetFireChangeEventState(fireChangeEvent);
       }
-      NS_ENSURE_SUCCESS(rv, rv);
     }
     else if (nsGkAtoms::select == aName)
     {
@@ -2694,11 +2695,13 @@ nsTextControlFrame::SetValue(const nsAString& aValue)
         if (!weakFrame.IsAlive()) {
           nsCOMPtr<nsIDOMHTMLInputElement> inputElement = do_QueryInterface(content);
           if (inputElement) {
-            return inputElement->SetValue(currentValue);
+            inputElement->SetValue(currentValue);
+            return NS_ERROR_UNEXPECTED;
           }
           nsCOMPtr<nsIDOMHTMLTextAreaElement> textAreaElement = do_QueryInterface(content);
           if (textAreaElement) {
-            return textAreaElement->SetValue(currentValue);
+            textAreaElement->SetValue(currentValue);
+            return NS_ERROR_UNEXPECTED;
           }
           NS_NOTREACHED("The content node should either be an input or a textarea element");
         }
