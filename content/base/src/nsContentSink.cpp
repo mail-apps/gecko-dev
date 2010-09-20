@@ -1912,6 +1912,7 @@ nsIAtom** const kDefaultAllowedAttributes [] = {
   &nsGkAtoms::longdesc,
   &nsGkAtoms::maxlength,
   &nsGkAtoms::media,
+  &nsGkAtoms::mozdonotsend,
   &nsGkAtoms::method,
   &nsGkAtoms::multiple,
   &nsGkAtoms::name,
