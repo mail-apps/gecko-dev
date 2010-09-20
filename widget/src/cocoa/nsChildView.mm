@@ -6353,6 +6353,13 @@ nsTSMManager::SetRomanKeyboardsOnly(PRBool aRomanOnly)
   if (aRomanOnly == sIsRomanKeyboardsOnly)
     return;
   CommitIME();
+
+  // This is a workaround of Bug 548480 for Snow Leopard.
+  //
+  // KeyScript may cause the crash in CFHash.  We need call
+  // [NSInputManager currentInputManager] before it.
+  [NSInputManager currentInputManager];
+
   KeyScript(aRomanOnly ? ENABLE_ROMAN_KYBDS_ONLY : smKeyEnableKybds);
   sIsRomanKeyboardsOnly = aRomanOnly;
 }
