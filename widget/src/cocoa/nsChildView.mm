@@ -6350,8 +6350,6 @@ nsTSMManager::SetIMEOpenState(PRBool aOpen)
 void
 nsTSMManager::SetRomanKeyboardsOnly(PRBool aRomanOnly)
 {
-  if (aRomanOnly == sIsRomanKeyboardsOnly)
-    return;
   CommitIME();
 
   // This is a workaround of Bug 548480 for Snow Leopard.
