@@ -133,6 +133,7 @@
 #include "nsIPrefService.h"
 #include "nsIContentFilter.h"
 #include "nsEventDispatcher.h"
+#include "nsIPrincipal.h"
 
 const PRUnichar nbsp = 160;
 
@@ -1313,6 +1314,25 @@ NS_IMETHODIMP nsHTMLEditor::InsertFromTransferable(nsITransferable *transferable
 #ifdef DEBUG_clipboard
     printf("Got flavor [%s]\n", bestFlavor);
 #endif
+
+    // Try to determine whether we should use a sanitizing fragment sink
+    PRBool isSafe = PR_FALSE;
+    if (aSourceDoc) {
+      nsCOMPtr<nsIDOMDocument> destdomdoc;
+      rv = GetDocument(getter_AddRefs(destdomdoc));
+      NS_ENSURE_SUCCESS(rv, rv);
+      nsCOMPtr<nsIDocument> destdoc = do_QueryInterface(destdomdoc);
+      NS_ASSERTION(destdoc, "Where is our destination doc?");
+      nsCOMPtr<nsIDocument> srcdoc = do_QueryInterface(aSourceDoc);
+      NS_ASSERTION(srcdoc, "Where is our source doc?");
+
+      nsIPrincipal* srcPrincipal = srcdoc->NodePrincipal();
+      nsIPrincipal* destPrincipal = destdoc->NodePrincipal();
+      NS_ASSERTION(srcPrincipal && destPrincipal, "How come we don't have a principal?");
+      rv = srcPrincipal->Subsumes(destPrincipal, &isSafe);
+      NS_ENSURE_SUCCESS(rv, rv);
+    }
+
     if (0 == nsCRT::strcmp(bestFlavor, kNativeHTMLMime))
     {
       // note cf_html uses utf8, hence use length = len, not len/2 as in flavors below
@@ -1333,7 +1353,7 @@ NS_IMETHODIMP nsHTMLEditor::InsertFromTransferable(nsITransferable *transferable
                                        aSourceDoc,
                                        aDestinationNode, aDestOffset,
                                        aDoDeleteSelection,
-                                       PR_FALSE);
+                                       isSafe);
         }
       }
     }
@@ -1352,7 +1372,7 @@ NS_IMETHODIMP nsHTMLEditor::InsertFromTransferable(nsITransferable *transferable
                                      aSourceDoc,
                                      aDestinationNode, aDestOffset,
                                      aDoDeleteSelection,
-                                     PR_FALSE);
+                                     isSafe);
       }
     }
     else if (0 == nsCRT::strcmp(bestFlavor, kUnicodeMime) ||
@@ -1424,7 +1444,7 @@ NS_IMETHODIMP nsHTMLEditor::InsertFromTransferable(nsITransferable *transferable
                                          aSourceDoc,
                                          aDestinationNode, aDestOffset,
                                          aDoDeleteSelection,
-                                         PR_FALSE);
+                                         isSafe);
           }
         }
       }
@@ -1488,7 +1508,7 @@ NS_IMETHODIMP nsHTMLEditor::InsertFromTransferable(nsITransferable *transferable
                                        aSourceDoc,
                                        aDestinationNode, aDestOffset,
                                        aDoDeleteSelection,
-                                       PR_FALSE);
+                                       isSafe);
         }
       }
     }
