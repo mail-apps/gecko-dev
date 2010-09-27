@@ -954,7 +954,7 @@ nsHTMLEditor::RelativizeURIInFragmentList(const nsCOMArray<nsIDOMNode> &aNodeLis
   nsCOMPtr<nsIDocument> destDoc = do_QueryInterface(domDoc);
   if (!destDoc) return NS_ERROR_FAILURE;
 
-  nsCOMPtr<nsIURL> destURL = do_QueryInterface(destDoc->GetDocBaseURI());
+  nsCOMPtr<nsIURL> destURL = do_QueryInterface(destDoc->GetBaseURI());
   if (!destURL) return NS_ERROR_FAILURE;
 
   nsresult rv;
