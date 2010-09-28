@@ -129,7 +129,6 @@
 #include "nsIPrefService.h"
 #include "nsIContentFilter.h"
 #include "nsEventDispatcher.h"
-#include "nsIPrincipal.h"
 
 const PRUnichar nbsp = 160;
 
@@ -268,22 +267,6 @@ nsHTMLEditor::InsertHTMLWithContext(const nsAString & aInputString,
                                     PRInt32 aDestOffset,
                                     PRBool aDeleteSelection)
 {
-  return DoInsertHTMLWithContext(aInputString, aContextStr, aInfoStr,
-      aFlavor, aSourceDoc, aDestNode, aDestOffset, aDeleteSelection,
-      PR_TRUE);
-}
-
-nsresult
-nsHTMLEditor::DoInsertHTMLWithContext(const nsAString & aInputString,
-                                      const nsAString & aContextStr,
-                                      const nsAString & aInfoStr,
-                                      const nsAString & aFlavor,
-                                      nsIDOMDocument *aSourceDoc,
-                                      nsIDOMNode *aDestNode,
-                                      PRInt32 aDestOffset,
-                                      PRBool aDeleteSelection,
-                                      PRBool aTrustedInput)
-{
   if (!mRules) return NS_ERROR_NOT_INITIALIZED;
 
   // force IME commit; set up rules sniffing and batching
@@ -306,8 +289,7 @@ nsHTMLEditor::DoInsertHTMLWithContext(const nsAString & aInputString,
                                    address_of(streamStartParent),
                                    address_of(streamEndParent),
                                    &streamStartOffset,
-                                   &streamEndOffset,
-                                   aTrustedInput);
+                                   &streamEndOffset);
   NS_ENSURE_SUCCESS(res, res);
 
   nsCOMPtr<nsIDOMNode> targetNode, tempNode;
@@ -1312,25 +1294,6 @@ NS_IMETHODIMP nsHTMLEditor::InsertFromTransferable(nsITransferable *transferable
 #ifdef DEBUG_clipboard
     printf("Got flavor [%s]\n", bestFlavor);
 #endif
-
-    // Try to determine whether we should use a sanitizing fragment sink
-    PRBool isSafe = PR_FALSE;
-    if (aSourceDoc) {
-      nsCOMPtr<nsIDOMDocument> destdomdoc;
-      rv = GetDocument(getter_AddRefs(destdomdoc));
-      NS_ENSURE_SUCCESS(rv, rv);
-      nsCOMPtr<nsIDocument> destdoc = do_QueryInterface(destdomdoc);
-      NS_ASSERTION(destdoc, "Where is our destination doc?");
-      nsCOMPtr<nsIDocument> srcdoc = do_QueryInterface(aSourceDoc);
-      NS_ASSERTION(srcdoc, "Where is our source doc?");
-
-      nsIPrincipal* srcPrincipal = srcdoc->NodePrincipal();
-      nsIPrincipal* destPrincipal = destdoc->NodePrincipal();
-      NS_ASSERTION(srcPrincipal && destPrincipal, "How come we don't have a principal?");
-      rv = srcPrincipal->Subsumes(destPrincipal, &isSafe);
-      NS_ENSURE_SUCCESS(rv, rv);
-    }
-
     if (0 == nsCRT::strcmp(bestFlavor, kNativeHTMLMime))
     {
       // note cf_html uses utf8, hence use length = len, not len/2 as in flavors below
@@ -1346,12 +1309,11 @@ NS_IMETHODIMP nsHTMLEditor::InsertFromTransferable(nsITransferable *transferable
         if (NS_SUCCEEDED(rv) && !cffragment.IsEmpty())
         {
           nsAutoEditBatch beginBatching(this);
-          rv = DoInsertHTMLWithContext(cffragment,
-                                       cfcontext, cfselection, flavor,
-                                       aSourceDoc,
-                                       aDestinationNode, aDestOffset,
-                                       aDoDeleteSelection,
-                                       isSafe);
+          rv = InsertHTMLWithContext(cffragment,
+                                     cfcontext, cfselection, flavor,
+                                     aSourceDoc,
+                                     aDestinationNode, aDestOffset,
+                                     aDoDeleteSelection);
         }
       }
     }
@@ -1365,12 +1327,11 @@ NS_IMETHODIMP nsHTMLEditor::InsertFromTransferable(nsITransferable *transferable
         NS_ASSERTION(text.Length() <= (len/2), "Invalid length!");
         stuffToPaste.Assign(text.get(), len / 2);
         nsAutoEditBatch beginBatching(this);
-        rv = DoInsertHTMLWithContext(stuffToPaste,
-                                     aContextStr, aInfoStr, flavor,
-                                     aSourceDoc,
-                                     aDestinationNode, aDestOffset,
-                                     aDoDeleteSelection,
-                                     isSafe);
+        rv = InsertHTMLWithContext(stuffToPaste,
+                                   aContextStr, aInfoStr, flavor,
+                                   aSourceDoc,
+                                   aDestinationNode, aDestOffset,
+                                   aDoDeleteSelection);
       }
     }
     else if (0 == nsCRT::strcmp(bestFlavor, kUnicodeMime) ||
@@ -1437,12 +1398,11 @@ NS_IMETHODIMP nsHTMLEditor::InsertFromTransferable(nsITransferable *transferable
             nsAutoEditBatch beginBatching(this);
 
             const nsAFlatString& empty = EmptyString();
-            rv = DoInsertHTMLWithContext(stuffToPaste,
-                                         empty, empty, flavor, 
-                                         aSourceDoc,
-                                         aDestinationNode, aDestOffset,
-                                         aDoDeleteSelection,
-                                         isSafe);
+            rv = InsertHTMLWithContext(stuffToPaste,
+                                       empty, empty, flavor, 
+                                       aSourceDoc,
+                                       aDestinationNode, aDestOffset,
+                                       aDoDeleteSelection);
           }
         }
       }
@@ -1501,12 +1461,11 @@ NS_IMETHODIMP nsHTMLEditor::InsertFromTransferable(nsITransferable *transferable
           AppendUTF8toUTF16(urltext, stuffToPaste);
           stuffToPaste.AppendLiteral("\" alt=\"\" >");
           nsAutoEditBatch beginBatching(this);
-          rv = DoInsertHTMLWithContext(stuffToPaste, EmptyString(), EmptyString(), 
-                                       NS_LITERAL_STRING(kFileMime),
-                                       aSourceDoc,
-                                       aDestinationNode, aDestOffset,
-                                       aDoDeleteSelection,
-                                       isSafe);
+          rv = InsertHTMLWithContext(stuffToPaste, EmptyString(), EmptyString(), 
+                                     NS_LITERAL_STRING(kFileMime),
+                                     aSourceDoc,
+                                     aDestinationNode, aDestOffset,
+                                     aDoDeleteSelection);
         }
       }
     }
@@ -2581,8 +2540,7 @@ nsresult nsHTMLEditor::CreateDOMFragmentFromPaste(const nsAString &aInputString,
                                                   nsCOMPtr<nsIDOMNode> *outStartNode,
                                                   nsCOMPtr<nsIDOMNode> *outEndNode,
                                                   PRInt32 *outStartOffset,
-                                                  PRInt32 *outEndOffset,
-                                                  PRBool aTrustedInput)
+                                                  PRInt32 *outEndOffset)
 {
   if (!outFragNode || !outStartNode || !outEndNode) 
     return NS_ERROR_NULL_POINTER;
@@ -2602,8 +2560,7 @@ nsresult nsHTMLEditor::CreateDOMFragmentFromPaste(const nsAString &aInputString,
   nsCOMPtr<nsIDOMNode> contextLeaf, junk;
   if (!aContextStr.IsEmpty())
   {
-    res = ParseFragment(aContextStr, tagStack, doc, address_of(contextAsNode),
-                        aTrustedInput);
+    res = ParseFragment(aContextStr, tagStack, doc, address_of(contextAsNode));
     NS_ENSURE_SUCCESS(res, res);
     NS_ENSURE_TRUE(contextAsNode, NS_ERROR_FAILURE);
 
@@ -2623,7 +2580,7 @@ nsresult nsHTMLEditor::CreateDOMFragmentFromPaste(const nsAString &aInputString,
   NS_ENSURE_SUCCESS(res, res);
 
   // create fragment for pasted html
-  res = ParseFragment(aInputString, tagStack, doc, outFragNode, aTrustedInput);
+  res = ParseFragment(aInputString, tagStack, doc, outFragNode);
   NS_ENSURE_SUCCESS(res, res);
   NS_ENSURE_TRUE(*outFragNode, NS_ERROR_FAILURE);
 
@@ -2685,8 +2642,7 @@ nsresult nsHTMLEditor::CreateDOMFragmentFromPaste(const nsAString &aInputString,
 nsresult nsHTMLEditor::ParseFragment(const nsAString & aFragStr,
                                      nsTArray<nsString> &aTagStack,
                                      nsIDocument* aTargetDocument,
-                                     nsCOMPtr<nsIDOMNode> *outNode,
-                                     PRBool aTrustedInput)
+                                     nsCOMPtr<nsIDOMNode> *outNode)
 {
   // figure out if we are parsing full context or not
   PRBool bContext = aTagStack.IsEmpty();
@@ -2699,31 +2655,24 @@ nsresult nsHTMLEditor::ParseFragment(const nsAString & aFragStr,
 
   // create the html fragment sink
   nsCOMPtr<nsIContentSink> sink;
-  if (aTrustedInput) {
-    if (bContext)
-      sink = do_CreateInstance(NS_HTMLFRAGMENTSINK2_CONTRACTID);
-    else
-      sink = do_CreateInstance(NS_HTMLFRAGMENTSINK_CONTRACTID);
-  } else {
-    if (bContext)
-      sink = do_CreateInstance(NS_HTMLPARANOIDFRAGMENTSINK2_CONTRACTID);
-    else
-      sink = do_CreateInstance(NS_HTMLPARANOIDFRAGMENTSINK_CONTRACTID);
-
-    nsCOMPtr<nsIParanoidFragmentContentSink> paranoidSink(do_QueryInterface(sink));
-    NS_ASSERTION(paranoidSink, "Our content sink is paranoid");
-    if (bContext) {
-      // Allow comments for the context to catch our placeholder cookie
-      paranoidSink->AllowComments();
-    } else {
-      // Allow style elements and attributes for the actual content
-      paranoidSink->AllowStyles();
-    }
-  }
+  if (bContext)
+    sink = do_CreateInstance(NS_HTMLPARANOIDFRAGMENTSINK2_CONTRACTID);
+  else
+    sink = do_CreateInstance(NS_HTMLPARANOIDFRAGMENTSINK_CONTRACTID);
 
   NS_ENSURE_TRUE(sink, NS_ERROR_FAILURE);
   nsCOMPtr<nsIFragmentContentSink> fragSink(do_QueryInterface(sink));
   NS_ENSURE_TRUE(fragSink, NS_ERROR_FAILURE);
+
+  nsCOMPtr<nsIParanoidFragmentContentSink> paranoidSink(do_QueryInterface(sink));
+  NS_ASSERTION(paranoidSink, "Our content sink is paranoid");
+  if (bContext) {
+    // Allow comemnts for the context to catch our placeholder cookie
+    paranoidSink->AllowComments();
+  } else {
+    // Allow style elements and attributes for the actual content
+    paranoidSink->AllowStyles();
+  }
 
   fragSink->SetTargetDocument(aTargetDocument);
 
