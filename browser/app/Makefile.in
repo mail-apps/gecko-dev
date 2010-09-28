@@ -63,7 +63,11 @@ DEFINES += \
 
 APP_VERSION = $(shell cat $(srcdir)/../config/version.txt)
 DEFINES += -DAPP_VERSION="$(APP_VERSION)"
-APP_UA_NAME = $(shell echo $(MOZ_APP_DISPLAYNAME) | sed -e's/[^A-Za-z]//g')
+ifndef MOZ_APP_UANAME
+# Unless MOZ_APP_UANAME has been explicitly set, just use the display name.
+MOZ_APP_UANAME = MOZ_APP_DISPLAYNAME
+endif
+APP_UA_NAME = $(shell echo $(MOZ_APP_UANAME) | sed -e's/[^A-Za-z]//g')
 DEFINES += -DAPP_UA_NAME="$(APP_UA_NAME)"
 
 DIST_FILES = application.ini
