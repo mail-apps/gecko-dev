@@ -30,7 +30,7 @@ addLoadEvent(function() {
   doc.open();
   doc.write("<html><head><base href='http://mochi.test:8888/'></head><body></body></html>");
   doc.close();
-  SimpleTest.waitForFocus(function() {
+  setTimeout(function() {
     getSelection().selectAllChildren(src);
     SimpleTest.waitForClipboard("src",
       function() {
@@ -50,7 +50,7 @@ addLoadEvent(function() {
         SimpleTest.finish();
       }
     );
-  });
+  }, 0);
 });
 
 </script>
