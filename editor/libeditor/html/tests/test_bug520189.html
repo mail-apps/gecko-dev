@@ -408,6 +408,8 @@ function runTest(test) {
   trans.setTransferData("text/html", data, data.data.length * 2);
 
   if ("indirectPaste" in test) {
+    todo(false, "nsIEditor.pasteTransferable is not availbale on branches");
+    /*
     var editor, win;
     if ("isIFrame" in test) {
       win = elem.contentDocument.defaultView;
@@ -420,6 +422,7 @@ function runTest(test) {
                 .QueryInterface(Components.interfaces.nsIEditorDocShell)
                 .editor;
     editor.pasteTransferable(trans);
+    */
   } else {
     var clipboard = Components.classes["@mozilla.org/widget/clipboard;1"]
                               .getService(Components.interfaces.nsIClipboard);
