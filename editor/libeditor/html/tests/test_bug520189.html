@@ -409,6 +409,7 @@ function runTest(test) {
 
   if ("indirectPaste" in test) {
     todo(false, "nsIEditor.pasteTransferable is not availbale on branches");
+    return;
     /*
     var editor, win;
     if ("isIFrame" in test) {
