@@ -216,7 +216,7 @@ static PRInt32 sContextCount;
 static PRTime sMaxScriptRunTime;
 static PRTime sMaxChromeScriptRunTime;
 
-static nsIScriptSecurityManager *sSecurityManager;
+static nsIScriptSecurityManager_1_9_2 *sSecurityManager;
 
 static nsICollation *gCollation;
 
