@@ -1,2 +1,1 @@
 MOZ_APP_DISPLAYNAME=Minefield
-MOZ_APP_UANAME=Firefox
