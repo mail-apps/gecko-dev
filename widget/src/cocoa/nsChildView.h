@@ -68,6 +68,7 @@
 class gfxASurface;
 class nsChildView;
 union nsPluginPort;
+class nsITimer;
 
 enum {
   // Currently focused ChildView (while this TSM document is active).
@@ -263,6 +264,8 @@ public:
 
   static void CommitIME();
   static void CancelIME();
+
+  static void Shutdown();
 private:
   static PRBool sIsIMEEnabled;
   static PRBool sIsRomanKeyboardsOnly;
@@ -270,8 +273,11 @@ private:
   static NSView<mozView>* sComposingView;
   static TSMDocumentID sDocumentID;
   static NSString* sComposingString;
+  static nsITimer* sSyncKeyScriptTimer;
 
   static void KillComposing();
+  static void CallKeyScriptAPI();
+  static void SyncKeyScript(nsITimer* aTimer, void* aClosure);
 };
 
 //-------------------------------------------------------------------------
