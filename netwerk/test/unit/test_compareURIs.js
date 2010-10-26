@@ -1,4 +1,5 @@
-Components.utils.import("resource://gre/modules/NetUtil.jsm");
+var ios = Components.classes["@mozilla.org/network/io-service;1"]
+                    .getService(Components.interfaces.nsIIOService);
 
 function do_info(text, stack) {
   if (!stack)
@@ -34,8 +35,8 @@ function run_test()
     tests.forEach(function(aTest) {
         do_info("Comparing " + aTest[0] + " to " + aTest[1]);
 
-	var uri1 = NetUtil.newURI(aTest[0]);
-	var uri2 = NetUtil.newURI(aTest[1]);
+	var uri1 = ios.newURI(aTest[0], null, null);
+	var uri2 = ios.newURI(aTest[1], null, null);
 
 	var equal;
 	try {
