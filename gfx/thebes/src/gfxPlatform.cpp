@@ -308,6 +308,7 @@ gfxPlatform::UpdateFontList()
 }
 
 #define GFX_DOWNLOADABLE_FONTS_ENABLED "gfx.downloadable_fonts.enabled"
+#define GFX_DOWNLOADABLE_FONTS_SANITIZE "gfx.downloadable_fonts.sanitize"
 
 PRBool
 gfxPlatform::DownloadableFontsEnabled()
@@ -327,6 +328,28 @@ gfxPlatform::DownloadableFontsEnabled()
     }
 
     return allowDownloadableFonts;
+}
+
+PRBool
+gfxPlatform::SanitizeDownloadedFonts()
+{
+    static PRBool initialized = PR_FALSE;
+    static PRBool sanitizeDownloadableFonts = PR_TRUE;
+
+    if (initialized == PR_FALSE) {
+        initialized = PR_TRUE;
+        nsCOMPtr<nsIPrefBranch> prefs = do_GetService(NS_PREFSERVICE_CONTRACTID);
+        if (prefs) {
+            PRBool sanitize;
+            nsresult rv = prefs->GetBoolPref(GFX_DOWNLOADABLE_FONTS_SANITIZE,
+                                             &sanitize);
+            if (NS_SUCCEEDED(rv)) {
+                sanitizeDownloadableFonts = sanitize;
+            }
+        }
+    }
+
+    return sanitizeDownloadableFonts;
 }
 
 gfxFontEntry*
