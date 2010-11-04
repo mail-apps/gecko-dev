@@ -170,6 +170,11 @@ pref("gfx.color_management.rendering_intent", 0);
 
 pref("gfx.downloadable_fonts.enabled", true);
 pref("gfx.downloadable_fonts.sanitize", true);
+#ifdef XP_MACOSX
+pref("gfx.downloadable_fonts.sanitize.preserve_otl_tables", false);
+#else
+pref("gfx.downloadable_fonts.sanitize.preserve_otl_tables", true);
+#endif
 
 pref("accessibility.browsewithcaret", false);
 pref("accessibility.warn_on_browsewithcaret", true);
