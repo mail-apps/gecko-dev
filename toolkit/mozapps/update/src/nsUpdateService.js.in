@@ -1220,7 +1220,7 @@ function UpdateService() {
   // second half of what app update reports as the ABI if the user is running a
   // universal binary.
   if (macutils.isUniversalBinary)
-    abi += "-u-ppc-i386";
+    gABI += "-u-ppc-i386";
 #endif
 
   // Start the update timer only after a profile has been selected so that the
