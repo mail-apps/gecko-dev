@@ -953,11 +953,9 @@ nsSVGPathElement::GetMarkPoints(nsTArray<nsSVGMark> *aMarks)
       if (aMarks->Length())
         aMarks->ElementAt(aMarks->Length() - 1).angle = prevAngle;
     } else {
-      if (aMarks->Length()) {
-        aMarks->ElementAt(aMarks->Length() - 1).angle =
-          nsSVGUtils::AngleBisect(prevAngle, startAngle);
-        prevAngle = endAngle;
-      }
+      aMarks->ElementAt(aMarks->Length() - 1).angle =
+        nsSVGUtils::AngleBisect(prevAngle, startAngle);
+      prevAngle = endAngle;
     }
 
     aMarks->AppendElement(nsSVGMark(x, y, 0));
