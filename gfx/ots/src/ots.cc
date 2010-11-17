@@ -4,8 +4,12 @@
 
 #include "ots.h"
 
+#define MOZ_DISABLE_WOFF_SUPPORT  1 // for mozilla-1.9.1, no WOFF
+
 #include <sys/types.h>
+#if !defined(MOZ_DISABLE_WOFF_SUPPORT)
 #include <zlib.h>
+#endif
 
 #include <algorithm>
 #include <cstdlib>
@@ -236,6 +240,7 @@ bool ProcessTTF(ots::OpenTypeFile *header,
   return ProcessGeneric(header, output, data, length, tables, file);
 }
 
+#if !defined(MOZ_DISABLE_WOFF_SUPPORT)
 bool ProcessWOFF(ots::OpenTypeFile *header,
                  ots::OTSStream *output, const uint8_t *data, size_t length) {
   ots::Buffer file(data, length);
@@ -306,6 +311,7 @@ bool ProcessWOFF(ots::OpenTypeFile *header,
 
   return ProcessGeneric(header, output, data, length, tables, file);
 }
+#endif
 
 bool ProcessGeneric(ots::OpenTypeFile *header, ots::OTSStream *output,
                     const uint8_t *data, size_t length,
@@ -420,6 +426,9 @@ bool ProcessGeneric(ots::OpenTypeFile *header, ots::OTSStream *output,
     size_t table_length;
 
     if (it->second.uncompressed_length != it->second.length) {
+#if defined(MOZ_DISABLE_WOFF_SUPPORT)
+      return OTS_FAILURE();
+#else
       // compressed table. Need to uncompress into memory first.
       table_length = it->second.uncompressed_length;
       table_data = arena.Allocate(table_length);
@@ -429,6 +438,7 @@ bool ProcessGeneric(ots::OpenTypeFile *header, ots::OTSStream *output,
       if (r != Z_OK || dest_len != table_length) {
         return OTS_FAILURE();
       }
+#endif
     } else {
       // uncompressed table. We can process directly from memory.
       table_data = data + it->second.offset;
@@ -588,11 +598,15 @@ bool Process(OTSStream *output, const uint8_t *data, size_t length) {
   }
 
   bool result;
+#if defined(MOZ_DISABLE_WOFF_SUPPORT)
+  result = ProcessTTF(&header, output, data, length);
+#else
   if (data[0] == 'w' && data[1] == 'O' && data[2] == 'F' && data[3] == 'F') {
     result = ProcessWOFF(&header, output, data, length);
   } else {
     result = ProcessTTF(&header, output, data, length);
   }
+#endif
 
   for (unsigned i = 0; ; ++i) {
     if (table_parsers[i].parse == NULL) break;
