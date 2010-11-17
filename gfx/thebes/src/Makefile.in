@@ -19,6 +19,7 @@ REQUIRES = \
 	unicharutil \
 	$(LCMS_REQUIRES) \
 	qcms \
+	ots/src \
 	$(NULL)
 
 CPPSRCS	= \
