@@ -47,7 +47,7 @@
 #include "nsIXULAppInfo.h"
 
 #include "mozilla/Mutex.h"
-#include "mozilla/PaintTracker.h"
+#include "PaintTracker.h"
 
 using mozilla::ipc::SyncChannel;
 using mozilla::ipc::RPCChannel;
