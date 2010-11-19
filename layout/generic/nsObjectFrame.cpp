@@ -1640,7 +1640,7 @@ nsObjectFrame::PaintPlugin(nsIRenderingContext& aRenderingContext,
       ctx->NewPath();
       ctx->Rectangle(nativeClipRect);
       ctx->Clip();
-      gfxPoint offset(aPluginRect.x / appUnitsPerDevPixel, aPluginRect.y / appUnitsPerDevPixel);
+      gfxPoint offset(contentPixels.x, contentPixels.y);
       ctx->Translate(offset);
 
       gfxQuartzNativeDrawing nativeDrawing(ctx, nativeClipRect - offset);
