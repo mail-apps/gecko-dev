@@ -158,10 +158,6 @@
 #include "nsIContentPolicy.h"
 #include "nsContentPolicyUtils.h"
 #include "nsContentErrors.h"
-#include "nsIContentUtils.h"
-
-#include "nsIInterfaceRequestor.h"
-#include "nsIChannelEventSink.h"
 
 #if defined(XP_WIN)
 #include "windows.h"
@@ -1119,9 +1115,7 @@ class nsPluginStreamListenerPeer : public nsIStreamListener,
                                    public nsIProgressEventSink,
                                    public nsIHttpHeaderVisitor,
                                    public nsSupportsWeakReference,
-                                   public nsINPAPIPluginStreamInfo,
-                                   public nsIInterfaceRequestor,
-                                   public nsIChannelEventSink
+                                   public nsINPAPIPluginStreamInfo
 {
 public:
   nsPluginStreamListenerPeer();
@@ -1132,8 +1126,6 @@ public:
   NS_DECL_NSIREQUESTOBSERVER
   NS_DECL_NSISTREAMLISTENER
   NS_DECL_NSIHTTPHEADERVISITOR
-  NS_DECL_NSIINTERFACEREQUESTOR
-  NS_DECL_NSICHANNELEVENTSINK
 
   // nsINPAPIPluginStreamInfo interface
   NS_DECL_NSIPLUGINSTREAMINFO
@@ -1167,7 +1159,6 @@ private:
   nsresult SetUpCache(nsIURI* aURL); // todo: see about removing this...
   nsresult SetUpStreamListener(nsIRequest* request, nsIURI* aURL);
   nsresult SetupPluginCacheFile(nsIChannel* channel);
-  nsresult GetInterfaceGlobal(const nsIID& aIID, void** result);
 
   nsCOMPtr<nsIURI> mURL;
   nsCString mURLSpec; // Have to keep this member because GetURL hands out char*
@@ -1498,15 +1489,13 @@ nsPluginStreamListenerPeer::~nsPluginStreamListenerPeer()
   delete mDataForwardToRequest;
 }
 
-NS_IMPL_ISUPPORTS8(nsPluginStreamListenerPeer,
+NS_IMPL_ISUPPORTS6(nsPluginStreamListenerPeer,
                    nsIStreamListener,
                    nsIRequestObserver,
                    nsIHttpHeaderVisitor,
                    nsISupportsWeakReference,
                    nsIPluginStreamInfo,
-                   nsINPAPIPluginStreamInfo,
-                   nsIInterfaceRequestor,
-                   nsIChannelEventSink)
+                   nsINPAPIPluginStreamInfo)
 
 // Called as a result of GetURL and PostURL
 nsresult nsPluginStreamListenerPeer::Initialize(nsIURI *aURL,
@@ -2284,84 +2273,6 @@ nsPluginStreamListenerPeer::VisitHeader(const nsACString &header, const nsACStri
 
   return listener->NewResponseHeader(PromiseFlatCString(header).get(),
                                      PromiseFlatCString(value).get());
-}
-
-nsresult
-nsPluginStreamListenerPeer::GetInterfaceGlobal(const nsIID& aIID, void** result)
-{
-  if (!mInstance) {
-    return NS_ERROR_FAILURE;
-  }
-
-  nsCOMPtr<nsIPluginInstanceOwner> owner;
-  mInstance->GetOwner(getter_AddRefs(owner));
-  if (owner) {
-    nsCOMPtr<nsIDocument> doc;
-    nsresult rv = owner->GetDocument(getter_AddRefs(doc));
-    if (NS_SUCCEEDED(rv) && doc) {
-      nsPIDOMWindow *window = doc->GetWindow();
-      if (window) {
-        nsCOMPtr<nsIWebNavigation> webNav = do_GetInterface(window);
-        nsCOMPtr<nsIInterfaceRequestor> ir = do_QueryInterface(webNav);
-        return ir->GetInterface(aIID, result);
-      }
-    }
-  }
-
-  return NS_ERROR_FAILURE;
-}
-
-NS_IMETHODIMP
-nsPluginStreamListenerPeer::GetInterface(const nsIID& aIID, void** result)
-{
-  // Provide nsIChannelEventSink ourselves, otherwise let our document's
-  // window provide the interface.
-
-  if (aIID.Equals(NS_GET_IID(nsIChannelEventSink))) {
-    return QueryInterface(aIID, result);
-  }
-
-  return GetInterfaceGlobal(aIID, result);
-}
-
-NS_IMETHODIMP
-nsPluginStreamListenerPeer::OnChannelRedirect(nsIChannel *oldChannel, nsIChannel *newChannel, PRUint32 flags)
-{
-  // Don't allow cross-origin 307 POST redirects. Fall back to channel event sink for window.
-
-  nsCOMPtr<nsIHttpChannel> oldHttpChannel(do_QueryInterface(oldChannel));
-  if (oldHttpChannel) {
-    PRUint32 responseStatus;
-    nsresult rv = oldHttpChannel->GetResponseStatus(&responseStatus);
-    if (NS_FAILED(rv)) {
-      return rv;
-    }
-    if (responseStatus == 307) {
-      nsCAutoString method;
-      rv = oldHttpChannel->GetRequestMethod(method);
-      if (NS_FAILED(rv)) {
-        return rv;
-      }
-      if (method.EqualsLiteral("POST")) {
-        nsCOMPtr<nsIContentUtils2> contentUtils2 = do_GetService("@mozilla.org/content/contentutils2;1");
-        NS_ENSURE_TRUE(contentUtils2, NS_ERROR_FAILURE);
-
-        nsCOMPtr<nsIInterfaceRequestor> sameOriginChecker = contentUtils2->GetSameOriginChecker();        
-        nsCOMPtr<nsIChannelEventSink> sameOriginChannelEventSink = do_GetInterface(sameOriginChecker);
-        NS_ENSURE_TRUE(sameOriginChannelEventSink, NS_ERROR_FAILURE);
-
-        return sameOriginChannelEventSink->OnChannelRedirect(oldChannel, newChannel, flags);        
-      }
-    }
-  }
-
-  nsCOMPtr<nsIChannelEventSink> channelEventSink;
-  nsresult rv = GetInterfaceGlobal(NS_GET_IID(nsIChannelEventSink), getter_AddRefs(channelEventSink));
-  if (NS_FAILED(rv)) {
-    return NS_ERROR_FAILURE;
-  }
-
-  return channelEventSink->OnChannelRedirect(oldChannel, newChannel, flags);
 }
 
 nsPluginHost::nsPluginHost()
@@ -5587,12 +5498,24 @@ nsresult nsPluginHost::NewPluginURLStream(const nsString& aURL,
     rv = listenerPeer->Initialize(url, aInstance, aListener);
 
     if (NS_SUCCEEDED(rv)) {
+      nsCOMPtr<nsIInterfaceRequestor> callbacks;
+      if (doc) {
+        // Get the script global object owner and use that as the
+        // notification callback.
+        nsIScriptGlobalObject* global = doc->GetScriptGlobalObject();
+        if (global) {
+          nsCOMPtr<nsIWebNavigation> webNav = do_GetInterface(global);
+          callbacks = do_QueryInterface(webNav);
+        }
+      }
+
       nsCOMPtr<nsIChannel> channel;
+
       rv = NS_NewChannel(getter_AddRefs(channel), url, nsnull,
         nsnull, /* do not add this internal plugin's channel
                 on the load group otherwise this channel could be canceled
                 form |nsDocShell::OnLinkClickSync| bug 166613 */
-        listenerPeer);
+        callbacks);
       if (NS_FAILED(rv))
         return rv;
 

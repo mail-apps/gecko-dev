@@ -37,8 +37,6 @@
 #ifndef nsIContentUtils_h__
 #define nsIContentUtils_h__
 
-class nsIInterfaceRequestor;
-
 // C4EA618E-A3D9-4524-8EEA-E92F26FC44DB
 #define NS_ICONTENTUTILS_IID \
 { 0xC4EA618E, 0xA3D9, 0x4524, \
@@ -54,21 +52,5 @@ public:
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(nsIContentUtils, NS_ICONTENTUTILS_IID)
-
-// {bebbaf89-a291-4303-b2dd-963efd4d53dd}
-#define NS_ICONTENTUTILS2_IID \
-{ 0xbebbaf89, 0xa291, 0x4303, \
-{ 0xb2, 0xdd, 0x96, 0x3e, 0xfd, 0x4d, 0x53, 0xdd } }
-
-class nsIContentUtils2 : public nsISupports
-{
-  public:
-    NS_DECLARE_STATIC_IID_ACCESSOR(NS_ICONTENTUTILS2_IID)
-    NS_DECL_ISUPPORTS
-
-    virtual nsIInterfaceRequestor* GetSameOriginChecker();
-};
-
-NS_DEFINE_STATIC_IID_ACCESSOR(nsIContentUtils2, NS_ICONTENTUTILS2_IID)
 
 #endif /* nsIContentUtils_h__ */

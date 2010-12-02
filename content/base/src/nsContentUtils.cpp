@@ -4508,14 +4508,6 @@ nsIContentUtils::IsSafeToRunScript()
   return nsContentUtils::IsSafeToRunScript();
 }
 
-NS_IMPL_ISUPPORTS1(nsIContentUtils2, nsIContentUtils2)
-
-nsIInterfaceRequestor*
-nsIContentUtils2::GetSameOriginChecker()
-{
-  return nsContentUtils::GetSameOriginChecker();
-}
-
 /* static */
 PRBool
 nsContentUtils::AddScriptRunner(nsIRunnable* aRunnable)
