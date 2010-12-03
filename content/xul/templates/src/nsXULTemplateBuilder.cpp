@@ -1116,9 +1116,14 @@ nsXULTemplateBuilder::AttributeChanged(nsIDocument* aDocument,
         // Check for a change to the 'datasources' attribute. If so, setup
         // mDB by parsing the new value and rebuild.
         else if (aAttribute == nsGkAtoms::datasources) {
-            nsContentUtils::AddScriptRunner(
-                NS_NEW_RUNNABLE_METHOD(nsXULTemplateBuilder, this,
-                                       RunnableLoadAndRebuild));
+            Uninit(PR_FALSE);  // Reset results
+            
+            PRBool shouldDelay;
+            LoadDataSources(aDocument, &shouldDelay);
+            if (!shouldDelay)
+                nsContentUtils::AddScriptRunner(
+                    NS_NEW_RUNNABLE_METHOD(nsXULTemplateBuilder, this,
+                                           RunnableRebuild));
         }
     }
 }
@@ -1135,9 +1140,8 @@ nsXULTemplateBuilder::ContentRemoved(nsIDocument* aDocument,
         if (mQueryProcessor)
             mQueryProcessor->Done();
 
-        // Pass false to Uninit since content is going away anyway
-        nsContentUtils::AddScriptRunner(
-            NS_NEW_RUNNABLE_METHOD(nsXULTemplateBuilder, this, UninitFalse));
+        // use false since content is going away anyway
+        Uninit(PR_FALSE);
 
         aDocument->RemoveObserver(this);
 
@@ -1174,8 +1178,7 @@ nsXULTemplateBuilder::NodeWillBeDestroyed(const nsINode* aNode)
     mCompDB = nsnull;
     mRoot = nsnull;
 
-    nsContentUtils::AddScriptRunner(
-        NS_NEW_RUNNABLE_METHOD(nsXULTemplateBuilder, this, UninitTrue));
+    Uninit(PR_TRUE);
 }
 
 
