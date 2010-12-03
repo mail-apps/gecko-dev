@@ -121,10 +121,9 @@ function run_test() {
   // is blocklisted by default
   var blockFile = gProfD.clone();
   blockFile.append("blocklist.xml");
-  var stream = AM_Cc["@mozilla.org/network/file-output-stream;1"].
-               createInstance(AM_Ci.nsIFileOutputStream);
-  stream.init(blockFile, FileUtils.MODE_WRONLY | FileUtils.MODE_CREATE | FileUtils.MODE_TRUNCATE,
-              FileUtils.PERMS_FILE, 0);
+  var stream = Components.classes["@mozilla.org/network/file-output-stream;1"].
+               createInstance(Components.interfaces.nsIFileOutputStream);
+  stream.init(blockFile, 0x02 | 0x08 | 0x20, 0644, 0);
 
   var data = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
              "<blocklist xmlns=\"http://www.mozilla.org/2006/addons-blocklist\">\n" +
