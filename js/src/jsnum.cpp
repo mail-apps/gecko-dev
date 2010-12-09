@@ -492,7 +492,7 @@ num_toLocaleString(JSContext *cx, uintN argc, jsval *vp)
 
     if (cx->localeCallbacks && cx->localeCallbacks->localeToUnicode) {
         JSBool ok = cx->localeCallbacks->localeToUnicode(cx, buf, vp);
-        cx->free(buf);
+        JS_free(cx, buf);
         return ok;
     }
 
