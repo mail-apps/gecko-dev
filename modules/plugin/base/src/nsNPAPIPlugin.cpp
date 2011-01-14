@@ -1770,7 +1770,7 @@ _getproperty(NPP npp, NPObject* npobj, NPIdentifier property,
   url.Assign(urlnp.utf8characters, urlnp.utf8length);
 
   PRBool javaCompatible = PR_FALSE;
-  if (NS_FAILED(NS_CheckIsJavaCompatibleURLString(url, &javaCompatible)))
+  if (NS_FAILED(NS_CheckIsJavaCompatibleURLString(url, PR_FALSE, &javaCompatible)))
     javaCompatible = PR_FALSE;
   if (javaCompatible)
     return true;
