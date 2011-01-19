@@ -202,6 +202,9 @@ struct JSTraceMonitor {
      */
     CLS(VMAllocator)        reTempAlloc;
 
+    /* Scripts with recorded fragments. */
+    JSDHashTable            tracedScripts;
+    
 #ifdef __cplusplus /* Allow inclusion from LiveConnect C files. */
 
 #ifdef DEBUG

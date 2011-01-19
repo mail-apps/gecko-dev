@@ -864,7 +864,7 @@ script_finalize(JSContext *cx, JSObject *obj)
 {
     JSScript *script = (JSScript *) obj->getPrivate();
     if (script)
-        js_DestroyScript(cx, script);
+        js_DestroyScriptFromGC(cx, script, NULL);
 }
 
 static JSBool
@@ -1587,8 +1587,22 @@ js_CallDestroyScriptHook(JSContext *cx, JSScript *script)
         hook(cx, script, cx->debugHooks->destroyScriptHookData);
 }
 
-void
-js_DestroyScript(JSContext *cx, JSScript *script)
+#if defined JS_TRACER && defined JS_THREADSAFE
+
+static JSDHashOperator
+thread_script_fragment_purger(JSDHashTable *table, JSDHashEntryHdr *hdr, uint32 /* index */,
+                              void *arg)
+{
+    JSThread *thread = ((JSThreadsHashEntry *) hdr)->thread;
+    JSScript *script = (JSScript *) arg;
+    js_PurgeScriptFragments(&thread->data.traceMonitor, script);
+    return JS_DHASH_NEXT;
+}
+
+#endif /* JS_TRACER && JS_THREADSAFE */
+
+static void
+DestroyScript(JSContext *cx, JSScript *script, JSThreadData *data)
 {
     js_CallDestroyScriptHook(cx, script);
     JS_ClearScriptTraps(cx, script);
@@ -1640,10 +1654,31 @@ js_DestroyScript(JSContext *cx, JSScript *script)
     }
 
 #ifdef JS_TRACER
-    js_PurgeScriptFragments(cx, script);
+# ifdef JS_THREADSAFE
+    if (data)
+        js_PurgeScriptFragments(&data->traceMonitor, script);
+    else
+        JS_DHashTableEnumerate(&cx->runtime->threads, thread_script_fragment_purger, script);
+# else
+    js_PurgeScriptFragments(JS_TRACE_MONITOR(cx), script);
+# endif
 #endif
-
+    
     cx->free(script);
+}
+
+void
+js_DestroyScript(JSContext *cx, JSScript *script)
+{
+    JS_ASSERT(!cx->runtime->gcRunning);
+    DestroyScript(cx, script, JS_THREAD_DATA(cx));
+}
+
+void
+js_DestroyScriptFromGC(JSContext *cx, JSScript *script, JSThreadData *data)
+{
+    JS_ASSERT(cx->runtime->gcRunning);
+    DestroyScript(cx, script, data);
 }
 
 void

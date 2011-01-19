@@ -1780,7 +1780,7 @@ fun_finalize(JSContext *cx, JSObject *obj)
      */
     if (FUN_INTERPRETED(fun)) {
         if (fun->u.i.script)
-            js_DestroyScript(cx, fun->u.i.script);
+            js_DestroyScriptFromGC(cx, fun->u.i.script, NULL);
         DestroyLocalNames(cx, fun);
     }
 }
