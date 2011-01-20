@@ -1660,7 +1660,7 @@ DestroyScript(JSContext *cx, JSScript *script, JSThreadData *data)
     else
         JS_DHashTableEnumerate(&cx->runtime->threads, thread_script_fragment_purger, script);
 # else
-    js_PurgeScriptFragments(JS_TRACE_MONITOR(cx), script);
+    js_PurgeScriptFragments(&JS_TRACE_MONITOR(cx), script);
 # endif
 #endif
     
