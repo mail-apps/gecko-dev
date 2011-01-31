@@ -380,8 +380,7 @@ nsInlineFrame::Reflow(nsPresContext*          aPresContext,
     }
   }
 
-  if (IsFrameTreeTooDeep(aReflowState, aMetrics)) {
-    aStatus = NS_FRAME_COMPLETE;
+  if (IsFrameTreeTooDeep(aReflowState, aMetrics, aStatus)) {
     return NS_OK;
   }
 
