@@ -1138,7 +1138,7 @@ extern void
 js_FinishJIT(JSTraceMonitor *tm);
 
 extern void
-js_PurgeScriptFragments(JSTraceMonitor *tm, JSScript* script);
+js_PurgeScriptFragments(JSContext* cx, JSScript* script);
 
 extern bool
 js_OverfullJITCache(JSTraceMonitor* tm);

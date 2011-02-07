@@ -2158,7 +2158,7 @@ SpecializeTreesToMissingGlobals(JSContext* cx, JSObject* globalObj, TreeInfo* ro
 }
 
 static void
-TrashTree(Fragment* f);
+TrashTree(JSContext* cx, Fragment* f);
 
 JS_REQUIRES_STACK
 TraceRecorder::TraceRecorder(JSContext* cx, VMSideExit* _anchor, Fragment* _fragment,
@@ -2302,10 +2302,10 @@ TraceRecorder::~TraceRecorder()
      JS_ASSERT(treeInfo && fragment);
 
      if (trashSelf)
-         TrashTree(fragment->root);
+         TrashTree(cx, fragment->root);
 
      for (unsigned int i = 0; i < whichTreesToTrash.length(); i++)
-         TrashTree(whichTreesToTrash[i]);
+         TrashTree(cx, whichTreesToTrash[i]);
 
     /* Purge the tempAlloc used during recording. */
     tempAlloc.reset();
@@ -2637,10 +2637,6 @@ JSTraceMonitor::flush()
 
     memset(&vmfragments[0], 0, FRAGMENT_TABLE_SIZE * sizeof(VMFragment*));
     reFragments = new (alloc) REHashMap(alloc);
-    if (tracedScripts.ops) {
-        JS_DHashTableFinish(&tracedScripts);
-        tracedScripts.ops = NULL;
-    }
 
     needFlush = JS_FALSE;
 }
@@ -5236,7 +5232,7 @@ StartRecorder(JSContext* cx, VMSideExit* anchor, Fragment* f, TreeInfo* ti,
 }
 
 static void
-TrashTree(Fragment* f)
+TrashTree(JSContext* cx, Fragment* f)
 {
     JS_ASSERT((!f->code()) == (!f->vmprivate));
     JS_ASSERT(f == f->root);
@@ -5252,11 +5248,11 @@ TrashTree(Fragment* f)
     Fragment** data = ti->dependentTrees.data();
     unsigned length = ti->dependentTrees.length();
     for (unsigned n = 0; n < length; ++n)
-        TrashTree(data[n]);
+        TrashTree(cx, data[n]);
     data = ti->linkedTrees.data();
     length = ti->linkedTrees.length();
     for (unsigned n = 0; n < length; ++n)
-        TrashTree(data[n]);
+        TrashTree(cx, data[n]);
 }
 
 static int
@@ -5463,22 +5459,6 @@ SynthesizeSlowNativeFrame(InterpState& state, JSContext *cx, VMSideExit *exit)
     cx->fp = fp;
 }
 
-static bool
-NoteRecordedScript(JSTraceMonitor *tm, JSScript *script)
-{
-    JSDHashTable *ht = &tm->tracedScripts;
-    if (!ht->ops &&
-        !JS_DHashTableInit(ht, JS_DHashGetStubOps(), NULL, sizeof(JSDHashEntryStub), 50)) {
-        ht->ops = NULL;
-        return false;
-    }
-    JSDHashEntryStub *he = (JSDHashEntryStub *) JS_DHashTableOperate(ht, script, JS_DHASH_ADD);
-    if (!he)
-        return false;
-    he->key = script;
-    return true;
-}
-
 static JS_REQUIRES_STACK bool
 RecordTree(JSContext* cx, JSTraceMonitor* tm, VMFragment* f, jsbytecode* outer,
            uint32 outerArgc, JSObject* globalObj, uint32 globalShape,
@@ -5511,9 +5491,7 @@ RecordTree(JSContext* cx, JSTraceMonitor* tm, VMFragment* f, jsbytecode* outer,
     f->root = f;
     f->lirbuf = tm->lirbuf;
 
-    if (tm->dataAlloc->outOfMemory() ||
-        js_OverfullJITCache(tm) ||
-        !NoteRecordedScript(tm, cx->fp->script)) {
+    if (tm->dataAlloc->outOfMemory() || js_OverfullJITCache(tm)) {
         Backoff(cx, (jsbytecode*) f->root->ip);
         ResetJIT(cx, FR_OOM);
         debug_only_print0(LC_TMTracer,
@@ -5654,7 +5632,7 @@ AttemptToStabilizeTree(JSContext* cx, JSObject* globalObj, VMSideExit* exit, jsb
         return false;
     } else if (consensus == TypeConsensus_Undemotes) {
         /* The original tree is unconnectable, so trash it. */
-        TrashTree(peer);
+        TrashTree(cx, peer);
         return false;
     }
 
@@ -6987,7 +6965,7 @@ js_AbortRecording(JSContext* cx, const char* reason)
      * TreeInfo object.
      */
     if (!f->code() && (f->root == f))
-        TrashTree(f);
+        TrashTree(cx, f);
 }
 
 #if defined NANOJIT_IA32
@@ -7378,9 +7356,6 @@ js_InitJIT(JSTraceMonitor *tm)
 void
 js_FinishJIT(JSTraceMonitor *tm)
 {
-    if (tm->tracedScripts.ops)
-        JS_DHashTableFinish(&tm->tracedScripts);
-
 #ifdef JS_JIT_SPEW
     if (jitstats.recorderStarted) {
         char sep = ':';
@@ -7488,18 +7463,12 @@ PurgeScriptRecordingAttempts(JSDHashTable *table, JSDHashEntryHdr *hdr, uint32 n
 
 
 JS_REQUIRES_STACK void
-js_PurgeScriptFragments(JSTraceMonitor *tm, JSScript* script)
+js_PurgeScriptFragments(JSContext* cx, JSScript* script)
 {
     debug_only_printf(LC_TMTracer,
                       "Purging fragments for JSScript %p.\n", (void*)script);
 
-    if (!tm->tracedScripts.ops)
-        return;
-    JSDHashEntryHdr *he = JS_DHashTableOperate(&tm->tracedScripts, script, JS_DHASH_LOOKUP);
-    if (JS_DHASH_ENTRY_IS_FREE(he))
-        return;
-    JS_DHashTableRawRemove(&tm->tracedScripts, he);
-
+    JSTraceMonitor* tm = &JS_TRACE_MONITOR(cx);
     for (size_t i = 0; i < FRAGMENT_TABLE_SIZE; ++i) {
         VMFragment** fragp = &tm->vmfragments[i];
         while (VMFragment* frag = *fragp) {
@@ -7515,7 +7484,7 @@ js_PurgeScriptFragments(JSTraceMonitor *tm, JSScript* script)
                 *fragp = frag->next;
                 do {
                     verbose_only( js_FragProfiling_FragFinalizer(frag, tm); )
-                    TrashTree(frag);
+                    TrashTree(cx, frag);
                 } while ((frag = frag->peer) != NULL);
                 continue;
             }
