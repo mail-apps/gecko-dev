@@ -39,12 +39,8 @@
 /* General Update Manager Tests */
 
 function run_test() {
-  do_test_pending();
-  do_register_cleanup(end_test);
-
-  logTestInfo("testing addition of a successful update to " + FILE_UPDATES_DB +
-              " and verification of update properties with the format prior " +
-              "to bug 530872");
+  dump("Testing: addition of a successful update to " + FILE_UPDATES_DB +
+       " and verification of update properties\n");
   removeUpdateDirsAndFiles();
   setUpdateChannel("test_channel");
 
@@ -56,7 +52,7 @@ function run_test() {
                                 "86", "true", STATE_PENDING);
   updates = getLocalUpdateString(patches, "major", "New", "version 4", "4.0",
                                  "4.0", "20070811053724", "http://details1/",
-                                 null, "http://license1/", "http://service1/",
+                                 "http://license1/", "http://service1/",
                                  "1238441300314", "test status text", "false",
                                  "test_channel", "true");
 
@@ -67,7 +63,7 @@ function run_test() {
                                 "75", "true", STATE_FAILED);
   updates = getLocalUpdateString(patches, "major", "Existing", "version 3",
                                  "3.0", "3.0", null, "http://details2/", null,
-                                 null, "http://service2/", null,
+                                 "http://service2/", null,
                                  getString("patchApplyFailure"), "true",
                                  "test_channel", "false");
   writeUpdatesToXMLFile(getLocalUpdatesXMLString(updates), false);
@@ -137,7 +133,7 @@ function run_test() {
                                 STATE_PENDING);
   updates = getLocalUpdateString(patches, "major", "New", "version 4.0", "4.0",
                                  "4.0", "20080811053724", "http://details/",
-                                 null, "http://license/", "http://service/",
+                                 "http://license/", "http://service/",
                                  "1238441400314", "test status text", null,
                                  "test_channel", "true");
 
@@ -148,7 +144,7 @@ function run_test() {
                                 STATE_FAILED);
   updates = getLocalUpdateString(patches, "major", "Existing", "version 3.0",
                                  "3.0", "3.0", null, "http://details/", null,
-                                 null, "http://service/", null,
+                                 "http://service/", null,
                                  getString("patchApplyFailure"), null,
                                  "test_channel", "false");
   writeUpdatesToXMLFile(getLocalUpdatesXMLString(updates), false);
@@ -177,10 +173,10 @@ function run_test() {
 
   patch = update.selectedPatch;
   do_check_eq(patch.type, "complete");
-  do_check_eq(patch.URL, URL_HOST + URL_PATH + "/" + FILE_SIMPLE_MAR);
+  do_check_eq(patch.URL, "http://localhost:4444/data/empty.mar");
   do_check_eq(patch.hashFunction, "MD5");
-  do_check_eq(patch.hashValue, MD5_HASH_SIMPLE_MAR);
-  do_check_eq(patch.size, SIZE_SIMPLE_MAR);
+  do_check_eq(patch.hashValue, "6232cd43a1c77e30191c53a329a3f99d");
+  do_check_eq(patch.size, "775");
   do_check_true(patch.selected);
   do_check_eq(patch.state, STATE_SUCCEEDED);
 
@@ -202,16 +198,12 @@ function run_test() {
 
   patch = update.selectedPatch;
   do_check_eq(patch.type, "complete");
-  do_check_eq(patch.URL, URL_HOST + URL_PATH + "/" + FILE_SIMPLE_MAR);
+  do_check_eq(patch.URL, "http://localhost:4444/data/empty.mar");
   do_check_eq(patch.hashFunction, "MD5");
-  do_check_eq(patch.hashValue, MD5_HASH_SIMPLE_MAR);
-  do_check_eq(patch.size, SIZE_SIMPLE_MAR);
+  do_check_eq(patch.hashValue, "6232cd43a1c77e30191c53a329a3f99d");
+  do_check_eq(patch.size, "775");
   do_check_true(patch.selected);
   do_check_eq(patch.state, STATE_FAILED);
 
-  do_test_finished();
-}
-
-function end_test() {
   cleanUp();
 }

@@ -27,13 +27,12 @@ const TESTS = [ {
 } ];
 
 function runTest() {
-  debugDump("entering");
+  debugDump("Entering runTest");
 
   let patches = getLocalPatchString("complete", null, null, "1234", null, null,
                                     STATE_DOWNLOADING);
   let updates = getLocalUpdateString(patches, null, null, null,
-                                     Services.appinfo.version,
-                                     Services.appinfo.platformVersion);
+                                     gApp.version, gApp.platformVersion);
 
   writeUpdatesToXMLFile(getLocalUpdatesXMLString(updates), true);
 
