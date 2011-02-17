@@ -12,11 +12,11 @@
 # for the specific language governing rights and limitations under the
 # License.
 #
-# The Original Code is the Netscape Portable Runtime (NSPR).
+# The Original Code is the Netscape security libraries.
 #
 # The Initial Developer of the Original Code is
 # Netscape Communications Corporation.
-# Portions created by the Initial Developer are Copyright (C) 1998-2000
+# Portions created by the Initial Developer are Copyright (C) 1994-2000
 # the Initial Developer. All Rights Reserved.
 #
 # Contributor(s):
@@ -34,28 +34,21 @@
 # the terms of any one of the MPL, the GPL or the LGPL.
 #
 # ***** END LICENSE BLOCK *****
+CORE_DEPTH = ../../..
 
-#! gmake
+MODULE = nss
 
-MOD_DEPTH	= ../../..
-topsrcdir	= @top_srcdir@
-srcdir		= @srcdir@
-VPATH		= @srcdir@
+REQUIRES = seccmd dbm softoken
 
-include $(MOD_DEPTH)/config/autoconf.mk
+PROGRAM = rsapoptst
 
-include $(topsrcdir)/config/config.mk
+EXPORTS = \
+	$(NULL)
 
-CSRCS = prseg.c prshm.c prshma.c
+PRIVATE_EXPORTS = \
+	$(NULL)
 
-TARGETS	= $(OBJS)
-
-INCLUDES = -I$(dist_includedir) -I$(topsrcdir)/pr/include -I$(topsrcdir)/pr/include/private
-
-DEFINES += -D_NSPR_BUILD_
-
-include $(topsrcdir)/config/rules.mk
-
-export:: $(TARGETS)
-
+CSRCS = \
+	rsapoptst.c \
+	$(NULL)
 
