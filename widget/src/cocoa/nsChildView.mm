@@ -4779,6 +4779,10 @@ GetUSLayoutCharFromKeyTranslate(UInt32 aKeyCode, UInt32 aModifiers)
   NSLog(@" aString = '%@'", aString);
 #endif
 
+  if (!mGeckoChild) {
+    return;
+  }
+
   nsAutoRetainCocoaObject kungFuDeathGrip(self);
 
   if (![aString isKindOfClass:[NSAttributedString class]])
