@@ -367,7 +367,7 @@ static NS_tchar* gSourcePath;
 static ArchiveReader gArchiveReader;
 
 #ifdef XP_WIN
-static bool gSucceeded = FALSE;
+static bool gSucceeded = false;
 WIN32_FIND_DATAW gFFData;
 #ifdef WINCE
 // Since WinCE doesn't have a current working directory store the current
@@ -421,8 +421,8 @@ static void LogPrintf(const char *fmt, ... )
 
 //-----------------------------------------------------------------------------
 
-static inline PRUint32
-mmin(PRUint32 a, PRUint32 b)
+static inline size_t
+mmin(size_t a, size_t b)
 {
   return (a > b) ? b : a;
 }
@@ -515,7 +515,8 @@ static int ensure_remove(const NS_tchar *path)
   ensure_write_permissions(path);
   int rv = NS_tremove(path);
   if (rv)
-    LOG(("remove failed: %d,%d (" LOG_S ")\n", rv, errno, path));
+    LOG(("ensure_remove: failed to remove file: " LOG_S ", rv: %d, err: %d\n",
+         path, rv, errno));
   return rv;
 }
 
@@ -553,6 +554,8 @@ static int ensure_parent_dir(const NS_tchar *path)
       // If the directory already exists, then ignore the error. On WinCE rv
       // will equal 0 if the directory already exists.
       if (rv < 0 && errno != EEXIST) {
+        LOG(("ensure_parent_dir: failed to create directory: " LOG_S ", " \
+             "err: %d\n", path, errno));
         rv = WRITE_ERROR;
       } else {
         rv = OK;
@@ -934,28 +937,39 @@ PatchFile::LoadSourceFile(FILE* ofile)
 {
   struct stat os;
   int rv = fstat(fileno((FILE*)ofile), &os);
-  if (rv)
+  if (rv) {
+    LOG(("LoadSourceFile: unable to stat destination file: " LOG_S ", " \
+         "err: %d\n", mDestFile, errno));
     return READ_ERROR;
+  }
 
-  if (PRUint32(os.st_size) != header.slen)
+  if (PRUint32(os.st_size) != header.slen) {
+    LOG(("LoadSourceFile: destination file size %d does not match expected size %d\n",
+         PRUint32(os.st_size), header.slen));
     return UNEXPECTED_ERROR;
+  }
 
   buf = (unsigned char*) malloc(header.slen);
   if (!buf)
     return MEM_ERROR;
 
-  int r = header.slen;
+  size_t r = header.slen;
   unsigned char *rb = buf;
   while (r) {
-    int c = fread(rb, 1, r, ofile);
-    if (c < 0)
+    size_t c = fread(rb, 1, r, ofile);
+    if (c < 0) {
+      LOG(("LoadSourceFile: error reading destination file: " LOG_S "\n",
+           mDestFile));
       return READ_ERROR;
+    }
 
     r -= c;
     rb += c;
 
-    if (c == 0 && r)
+    if (c == 0 && r) {
+      LOG(("LoadSourceFile: expected %d more bytes in destination file\n", r));
       return UNEXPECTED_ERROR;
+    }
   }
 
   // Verify that the contents of the source file correspond to what we expect.
@@ -963,7 +977,8 @@ PatchFile::LoadSourceFile(FILE* ofile)
   unsigned int crc = crc32(buf, header.slen);
 
   if (crc != header.scrc32) {
-    LOG(("CRC check failed\n"));
+    LOG(("LoadSourceFile: destination file crc %d does not match expected " \
+         "crc %d\n", crc, header.scrc32));
     return CRC_ERROR;
   }
   
@@ -1035,8 +1050,11 @@ PatchFile::Execute()
     return rv;
 
   FILE *origfile = NS_tfopen(mDestFile, NS_T("rb"));
-  if (!origfile)
+  if (!origfile) {
+    LOG(("unable to open destination file: " LOG_S ", err: %d\n", mDestFile,
+         errno));
     return READ_ERROR;
+  }
 
   rv = LoadSourceFile(origfile);
   fclose(origfile);
@@ -1056,8 +1074,11 @@ PatchFile::Execute()
     return rv;
 
   AutoFile ofile = ensure_open(mDestFile, NS_T("wb+"), ss.st_mode);
-  if (ofile == NULL)
+  if (ofile == NULL) {
+    LOG(("unable to create new file: " LOG_S ", err: %d\n", mDestFile,
+         errno));
     return WRITE_ERROR;
+  }
 
   rv = MBS_ApplyPatch(&header, pfile, buf, ofile);
 
@@ -1259,7 +1280,7 @@ LaunchWinPostProcess(const WCHAR *appExe)
   WCHAR dummyArg[13];
   wcscpy(dummyArg, L"argv0ignored ");
 
-  int len = wcslen(exearg) + wcslen(dummyArg);
+  size_t len = wcslen(exearg) + wcslen(dummyArg);
   WCHAR *cmdline = (WCHAR *) malloc((len + 1) * sizeof(WCHAR));
   if (!cmdline)
     return;
@@ -1831,7 +1852,7 @@ ActionList::Finish(int status)
 
 #ifdef XP_WIN
   if (status == OK)
-    gSucceeded = TRUE;
+    gSucceeded = true;
 #endif
 }
 
@@ -1843,33 +1864,43 @@ int DoUpdate()
 
   // extract the manifest
   FILE *fp = NS_tfopen(manifest, NS_T("wb"));
-  if (!fp)
+  if (!fp) {
+    LOG(("DoUpdate: error opening manifest file: " LOG_S "\n", manifest));
     return READ_ERROR;
+  }
 
   int rv = gArchiveReader.ExtractFileToStream("update.manifest", fp);
   fclose(fp);
-  if (rv)
+  if (rv) {
+    LOG(("DoUpdate: error extracting manifest file\n"));
     return rv;
+  }
 
   AutoFile mfile = NS_tfopen(manifest, NS_T("rb"));
-  if (mfile == NULL)
+  if (mfile == NULL) {
+    LOG(("DoUpdate: error opening manifest file: " LOG_S "\n", manifest));
     return READ_ERROR;
+  }
 
   struct stat ms;
   rv = fstat(fileno((FILE*)mfile), &ms);
-  if (rv)
+  if (rv) {
+    LOG(("DoUpdate: error stating manifest file: " LOG_S "\n", manifest));
     return READ_ERROR;
+  }
 
   char *mbuf = (char*) malloc(ms.st_size + 1);
   if (!mbuf)
     return MEM_ERROR;
 
-  int r = ms.st_size;
+  size_t r = ms.st_size;
   char *rb = mbuf;
   while (r) {
-    int c = fread(rb, 1, mmin(SSIZE_MAX,r), mfile);
-    if (c < 0)
+    size_t c = fread(rb, 1, mmin(SSIZE_MAX,r), mfile);
+    if (c < 0) {
+      LOG(("DoUpdate: error reading manifest file: " LOG_S "\n", manifest));
       return READ_ERROR;
+    }
 
     r -= c;
     rb += c;
@@ -1889,8 +1920,10 @@ int DoUpdate()
       continue;
 
     char *token = mstrtok(kWhitespace, &line);
-    if (!token)
+    if (!token) {
+      LOG(("DoUpdate: token not found in manifest\n"));
       return PARSE_ERROR;
+    }
 
     Action *action = NULL;
     if (strcmp(token, "remove") == 0) {
@@ -1909,6 +1942,7 @@ int DoUpdate()
       action = new PatchIfFile();
     }
     else {
+      LOG(("DoUpdate: unknown token: %s\n", token));
       return PARSE_ERROR;
     }
 
