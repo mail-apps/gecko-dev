@@ -59,11 +59,26 @@
 #ifndef WINCE
 # define putenv _putenv
 #endif
-# define snprintf _snprintf
 # define fchmod(a,b)
-
 # define NS_T(str) L ## str
-# define NS_tsnprintf _snwprintf
+// On Windows, _snprintf and _snwprintf don't guarantee null termination. These
+// macros always leave room in the buffer for null termination and set the end
+// of the buffer to null in case the string is larger than the buffer. Having
+// multiple nulls in a string is fine and this approach is simpler (possibly
+// faster) than calculating the string length to place the null terminator and
+// will truncate the string as _snprintf and _snwprintf do on other platforms.
+# define snprintf(dest, count, fmt, ...) \
+  PR_BEGIN_MACRO \
+    int _count = count - 1; \
+    _snprintf(dest, _count, fmt, ##__VA_ARGS__); \
+    dest[_count] = '\0'; \
+  PR_END_MACRO
+# define NS_tsnprintf(dest, count, fmt, ...) \
+  PR_BEGIN_MACRO \
+    int _count = count - 1; \
+    _snwprintf(dest, _count, fmt, ##__VA_ARGS__); \
+    dest[_count] = L'\0'; \
+  PR_END_MACRO
 # define NS_tstrrchr wcsrchr
 # define NS_taccess _waccess
 # define NS_tchdir _wchdir
@@ -376,7 +391,8 @@ static void LogInit()
     return;
 
   NS_tchar logFile[MAXPATHLEN];
-  NS_tsnprintf(logFile, MAXPATHLEN, NS_T("%s/update.log"), gSourcePath);
+  NS_tsnprintf(logFile, sizeof(logFile)/sizeof(logFile[0]),
+               NS_T("%s/update.log"), gSourcePath);
 
   gLogFP = NS_tfopen(logFile, NS_T("w"));
 }
@@ -583,7 +599,8 @@ static int rename_file(const NS_tchar *spath, const NS_tchar *dpath)
 static int backup_create(const NS_tchar *path)
 {
   NS_tchar backup[MAXPATHLEN];
-  NS_tsnprintf(backup, sizeof(backup), NS_T("%s" BACKUP_EXT), path);
+  NS_tsnprintf(backup, sizeof(backup)/sizeof(backup[0]),
+               NS_T("%s" BACKUP_EXT), path);
 
   return rename_file(path, backup);
 }
@@ -593,7 +610,8 @@ static int backup_create(const NS_tchar *path)
 static int backup_restore(const NS_tchar *path)
 {
   NS_tchar backup[MAXPATHLEN];
-  NS_tsnprintf(backup, sizeof(backup), NS_T("%s" BACKUP_EXT), path);
+  NS_tsnprintf(backup, sizeof(backup)/sizeof(backup[0]),
+               NS_T("%s" BACKUP_EXT), path);
 
   if (NS_taccess(backup, F_OK)) {
     LOG(("backup_restore: backup file doesn't exist: " LOG_S "\n", backup));
@@ -607,8 +625,9 @@ static int backup_restore(const NS_tchar *path)
 static int backup_discard(const NS_tchar *path)
 {
   NS_tchar backup[MAXPATHLEN];
-  NS_tsnprintf(backup, sizeof(backup), NS_T("%s" BACKUP_EXT), path);
-  
+  NS_tsnprintf(backup, sizeof(backup)/sizeof(backup[0]),
+               NS_T("%s" BACKUP_EXT), path);
+
   // Nothing to discard
   if (NS_taccess(backup, F_OK)) {
     LOG(("backup_discard: backup file doesn't exist: " LOG_S "\n", backup));
@@ -988,8 +1007,8 @@ PatchFile::Prepare()
   // extract the patch to a temporary file
   mPatchIndex = sPatchIndex++;
 
-  NS_tsnprintf(spath, MAXPATHLEN, NS_T("%s/%d.patch"),
-               gSourcePath, mPatchIndex);
+  NS_tsnprintf(spath, sizeof(spath)/sizeof(spath[0]),
+               NS_T("%s/%d.patch"), gSourcePath, mPatchIndex);
 
   NS_tremove(spath);
 
@@ -1043,6 +1062,9 @@ PatchFile::Execute()
   rv = MBS_ApplyPatch(&header, pfile, buf, ofile);
 
   // Go ahead and do a bit of cleanup now to minimize runtime overhead.
+  // Set pfile to NULL to make AutoFile close the file so it can be deleted on
+  // Windows.
+  pfile = NULL;
   NS_tremove(spath);
   spath[0] = '\0';
   free(buf);
@@ -1231,7 +1253,8 @@ LaunchWinPostProcess(const WCHAR *appExe)
   wcscpy(slash + 1, L"uninstall.update");
 
   WCHAR slogFile[MAXPATHLEN];
-  _snwprintf(slogFile, MAXPATHLEN, L"%s/update.log", gSourcePath);
+  NS_tsnprintf(slogFile, sizeof(slogFile)/sizeof(slogFile[0]),
+               NS_T("%s/update.log"), gSourcePath);
 
   WCHAR dummyArg[13];
   wcscpy(dummyArg, L"argv0ignored ");
@@ -1357,7 +1380,8 @@ WriteStatusFile(int status)
   // This is how we communicate our completion status to the main application.
 
   NS_tchar filename[MAXPATHLEN];
-  NS_tsnprintf(filename, MAXPATHLEN, NS_T("%s/update.status"), gSourcePath);
+  NS_tsnprintf(filename, sizeof(filename)/sizeof(filename[0]),
+               NS_T("%s/update.status"), gSourcePath);
 
   AutoFile file = NS_tfopen(filename, NS_T("wb+"));
   if (file == NULL)
@@ -1369,7 +1393,7 @@ WriteStatusFile(int status)
   if (status == OK) {
     text = "succeeded\n";
   } else {
-    snprintf(buf, sizeof(buf), "failed: %d\n", status);
+    snprintf(buf, sizeof(buf)/sizeof(buf[0]), "failed: %d\n", status);
     text = buf;
   }
   fwrite(text, strlen(text), 1, file);
@@ -1381,7 +1405,8 @@ UpdateThreadFunc(void *param)
   // open ZIP archive and process...
 
   NS_tchar dataFile[MAXPATHLEN];
-  NS_tsnprintf(dataFile, MAXPATHLEN, NS_T("%s/update.mar"), gSourcePath);
+  NS_tsnprintf(dataFile, sizeof(dataFile)/sizeof(dataFile[0]),
+               NS_T("%s/update.mar"), gSourcePath);
 
   int rv = gArchiveReader.Open(dataFile);
   if (rv == OK) {
@@ -1465,22 +1490,24 @@ int NS_main(int argc, NS_tchar **argv)
     }
   }
 
-  // The callback is the last N command line arguments starting from argOffset.
-  // The argument specified by argOffset is the callback executable and the
-  // argument prior to argOffset is the working directory.
-  const int argOffset = 4;
-
+  // The directory containing the update information.
   gSourcePath = argv[1];
+
+  // The callback is the remaining arguments starting at callbackIndex.
+  // The argument specified by callbackIndex is the callback executable and the
+  // argument prior to callbackIndex is the working directory.
+  const int callbackIndex = 4;
 
 #if defined(XP_WIN) && !defined(WINCE)
   // Launch a second instance of the updater with the runas verb on Windows
   // when write access is denied to the installation directory.
   HANDLE updateLockFileHandle;
   NS_tchar elevatedLockFilePath[MAXPATHLEN];
-  if (argc > argOffset) {
+  if (argc > callbackIndex) {
     NS_tchar updateLockFilePath[MAXPATHLEN];
-    NS_tsnprintf(updateLockFilePath, MAXPATHLEN,
-                 NS_T("%s.update_in_progress.lock"), argv[argOffset]);
+    NS_tsnprintf(updateLockFilePath,
+                 sizeof(updateLockFilePath)/sizeof(updateLockFilePath[0]),
+                 NS_T("%s.update_in_progress.lock"), argv[callbackIndex]);
 
     // The update_in_progress.lock file should only exist during an update. In
     // case it exists attempt to remove it and exit if that fails to prevent
@@ -1499,7 +1526,8 @@ int NS_main(int argc, NS_tchar **argv)
                                        FILE_FLAG_DELETE_ON_CLOSE,
                                        NULL);
 
-    NS_tsnprintf(elevatedLockFilePath, MAXPATHLEN,
+    NS_tsnprintf(elevatedLockFilePath,
+                 sizeof(elevatedLockFilePath)/sizeof(elevatedLockFilePath[0]),
                  NS_T("%s/update_elevated.lock"), argv[1]);
 
     if (updateLockFileHandle == INVALID_HANDLE_VALUE) {
@@ -1551,8 +1579,8 @@ int NS_main(int argc, NS_tchar **argv)
         WriteStatusFile(ELEVATION_CANCELED);
       }
 
-      if (argc > argOffset) {
-        LaunchCallbackApp(argv[3], argc - argOffset, argv + argOffset);
+      if (argc > callbackIndex) {
+        LaunchCallbackApp(argv[3], argc - callbackIndex, argv + callbackIndex);
       }
 
       CloseHandle(elevatedFileHandle);
@@ -1574,31 +1602,32 @@ int NS_main(int argc, NS_tchar **argv)
 #ifdef XP_WIN
   HANDLE callbackFile = INVALID_HANDLE_VALUE;
   NS_tchar callbackBackupPath[MAXPATHLEN];
-  if (argc > argOffset) {
+  if (argc > callbackIndex) {
     // FindFirstFileW is used to get the callback's filename for comparison
     // with the callback's patch since it will return the correct case and the
     // long name instead of the 8.3 format name.
     HANDLE hFindFile;
-    hFindFile = FindFirstFileW(argv[argOffset], &gFFData);
+    hFindFile = FindFirstFileW(argv[callbackIndex], &gFFData);
     if (hFindFile == INVALID_HANDLE_VALUE) {
-      LOG(("NS_main: unable to find callback file: " LOG_S "\n", argv[argOffset]));
+      LOG(("NS_main: unable to find callback file: " LOG_S "\n", argv[callbackIndex]));
       LogFinish();
       WriteStatusFile(WRITE_ERROR);
       EXIT_WHEN_ELEVATED(elevatedLockFilePath, updateLockFileHandle, 1);
-      LaunchCallbackApp(argv[3], argc - argOffset, argv + argOffset);
+      LaunchCallbackApp(argv[3], argc - callbackIndex, argv + callbackIndex);
       return 1;
     }
     FindClose(hFindFile);
 
     // Make a copy of the callback executable.
-    NS_tsnprintf(callbackBackupPath, sizeof(callbackBackupPath),
-                 NS_T("%s" CALLBACK_BACKUP_EXT), argv[argOffset]);
+    NS_tsnprintf(callbackBackupPath,
+                 sizeof(callbackBackupPath)/sizeof(callbackBackupPath[0]),
+                 NS_T("%s" CALLBACK_BACKUP_EXT), argv[callbackIndex]);
     NS_tremove(callbackBackupPath);
-    CopyFileW(argv[argOffset], callbackBackupPath, FALSE);
+    CopyFileW(argv[callbackIndex], callbackBackupPath, FALSE);
 
     // By opening a file handle to the callback executable, the OS will prevent
     // launching the process while it is being updated. 
-    callbackFile = CreateFileW(argv[argOffset],
+    callbackFile = CreateFileW(argv[callbackIndex],
 #ifdef WINCE
                                GENERIC_WRITE,
                                FILE_SHARE_READ | FILE_SHARE_WRITE,
@@ -1611,12 +1640,12 @@ int NS_main(int argc, NS_tchar **argv)
     // it isn't possible to update write the status file and return.
     if (callbackFile == INVALID_HANDLE_VALUE) {
       LOG(("NS_main: file in use - failed to exclusively open executable " \
-           "file: " LOG_S "\n", argv[argOffset]));
+           "file: " LOG_S "\n", argv[callbackIndex]));
       LogFinish();
       WriteStatusFile(WRITE_ERROR);
       NS_tremove(callbackBackupPath);
       EXIT_WHEN_ELEVATED(elevatedLockFilePath, updateLockFileHandle, 1);
-      LaunchCallbackApp(argv[3], argc - argOffset, argv + argOffset);
+      LaunchCallbackApp(argv[3], argc - callbackIndex, argv + callbackIndex);
       return 1;
     }
   }
@@ -1641,11 +1670,11 @@ int NS_main(int argc, NS_tchar **argv)
   t.Join();
 
 #ifdef XP_WIN
-  if (argc > argOffset) {
+  if (argc > callbackIndex) {
     CloseHandle(callbackFile);
     // CopyFile will preserve the case of the destination file if it already
     // exists.
-    if (CopyFileW(callbackBackupPath, argv[argOffset], FALSE) != 0) {
+    if (CopyFileW(callbackBackupPath, argv[callbackIndex], FALSE) != 0) {
       NS_tremove(callbackBackupPath);
     }
   }
@@ -1676,14 +1705,14 @@ int NS_main(int argc, NS_tchar **argv)
 
   LogFinish();
 
-  if (argc > argOffset) {
+  if (argc > callbackIndex) {
 #if defined(XP_WIN) && !defined(WINCE)
     if (gSucceeded) {
-      LaunchWinPostProcess(argv[argOffset]);
+      LaunchWinPostProcess(argv[callbackIndex]);
     }
     EXIT_WHEN_ELEVATED(elevatedLockFilePath, updateLockFileHandle, 0);
 #endif
-    LaunchCallbackApp(argv[3], argc - argOffset, argv + argOffset);
+    LaunchCallbackApp(argv[3], argc - callbackIndex, argv + callbackIndex);
   }
 
   return 0;
@@ -1809,7 +1838,8 @@ ActionList::Finish(int status)
 int DoUpdate()
 {
   NS_tchar manifest[MAXPATHLEN];
-  NS_tsnprintf(manifest, MAXPATHLEN, NS_T("%s/update.manifest"), gSourcePath);
+  NS_tsnprintf(manifest, sizeof(manifest)/sizeof(manifest[0]),
+               NS_T("%s/update.manifest"), gSourcePath);
 
   // extract the manifest
   FILE *fp = NS_tfopen(manifest, NS_T("wb"));
