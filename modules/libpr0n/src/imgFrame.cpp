@@ -157,6 +157,7 @@ imgFrame::imgFrame() :
 #ifdef USE_WIN_SURFACE
   , mIsDDBSurface(PR_FALSE)
 #endif
+  , mLocked(PR_FALSE)
 {
   static PRBool hasCheckedOptimize = PR_FALSE;
   if (!hasCheckedOptimize) {
@@ -815,6 +816,12 @@ nsresult imgFrame::LockImageData()
   if (mPalettedImageData)
     return NS_OK;
 
+  NS_ABORT_IF_FALSE(!mLocked, "Trying to lock already locked image data.");
+  if (mLocked) {
+    return NS_ERROR_FAILURE;
+  }
+  mLocked = PR_TRUE;
+
   if ((mOptSurface || mSinglePixel) && !mImageSurface) {
     // Recover the pixels
     mImageSurface = new gfxImageSurface(gfxIntSize(mSize.width, mSize.height),
@@ -855,6 +862,13 @@ nsresult imgFrame::UnlockImageData()
   // Assume we've been written to.
   if (mImageSurface)
     mImageSurface->MarkDirty();
+
+  NS_ABORT_IF_FALSE(mLocked, "Unlocking an unlocked image!");
+  if (!mLocked) {
+    return NS_ERROR_FAILURE;
+  }
+
+  mLocked = PR_FALSE;
 
 #ifdef XP_MACOSX
   // The quartz image surface (ab)uses the flush method to get the
