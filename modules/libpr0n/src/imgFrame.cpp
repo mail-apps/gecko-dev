@@ -777,6 +777,9 @@ PRUint32 imgFrame::GetImageDataLength() const
 void imgFrame::GetImageData(PRUint8 **aData, PRUint32 *length) const
 {
   if (mImageSurface)
+    mImageSurface->Flush();
+
+  if (mImageSurface)
     *aData = mImageSurface->Data();
   else if (mPalettedImageData)
     *aData = mPalettedImageData + PaletteDataLength();
@@ -836,6 +839,11 @@ nsresult imgFrame::LockImageData()
 #endif
   }
 
+  // We might write to the bits in this image surface, so we need to make the
+  // surface ready for that.
+  if (mImageSurface)
+    mImageSurface->Flush();
+
   return NS_OK;
 }
 
@@ -844,7 +852,13 @@ nsresult imgFrame::UnlockImageData()
   if (mPalettedImageData)
     return NS_OK;
 
+  // Assume we've been written to.
+  if (mImageSurface)
+    mImageSurface->MarkDirty();
+
 #ifdef XP_MACOSX
+  // The quartz image surface (ab)uses the flush method to get the
+  // cairo_image_surface data into a CGImage, so we have to call Flush() here.
   if (mQuartzSurface)
     mQuartzSurface->Flush();
 #endif
