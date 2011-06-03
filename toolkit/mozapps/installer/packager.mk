@@ -153,7 +153,7 @@ INNER_MAKE_PACKAGE	= rm -f app.7z && \
 INNER_UNMAKE_PACKAGE	= $(CYGWIN_WRAPPER) 7z x $(UNPACKAGE) && \
   rm -f ../optional_file_list.txt && \
   mv core $(MOZ_PKG_DIR) && \
-  (if [ -d optional ]; then ls -1 optional > ../optional_file_list.txt; mv optional/* $(MOZ_PKG_DIR); fi;)
+  (if [ -d optional ]; then ls -1 optional > ../optional_file_list.txt; cp -rp optional/* $(MOZ_PKG_DIR); rm -rf optional; fi;)
 endif
 ifeq ($(MOZ_PKG_FORMAT),APK)
 
