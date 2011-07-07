@@ -1,76 +1,77 @@
-af osx
-ar osx
-as osx
-ast osx
-be osx
-bg osx
-bn-BD osx
-bn-IN osx
-ca osx
-cs osx
-cy osx
-da osx
-de osx
-el osx
-en-GB osx
-en-US osx
-eo osx
-es-AR osx
-es-CL osx
-es-ES osx
-es-MX osx
-et osx
-eu osx
-fa osx
-fi osx
-fr osx
-fy-NL osx
-ga-IE osx
-gd osx
-gl osx
-gu-IN osx
-he osx
-hi-IN osx
-hr osx
-hu osx
-id osx
-is osx
-it osx
+af
+ar
+as
+ast
+be
+bg
+bn-BD
+bn-IN
+ca
+cs
+cy
+da
+de
+el
+en-GB
+en-US
+eo
+es-AR
+es-CL
+es-ES
+es-MX
+et
+eu
+fa
+fi
+fr
+fy-NL
+ga-IE
+gd
+gl
+gu-IN
+he
+hi-IN
+hr
+hu
+id
+is
+it
+ja linux win32
 ja-JP-mac osx
-ka osx
-kk osx
-kn osx
-ko osx
-ku osx
-lt osx
-lv osx
-mk osx
-ml osx
-mr osx
-nb-NO osx
-nl osx
-nn-NO osx
-oc osx
-or osx
-pa-IN osx
-pl osx
-pt-BR osx
-pt-PT osx
-rm osx
-ro osx
-ru osx
-si osx
-sk osx
-sl osx
-sq osx
-sr osx
-sv-SE osx
-ta osx
-ta-LK osx
-te osx
-th osx
-tr osx
-uk osx
-vi osx
-zh-CN osx
-zh-TW osx
+ka
+kk
+kn
+ko
+ku
+lt
+lv
+mk
+ml
+mr
+nb-NO
+nl
+nn-NO
+oc
+or
+pa-IN
+pl
+pt-BR
+pt-PT
+rm
+ro
+ru
+si
+sk
+sl
+sq
+sr
+sv-SE
+ta
+ta-LK
+te
+th
+tr
+uk
+vi
+zh-CN
+zh-TW
