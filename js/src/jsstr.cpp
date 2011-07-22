@@ -1524,7 +1524,7 @@ MatchCallback(JSContext *cx, size_t count, void *p)
         arrayval = OBJECT_TO_JSVAL(arrayobj);
     }
 
-    JSString *str = cx->regExpStatics.input;
+    JSString *str = cx->regExpStatics.pendingInput;
     JSSubString &match = cx->regExpStatics.lastMatch;
     ptrdiff_t off = match.chars - str->chars();
     JS_ASSERT(off >= 0 && size_t(off) <= str->length());
