@@ -1259,9 +1259,12 @@ nsNativeThemeCocoa::GetScrollbarDrawInfo(HIThemeTrackDrawInfo& aTdi, nsIFrame *a
 
   aTdi.trackInfo.scrollbar.pressState = 0;
 
-  // Only go get these scrollbar button states if we need it. For example, there's no reaon to look up scrollbar button 
-  // states when we're only creating a TrackDrawInfo to determine the size of the thumb.
-  if (aShouldGetButtonStates) {
+  // Only go get these scrollbar button states if we need it. For example,
+  // there's no reason to look up scrollbar button states when we're only
+  // creating a TrackDrawInfo to determine the size of the thumb. There's
+  // also no reason to do this on Lion or later, whose scrollbars have no
+  // arrow buttons.
+  if (aShouldGetButtonStates && !nsToolkit::OnLionOrLater()) {
     PRInt32 buttonStates[] = {0, 0, 0, 0};
     GetScrollbarPressStates(aFrame, buttonStates);
     ThemeScrollBarArrowStyle arrowStyle;
@@ -2030,24 +2033,27 @@ nsNativeThemeCocoa::GetWidgetBorder(nsIDeviceContext* aContext,
     case NS_THEME_SCROLLBAR_TRACK_HORIZONTAL:
     case NS_THEME_SCROLLBAR_TRACK_VERTICAL:
     {
-      // There's only an endcap to worry about when both arrows are on the bottom
-      ThemeScrollBarArrowStyle arrowStyle;
-      ::GetThemeScrollBarArrowStyle(&arrowStyle);
-      if (arrowStyle == kThemeScrollBarArrowsLowerRight) {
-        PRBool isHorizontal = (aWidgetType == NS_THEME_SCROLLBAR_TRACK_HORIZONTAL);
+      // On Lion and later, scrollbars have no arrows.
+      if (!nsToolkit::OnLionOrLater()) {
+        // There's only an endcap to worry about when both arrows are on the bottom
+        ThemeScrollBarArrowStyle arrowStyle;
+        ::GetThemeScrollBarArrowStyle(&arrowStyle);
+        if (arrowStyle == kThemeScrollBarArrowsLowerRight) {
+          PRBool isHorizontal = (aWidgetType == NS_THEME_SCROLLBAR_TRACK_HORIZONTAL);
 
-        nsIFrame *scrollbarFrame = GetParentScrollbarFrame(aFrame);
-        if (!scrollbarFrame) return NS_ERROR_FAILURE;
-        PRBool isSmall = (scrollbarFrame->GetStyleDisplay()->mAppearance == NS_THEME_SCROLLBAR_SMALL);
+          nsIFrame *scrollbarFrame = GetParentScrollbarFrame(aFrame);
+          if (!scrollbarFrame) return NS_ERROR_FAILURE;
+          PRBool isSmall = (scrollbarFrame->GetStyleDisplay()->mAppearance == NS_THEME_SCROLLBAR_SMALL);
 
-        // There isn't a metric for this, so just hardcode a best guess at the value.
-        // This value is even less exact due to the fact that the endcap is partially concave.
-        PRInt32 endcapSize = isSmall ? 5 : 6;
+          // There isn't a metric for this, so just hardcode a best guess at the value.
+          // This value is even less exact due to the fact that the endcap is partially concave.
+          PRInt32 endcapSize = isSmall ? 5 : 6;
 
-        if (isHorizontal)
-          aResult->SizeTo(endcapSize, 0, 0, 0);
-        else
-          aResult->SizeTo(0, endcapSize, 0, 0);
+          if (isHorizontal)
+            aResult->SizeTo(endcapSize, 0, 0, 0);
+          else
+            aResult->SizeTo(0, endcapSize, 0, 0);
+        }
       }
       break;
     }
