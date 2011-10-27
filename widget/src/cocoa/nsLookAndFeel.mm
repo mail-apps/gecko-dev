@@ -554,28 +554,33 @@ NS_IMETHODIMP nsLookAndFeel::GetMetric(const nsMetricID aID, PRInt32 & aMetric)
       aMetric = 4;
       break;
     case eMetric_ScrollArrowStyle:
-      ThemeScrollBarArrowStyle arrowStyle;
-      ::GetThemeScrollBarArrowStyle ( &arrowStyle );
-      switch (arrowStyle) {
-        case kThemeScrollBarArrowsSingle:
-          aMetric = eMetric_ScrollArrowStyleSingle;
-          break;
-        // These constants aren't selectable in System Preferences like the other two (don't know why) 
-        // `defaults write -g AppleScrollBarVariant DoubleBoth` to enable it.
-        case kThemeScrollBarArrowsBoth:
-          aMetric = eMetric_ScrollArrowStyleBothAtEachEnd;
-          break;
-        // `defaults write -g AppleScrollBarVariant DoubleMin` to enable it.
-        case kThemeScrollBarArrowsUpperLeft:
-          aMetric = eMetric_ScrollArrowStyleBothAtTop;
-          break;
-        default:
-          NS_WARNING("Not handling all possible ThemeScrollBarArrowStyle values");
-          // fall through so we default to BothAtBottom
-        case kThemeScrollBarArrowsLowerRight:
-          aMetric = eMetric_ScrollArrowStyleBothAtBottom;
+      if (nsToolkit::OnLionOrLater()) {
+        // OS X Lion's scrollbars have no arrows
+        aMetric = eMetric_ScrollArrowNone;
+      } else {
+        ThemeScrollBarArrowStyle arrowStyle;
+        ::GetThemeScrollBarArrowStyle ( &arrowStyle );
+        switch (arrowStyle) {
+          case kThemeScrollBarArrowsSingle:
+            aMetric = eMetric_ScrollArrowStyleSingle;
+            break;
+          // These constants aren't selectable in System Preferences like the other two (don't know why) 
+          // `defaults write -g AppleScrollBarVariant DoubleBoth` to enable it.
+          case kThemeScrollBarArrowsBoth:
+            aMetric = eMetric_ScrollArrowStyleBothAtEachEnd;
+            break;
+          // `defaults write -g AppleScrollBarVariant DoubleMin` to enable it.
+          case kThemeScrollBarArrowsUpperLeft:
+            aMetric = eMetric_ScrollArrowStyleBothAtTop;
+            break;
+          default:
+            NS_WARNING("Not handling all possible ThemeScrollBarArrowStyle values");
+            // fall through so we default to BothAtBottom
+          case kThemeScrollBarArrowsLowerRight:
+            aMetric = eMetric_ScrollArrowStyleBothAtBottom;
+        }
       }
-        break;
+      break;
     case eMetric_ScrollSliderStyle:
       ThemeScrollBarThumbStyle thumbStyle;
       ::GetThemeScrollBarThumbStyle ( &thumbStyle );
