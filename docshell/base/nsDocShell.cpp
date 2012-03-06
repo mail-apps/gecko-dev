@@ -8087,6 +8087,7 @@ nsIPrincipal*
 nsDocShell::GetInheritedPrincipal(PRBool aConsiderCurrentDocument)
 {
     nsCOMPtr<nsIDocument> document;
+    PRBool inheritedFromCurrent = PR_FALSE;
 
     if (aConsiderCurrentDocument && mContentViewer) {
         nsCOMPtr<nsIDocumentViewer>
@@ -8094,6 +8095,7 @@ nsDocShell::GetInheritedPrincipal(PRBool aConsiderCurrentDocument)
         if (!docViewer)
             return nsnull;
         docViewer->GetDocument(getter_AddRefs(document));
+        inheritedFromCurrent = PR_TRUE;
     }
 
     if (!document) {
@@ -8124,7 +8126,17 @@ nsDocShell::GetInheritedPrincipal(PRBool aConsiderCurrentDocument)
 
     //-- Get the document's principal
     if (document) {
-        return document->NodePrincipal();
+        nsIPrincipal *docPrincipal = document->NodePrincipal();
+
+        // Don't allow loads in typeContent docShells to inherit the system
+        // principal from existing documents.
+        if (inheritedFromCurrent &&
+            mItemType == typeContent &&
+            nsContentUtils::IsSystemPrincipal(docPrincipal)) {
+            return nsnull;
+        }
+
+        return docPrincipal;
     }
 
     return nsnull;
