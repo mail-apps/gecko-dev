@@ -1923,6 +1923,37 @@ nsLocalFile::GetBundleIdentifier(nsACString& outBundleIdentifier)
   NS_OBJC_END_TRY_ABORT_BLOCK_NSRESULT;
 }
 
+NS_IMETHODIMP
+nsLocalFile::GetBundleContentsLastModifiedTime(PRInt64 *aLastModTime)
+{
+  NS_OBJC_BEGIN_TRY_ABORT_BLOCK_NSRESULT;
+
+  CHECK_INIT();
+  NS_ENSURE_ARG(aLastModTime);
+
+  PRBool isPackage = PR_FALSE;
+  nsresult rv = IsPackage(&isPackage);
+  if (NS_FAILED(rv) || !isPackage) {
+    return GetLastModifiedTime(aLastModTime);
+  }
+
+  nsCAutoString infoPlistPath(mPath);
+  infoPlistPath.AppendLiteral("/Contents/Info.plist");
+  PRFileInfo64 info;
+  if (PR_GetFileInfo64(infoPlistPath.get(), &info) != PR_SUCCESS) {
+    return GetLastModifiedTime(aLastModTime);
+  }
+  PRInt64 modTime = PRInt64(info.modifyTime);
+  if (modTime == 0) {
+    *aLastModTime = 0;
+  } else {
+    *aLastModTime = modTime / PRInt64(PR_USEC_PER_MSEC);
+  }
+
+  return NS_OK;
+  NS_OBJC_END_TRY_ABORT_BLOCK_NSRESULT;
+}
+
 #pragma mark -
 #pragma mark [Protected Methods]
 

@@ -73,6 +73,9 @@
 #include "nsIProtocolProxyService.h"
 #include "nsIStreamConverterService.h"
 #include "nsIFile.h"
+#if defined(XP_MACOSX)
+#include "nsILocalFileMac.h"
+#endif
 #include "nsIInputStream.h"
 #include "nsIIOService.h"
 #include "nsIURL.h"
@@ -4662,7 +4665,19 @@ nsresult nsPluginHost::ScanPluginsDirectory(nsIFile * pluginsDir,
 
       // Get file mod time
       PRInt64 fileModTime = LL_ZERO;
+#if defined(XP_MACOSX)
+    // On OS X the date of a bundle's "contents" (i.e. of its Info.plist file)
+    // is a much better guide to when it was last modified than the date of
+    // its package directory.  See bug 313700.
+    nsCOMPtr<nsILocalFileMac> localFileMac = do_QueryInterface(dirEntry);
+    if (localFileMac) {
+      localFileMac->GetBundleContentsLastModifiedTime(&fileModTime);
+    } else {
       dirEntry->GetLastModifiedTime(&fileModTime);
+    }
+#else
+      dirEntry->GetLastModifiedTime(&fileModTime);
+#endif
 
       item->mModTime = fileModTime;
       item->mFilePath = filePath;

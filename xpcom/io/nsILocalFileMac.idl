@@ -50,7 +50,7 @@
 [ptr] native FSRefPtr(FSRef);
       native CFURLRef(CFURLRef);
 
-[scriptable, uuid(86D685E5-EE3F-405A-B521-446529DB82E5)]
+[scriptable, uuid(605AD84A-2834-4FE2-8280-59F40AB2BC87)]
 interface nsILocalFileMac : nsILocalFile
 {
    /**
@@ -210,6 +210,15 @@ interface nsILocalFileMac : nsILocalFile
     * returns the identifier of the bundle
     */
    readonly attribute AUTF8String bundleIdentifier;
+
+    /**
+     * Last modified time of a bundle's contents (as opposed to its package
+     * directory).  Our convention is to make the bundle's Info.plist file
+     * stand in for the rest of its contents -- since this file contains the
+     * bundle's version information and other identifiers.  For non-bundles
+     * this is the same as lastModifiedTime.
+     */
+    readonly attribute PRInt64 bundleContentsLastModifiedTime;
 };
 
 %{C++
