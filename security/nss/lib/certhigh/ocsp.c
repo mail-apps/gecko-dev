@@ -1,45 +1,12 @@
-/* ***** BEGIN LICENSE BLOCK *****
- * Version: MPL 1.1/GPL 2.0/LGPL 2.1
- *
- * The contents of this file are subject to the Mozilla Public License Version
- * 1.1 (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
- * http://www.mozilla.org/MPL/
- *
- * Software distributed under the License is distributed on an "AS IS" basis,
- * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
- * for the specific language governing rights and limitations under the
- * License.
- *
- * The Original Code is the Netscape security libraries.
- *
- * The Initial Developer of the Original Code is
- * Netscape Communications Corporation.
- * Portions created by the Initial Developer are Copyright (C) 1994-2000
- * the Initial Developer. All Rights Reserved.
- *
- * Contributor(s):
- *   Kai Engert (kengert@redhat.com)
- *
- * Alternatively, the contents of this file may be used under the terms of
- * either the GNU General Public License Version 2 or later (the "GPL"), or
- * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
- * in which case the provisions of the GPL or the LGPL are applicable instead
- * of those above. If you wish to allow use of your version of this file only
- * under the terms of either the GPL or the LGPL, and not to allow others to
- * use your version of this file under the terms of the MPL, indicate your
- * decision by deleting the provisions above and replace them with the notice
- * and other provisions required by the GPL or the LGPL. If you do not delete
- * the provisions above, a recipient may use your version of this file under
- * the terms of any one of the MPL, the GPL or the LGPL.
- *
- * ***** END LICENSE BLOCK ***** */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 /*
  * Implementation of OCSP services, for both client and server.
  * (XXX, really, mostly just for client right now, but intended to do both.)
  *
- * $Id: ocsp.c,v 1.65 2010/06/07 19:03:27 kaie%kuix.de Exp $
+ * $Id: ocsp.c,v 1.72 2012/09/22 13:41:58 wtc%google.com Exp $
  */
 
 #include "prerror.h"
@@ -138,7 +105,7 @@ static struct OCSPGlobalStruct {
 static SECItem *
 ocsp_GetEncodedOCSPResponseFromRequest(PRArenaPool *arena, 
                                        CERTOCSPRequest *request,
-                                       char *location, int64 time,
+                                       const char *location, int64 time,
                                        PRBool addServiceLocator,
                                        void *pwArg,
                                        CERTOCSPRequest **pRequest);
@@ -296,7 +263,7 @@ SECStatus
 SEC_RegisterDefaultHttpClient(const SEC_HttpClientFcn *fcnTable)
 {
     if (!OCSP_Global.monitor) {
-      PORT_SetError(SEC_ERROR_LIBRARY_FAILURE);
+      PORT_SetError(SEC_ERROR_NOT_INITIALIZED);
       return SECFailure;
     }
     
@@ -315,7 +282,7 @@ CERT_RegisterAlternateOCSPAIAInfoCallBack(
     CERT_StringFromCertFcn old;
 
     if (!OCSP_Global.monitor) {
-      PORT_SetError(SEC_ERROR_LIBRARY_FAILURE);
+      PORT_SetError(SEC_ERROR_NOT_INITIALIZED);
       return SECFailure;
     }
 
@@ -612,10 +579,14 @@ ocsp_CheckCacheSize(OCSPCacheData *cache)
 {
     OCSP_TRACE(("OCSP ocsp_CheckCacheSize\n"));
     PR_EnterMonitor(OCSP_Global.monitor);
-    if (OCSP_Global.maxCacheEntries <= 0) /* disabled or unlimited */
-        return;
-    while (cache->numberOfEntries > OCSP_Global.maxCacheEntries) {
-        ocsp_RemoveCacheItem(cache, cache->LRUitem);
+    if (OCSP_Global.maxCacheEntries > 0) {
+        /* Cache is not disabled. Number of cache entries is limited.
+         * The monitor ensures that maxCacheEntries remains positive.
+         */
+        while (cache->numberOfEntries > 
+                     (PRUint32)OCSP_Global.maxCacheEntries) {
+            ocsp_RemoveCacheItem(cache, cache->LRUitem);
+        }
     }
     PR_ExitMonitor(OCSP_Global.monitor);
 }
@@ -987,7 +958,7 @@ const SEC_HttpClientFcn *SEC_GetRegisteredHttpClient()
     const SEC_HttpClientFcn *retval;
 
     if (!OCSP_Global.monitor) {
-      PORT_SetError(SEC_ERROR_LIBRARY_FAILURE);
+      PORT_SetError(SEC_ERROR_NOT_INITIALIZED);
       return NULL;
     }
 
@@ -1505,7 +1476,7 @@ CERT_EncodeOCSPRequest(PRArenaPool *arena, CERTOCSPRequest *request,
  *   (SEC_ERROR_OCSP_MALFORMED_REQUEST), or low-level problem (no memory).
  */
 CERTOCSPRequest *
-CERT_DecodeOCSPRequest(SECItem *src)
+CERT_DecodeOCSPRequest(const SECItem *src)
 {
     PRArenaPool *arena = NULL;
     SECStatus rv = SECFailure;
@@ -2696,10 +2667,10 @@ ocsp_GetResponseSignature(CERTOCSPResponse *response)
     if (NULL == response->responseBytes) {
         return NULL;
     }
-    PORT_Assert(response->responseBytes != NULL);
-    PORT_Assert(response->responseBytes->responseTypeTag
-		== SEC_OID_PKIX_OCSP_BASIC_RESPONSE);
-
+    if (response->responseBytes->responseTypeTag
+        != SEC_OID_PKIX_OCSP_BASIC_RESPONSE) {
+        return NULL;
+    }
     basic = response->responseBytes->decodedResponse.basic;
     PORT_Assert(basic != NULL);
 
@@ -2937,7 +2908,7 @@ loser:
  * errors appropriate to the problem will be set.
  */
 static PRFileDesc *
-ocsp_SendEncodedRequest(char *location, SECItem *encodedRequest)
+ocsp_SendEncodedRequest(const char *location, SECItem *encodedRequest)
 {
     char *hostname = NULL;
     char *path = NULL;
@@ -2946,6 +2917,7 @@ ocsp_SendEncodedRequest(char *location, SECItem *encodedRequest)
     PRFileDesc *sock = NULL;
     PRFileDesc *returnSock = NULL;
     char *header = NULL;
+    char portstr[16];
 
     /*
      * Take apart the location, getting the hostname, port, and path.
@@ -2961,11 +2933,16 @@ ocsp_SendEncodedRequest(char *location, SECItem *encodedRequest)
     if (sock == NULL)
 	goto loser;
 
+    portstr[0] = '\0';
+    if (port != 80) {
+        PR_snprintf(portstr, sizeof(portstr), ":%d", port);
+    }
+
     header = PR_smprintf("POST %s HTTP/1.0\r\n"
-			 "Host: %s:%d\r\n"
+			 "Host: %s%s\r\n"
 			 "Content-Type: application/ocsp-request\r\n"
 			 "Content-Length: %u\r\n\r\n",
-			 path, hostname, port, encodedRequest->len);
+			 path, hostname, portstr, encodedRequest->len);
     if (header == NULL)
 	goto loser;
 
@@ -3290,7 +3267,7 @@ CERT_ParseURL(const char *url, char **pHostname, PRUint16 *pPort, char **pPath)
 static SECItem *
 fetchOcspHttpClientV1(PRArenaPool *arena, 
                       const SEC_HttpClientFcnV1 *hcv1, 
-                      char *location, 
+                      const char *location, 
                       SECItem *encodedRequest)
 {
     char *hostname = NULL;
@@ -3409,7 +3386,7 @@ loser:
  *     must be handled by the caller (and thus by having multiple calls
  *     to this routine), who knows about where the request(s) are being
  *     sent and whether there are any trusted responders in place.
- *   char *location
+ *   const char *location
  *     The location of the OCSP responder (a URL).
  *   int64 time
  *     Indicates the time for which the certificate status is to be 
@@ -3440,7 +3417,7 @@ loser:
  */
 SECItem *
 CERT_GetEncodedOCSPResponse(PRArenaPool *arena, CERTCertList *certList,
-			    char *location, int64 time,
+			    const char *location, int64 time,
 			    PRBool addServiceLocator,
 			    CERTCertificate *signerCert, void *pwArg,
 			    CERTOCSPRequest **pRequest)
@@ -3458,7 +3435,7 @@ CERT_GetEncodedOCSPResponse(PRArenaPool *arena, CERTCertList *certList,
 static SECItem *
 ocsp_GetEncodedOCSPResponseFromRequest(PRArenaPool *arena, 
                                        CERTOCSPRequest *request,
-                                       char *location, int64 time,
+                                       const char *location, int64 time,
                                        PRBool addServiceLocator,
                                        void *pwArg,
                                        CERTOCSPRequest **pRequest)
@@ -3519,7 +3496,7 @@ static SECItem *
 ocsp_GetEncodedOCSPResponseForSingleCert(PRArenaPool *arena, 
                                          CERTOCSPCertID *certID, 
                                          CERTCertificate *singleCert, 
-                                         char *location, int64 time,
+                                         const char *location, int64 time,
                                          PRBool addServiceLocator,
                                          void *pwArg,
                                          CERTOCSPRequest **pRequest)

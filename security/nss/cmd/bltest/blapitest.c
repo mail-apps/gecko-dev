@@ -1,39 +1,6 @@
-/* ***** BEGIN LICENSE BLOCK *****
- * Version: MPL 1.1/GPL 2.0/LGPL 2.1
- *
- * The contents of this file are subject to the Mozilla Public License Version
- * 1.1 (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
- * http://www.mozilla.org/MPL/
- *
- * Software distributed under the License is distributed on an "AS IS" basis,
- * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
- * for the specific language governing rights and limitations under the
- * License.
- *
- * The Original Code is the Netscape security libraries.
- *
- * The Initial Developer of the Original Code is
- * Netscape Communications Corporation.
- * Portions created by the Initial Developer are Copyright (C) 1994-2000
- * the Initial Developer. All Rights Reserved.
- *
- * Contributor(s):
- *   Douglas Stebila <douglas@stebila.ca>, Sun Microsystems Laboratories
- *
- * Alternatively, the contents of this file may be used under the terms of
- * either the GNU General Public License Version 2 or later (the "GPL"), or
- * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
- * in which case the provisions of the GPL or the LGPL are applicable instead
- * of those above. If you wish to allow use of your version of this file only
- * under the terms of either the GPL or the LGPL, and not to allow others to
- * use your version of this file under the terms of the MPL, indicate your
- * decision by deleting the provisions above and replace them with the notice
- * and other provisions required by the GPL or the LGPL. If you do not delete
- * the provisions above, a recipient may use your version of this file under
- * the terms of any one of the MPL, the GPL or the LGPL.
- *
- * ***** END LICENSE BLOCK ***** */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -46,11 +13,11 @@
 #include "prsystem.h"
 #include "plstr.h"
 #include "nssb64.h"
-#include "secutil.h"
+#include "basicutil.h"
 #include "plgetopt.h"
 #include "softoken.h"
 #include "nspr.h"
-#include "nss.h"
+#include "secport.h"
 #include "secoid.h"
 
 #ifdef NSS_ENABLE_ECC
@@ -78,7 +45,7 @@ char *testdir = NULL;
     if (rv) { \
 	PRErrorCode prerror = PR_GetError(); \
 	PR_fprintf(PR_STDERR, "%s: ERR %d (%s) at line %d.\n", progName, \
-                   prerror, SECU_Strerror(prerror), ln); \
+	prerror, PORT_ErrorToString(prerror), ln); \
 	exit(-1); \
     }
 
@@ -271,7 +238,7 @@ atob(SECItem *ascii, SECItem *binary, PRArenaPool *arena)
     binary->len = 0;
     it.item = binary;
     it.arena = arena;
-    len = (strncmp(&ascii->data[ascii->len-2],"\r\n",2)) ? 
+    len = (strncmp((const char *)&ascii->data[ascii->len-2],"\r\n",2)) ?
            ascii->len : ascii->len-2;
     cx = NSSBase64Decoder_Create(get_binary, &it);
     status = NSSBase64Decoder_Update(cx, (const char *)ascii->data, len);
@@ -296,9 +263,6 @@ btoa_file(SECItem *binary, PRFileDesc *outfile)
 {
     SECStatus status;
     NSSBase64Encoder *cx;
-    SECItem ascii;
-    ascii.data = NULL;
-    ascii.len = 0;
     if (binary->len == 0)
 	return SECSuccess;
     cx = NSSBase64Encoder_Create(output_ascii, outfile);
@@ -332,7 +296,7 @@ hex_from_2char(unsigned char *c2, unsigned char *byteval)
 }
 
 SECStatus
-char2_from_hex(unsigned char byteval, unsigned char *c2)
+char2_from_hex(unsigned char byteval, char *c2)
 {
     int i;
     unsigned char offset;
@@ -354,9 +318,6 @@ serialize_key(SECItem *it, int ni, PRFileDesc *file)
     int i;
     SECStatus status;
     NSSBase64Encoder *cx;
-    SECItem ascii;
-    ascii.data = NULL;
-    ascii.len = 0;
     cx = NSSBase64Encoder_Create(output_ascii, file);
     for (i=0; i<ni; i++, it++) {
 	len[0] = (it->len >> 24) & 0xff;
@@ -549,10 +510,10 @@ static CurveNameTagPair nameTagPair[] =
   { "sect131r2", SEC_OID_SECG_EC_SECT131R2},
 };
 
-static SECKEYECParams * 
+static SECItem * 
 getECParams(const char *curve)
 {
-    SECKEYECParams *ecparams;
+    SECItem *ecparams;
     SECOidData *oidData = NULL;
     SECOidTag curveOidTag = SEC_OID_UNKNOWN; /* default */
     int i, numCurves;
@@ -692,6 +653,7 @@ typedef enum {
     bltestMD2,		  /* Hash algorithms	   */
     bltestMD5,		  /* .			   */
     bltestSHA1,           /* .			   */
+    bltestSHA224,         /* .			   */
     bltestSHA256,         /* .			   */
     bltestSHA384,         /* .			   */
     bltestSHA512,         /* .			   */
@@ -726,6 +688,7 @@ static char *mode_strings[] =
     "md2",
     "md5",
     "sha1",
+    "sha224",
     "sha256",
     "sha384",
     "sha512",
@@ -756,7 +719,7 @@ typedef struct
 {
     bltestIO   key;
     bltestIO   pqgdata;
-    unsigned int j;
+    unsigned int keysize;
     bltestIO   keyseed;
     bltestIO   sigseed;
     bltestIO   sig; /* if doing verify, have additional input */
@@ -905,7 +868,7 @@ setupIO(PRArenaPool *arena, bltestIO *input, PRFileDesc *file,
 	in = &fileData;
     } else if (str) {
 	/* grabbing data from command line */
-	fileData.data = str;
+	fileData.data = (unsigned char *)str;
 	fileData.len = PL_strlen(str);
 	in = &fileData;
     } else if (file) {
@@ -1377,7 +1340,6 @@ bltest_camellia_init(bltestCipherInfo *cipherInfo, PRBool encrypt)
     int minorMode;
     int i;
     int keylen   = camelliap->key.buf.len;
-    int blocklen = CAMELLIA_BLOCK_SIZE; 
     PRIntervalTime time1, time2;
     
     switch (cipherInfo->mode) {
@@ -1497,12 +1459,21 @@ bltest_rsa_init(bltestCipherInfo *cipherInfo, PRBool encrypt)
     return SECSuccess;
 }
 
+blapi_pqg_param_gen(unsigned int keysize, PQGParams **pqg, PQGVerify **vfy)
+{
+    if (keysize < 1024) {
+	int j = PQG_PBITS_TO_INDEX(keysize);
+	return PQG_ParamGen(j, pqg, vfy);
+    }
+    return PQG_ParamGenV2(keysize, 0, 0, pqg, vfy);
+}
+
 SECStatus
 bltest_pqg_init(bltestDSAParams *dsap)
 {
     SECStatus rv, res;
     PQGVerify *vfy = NULL;
-    rv = PQG_ParamGen(dsap->j, &dsap->pqg, &vfy);
+    rv = blapi_pqg_param_gen(dsap->keysize, &dsap->pqg, &vfy);
     CHECKERROR(rv, __LINE__);
     rv = PQG_VerifyParams(dsap->pqg, vfy, &res);
     CHECKERROR(res, __LINE__);
@@ -1530,7 +1501,7 @@ bltest_dsa_init(bltestCipherInfo *cipherInfo, PRBool encrypt)
 	TIMESTART();
 	for (i=0; i<cipherInfo->cxreps; i++) {
 	    dummypqg = NULL;
-	    PQG_ParamGen(dsap->j, &dummypqg, &ignore);
+	    blapi_pqg_param_gen(dsap->keysize, &dummypqg, &ignore);
 	    DSA_NewKey(dummypqg, &dummyKey[i]);
 	}
 	TIMEFINISH(cipherInfo->cxtime, cipherInfo->cxreps);
@@ -1766,6 +1737,46 @@ finish:
 }
 
 SECStatus
+SHA224_restart(unsigned char *dest, const unsigned char *src, uint32 src_length)
+{
+    SECStatus rv = SECSuccess;
+    SHA224Context *cx, *cx_cpy;
+    unsigned char *cxbytes;
+    unsigned int len;
+    unsigned int i, quarter;
+    cx = SHA224_NewContext();
+    SHA224_Begin(cx);
+    /* divide message by 4, restarting 3 times */
+    quarter = (src_length + 3) / 4;
+    for (i=0; i < 4 && src_length > 0; i++) {
+	SHA224_Update(cx, src + i*quarter, PR_MIN(quarter, src_length));
+	len = SHA224_FlattenSize(cx);
+	cxbytes = PORT_Alloc(len);
+	SHA224_Flatten(cx, cxbytes);
+	cx_cpy = SHA224_Resurrect(cxbytes, NULL);
+	if (!cx_cpy) {
+	    PR_fprintf(PR_STDERR, "%s: SHA224_Resurrect failed!\n", progName);
+	    rv = SECFailure;
+	    goto finish;
+	}
+	rv = PORT_Memcmp(cx, cx_cpy, len);
+	if (rv) {
+	    SHA224_DestroyContext(cx_cpy, PR_TRUE);
+	    PR_fprintf(PR_STDERR, "%s: SHA224_restart failed!\n", progName);
+	    goto finish;
+	}
+	
+	SHA224_DestroyContext(cx_cpy, PR_TRUE);
+	PORT_Free(cxbytes);
+	src_length -= quarter;
+    }
+    SHA224_End(cx, dest, &len, MD5_LENGTH);
+finish:
+    SHA224_DestroyContext(cx, PR_TRUE);
+    return rv;
+}
+
+SECStatus
 SHA256_restart(unsigned char *dest, const unsigned char *src, uint32 src_length)
 {
     SECStatus rv = SECSuccess;
@@ -1920,7 +1931,7 @@ pubkeyInitKey(bltestCipherInfo *cipherInfo, PRFileDesc *file,
     case bltestDSA:
 	dsap = &cipherInfo->params.dsa;
 	if (keysize > 0) {
-	    dsap->j = PQG_PBITS_TO_INDEX(8*keysize);
+	    dsap->keysize = keysize*8;
 	    if (!dsap->pqg)
 		bltest_pqg_init(dsap);
 	    rv = DSA_NewKey(dsap->pqg, &dsap->dsakey);
@@ -1929,7 +1940,7 @@ pubkeyInitKey(bltestCipherInfo *cipherInfo, PRFileDesc *file,
 	} else {
 	    setupIO(cipherInfo->arena, &cipherInfo->params.key, file, NULL, 0);
 	    dsap->dsakey = dsakey_from_filedata(&cipherInfo->params.key.buf);
-	    dsap->j = PQG_PBITS_TO_INDEX(8*dsap->dsakey->params.prime.len);
+	    dsap->keysize = dsap->dsakey->params.prime.len*8;
 	}
 	break;
 #ifdef NSS_ENABLE_ECC
@@ -2026,7 +2037,7 @@ cipherInit(bltestCipherInfo *cipherInfo, PRBool encrypt)
 	break;
     case bltestDSA:
 	SECITEM_AllocItem(cipherInfo->arena, &cipherInfo->output.buf,
-			  DSA_SIGNATURE_LEN);
+			  DSA_MAX_SIGNATURE_LEN);
 	return bltest_dsa_init(cipherInfo, encrypt);
 	break;
 #ifdef NSS_ENABLE_ECC
@@ -2055,6 +2066,14 @@ cipherInit(bltestCipherInfo *cipherInfo, PRBool encrypt)
 	SECITEM_AllocItem(cipherInfo->arena, &cipherInfo->output.buf,
 			  SHA1_LENGTH);
 	cipherInfo->cipher.hashCipher = (restart) ? sha1_restart : SHA1_HashBuf;
+	return SECSuccess;
+	break;
+    case bltestSHA224:
+	restart = cipherInfo->params.hash.restart;
+	SECITEM_AllocItem(cipherInfo->arena, &cipherInfo->output.buf,
+			  SHA224_LENGTH);
+	cipherInfo->cipher.hashCipher = (restart) ? SHA224_restart 
+	                                          : SHA224_HashBuf;
 	return SECSuccess;
 	break;
     case bltestSHA256:
@@ -2166,6 +2185,7 @@ dsaOp(bltestCipherInfo *cipherInfo)
             }
             TIMEFINISH(cipherInfo->optime, 1.0);
         }
+	cipherInfo->output.buf.len = cipherInfo->output.pBuf.len;
         bltestCopyIO(cipherInfo->arena, &cipherInfo->params.dsa.sig, 
                      &cipherInfo->output);
     } else {
@@ -2333,8 +2353,9 @@ cipherDoOp(bltestCipherInfo *cipherInfo)
 {
     PRIntervalTime time1, time2;
     SECStatus rv = SECSuccess;
-    int i, len;
-    int maxLen = cipherInfo->output.pBuf.len;
+    int i;
+    unsigned int len;
+    unsigned int maxLen = cipherInfo->output.pBuf.len;
     unsigned char *dummyOut;
     if (cipherInfo->mode == bltestDSA)
 	return dsaOp(cipherInfo);
@@ -2344,14 +2365,26 @@ cipherDoOp(bltestCipherInfo *cipherInfo)
 #endif
     dummyOut = PORT_Alloc(maxLen);
     if (is_symmkeyCipher(cipherInfo->mode)) {
+        const unsigned char *input = cipherInfo->input.pBuf.data;
+        unsigned int inputLen = PR_MIN(cipherInfo->input.pBuf.len, 16);
+        unsigned char *output = cipherInfo->output.pBuf.data;
+        unsigned int outputLen = maxLen;
         TIMESTART();
         rv = (*cipherInfo->cipher.symmkeyCipher)(cipherInfo->cx,
-                                                 cipherInfo->output.pBuf.data,
-                                                 &len, maxLen,
-                                                 cipherInfo->input.pBuf.data,
-                                                 cipherInfo->input.pBuf.len);
-        TIMEFINISH(cipherInfo->optime, 1.0);
+                                                 output, &len, outputLen,
+                                                 input, inputLen);
         CHECKERROR(rv, __LINE__);
+        if (cipherInfo->input.pBuf.len > inputLen) {
+            input += inputLen;
+            inputLen = cipherInfo->input.pBuf.len - inputLen;
+            output += len;
+            outputLen -= len;
+            rv = (*cipherInfo->cipher.symmkeyCipher)(cipherInfo->cx,
+                                                     output, &len, outputLen,
+                                                     input, inputLen);
+            CHECKERROR(rv, __LINE__);
+        }
+        TIMEFINISH(cipherInfo->optime, 1.0);
         cipherInfo->repetitions = 0;
         if (cipherInfo->repetitionsToPerfom != 0) {
             TIMESTART();
@@ -2366,16 +2399,14 @@ cipherDoOp(bltestCipherInfo *cipherInfo)
             }
         } else {
             int opsBetweenChecks = 0;
-            bltestIO *input = &cipherInfo->input;
             TIMEMARK(cipherInfo->seconds);
             while (! (TIMETOFINISH())) {
                 int j = 0;
                 for (;j < opsBetweenChecks;j++) {
-                    (*cipherInfo->cipher.symmkeyCipher)(cipherInfo->cx,
-                                                        dummyOut,
-                                                        &len, maxLen,
-                                                        input->pBuf.data,
-                                                        input->pBuf.len);
+                    (*cipherInfo->cipher.symmkeyCipher)(
+                        cipherInfo->cx, dummyOut, &len, maxLen,
+                        cipherInfo->input.pBuf.data,
+                        cipherInfo->input.pBuf.len);
                 }
                 cipherInfo->repetitions += j;
             }
@@ -2498,6 +2529,7 @@ cipherFinish(bltestCipherInfo *cipherInfo)
     case bltestMD2: /* hash contexts are ephemeral */
     case bltestMD5:
     case bltestSHA1:
+    case bltestSHA224:
     case bltestSHA256:
     case bltestSHA384:
     case bltestSHA512:
@@ -2661,7 +2693,7 @@ print_td:
           if (td)
               fprintf(stdout, "%8s", "pqg_mod");
           else
-              fprintf(stdout, "%8d", PQG_INDEX_TO_PBITS(info->params.dsa.j));
+              fprintf(stdout, "%8d", info->params.dsa.keysize);
           break;
 #ifdef NSS_ENABLE_ECC
       case bltestECDSA:
@@ -2851,6 +2883,7 @@ get_params(PRArenaPool *arena, bltestParams *params,
     case bltestMD2:
     case bltestMD5:
     case bltestSHA1:
+    case bltestSHA224:
     case bltestSHA256:
     case bltestSHA384:
     case bltestSHA512:

@@ -1,39 +1,6 @@
-/* ***** BEGIN LICENSE BLOCK *****
- * Version: MPL 1.1/GPL 2.0/LGPL 2.1
- *
- * The contents of this file are subject to the Mozilla Public License Version
- * 1.1 (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
- * http://www.mozilla.org/MPL/
- *
- * Software distributed under the License is distributed on an "AS IS" basis,
- * WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
- * for the specific language governing rights and limitations under the
- * License.
- *
- * The Original Code is the Netscape security libraries.
- *
- * The Initial Developer of the Original Code is
- * Netscape Communications Corporation.
- * Portions created by the Initial Developer are Copyright (C) 1994-2000
- * the Initial Developer. All Rights Reserved.
- *
- * Contributor(s):
- *   Dr Vipul Gupta <vipul.gupta@sun.com>, Sun Microsystems Laboratories
- *
- * Alternatively, the contents of this file may be used under the terms of
- * either the GNU General Public License Version 2 or later (the "GPL"), or
- * the GNU Lesser General Public License Version 2.1 or later (the "LGPL"),
- * in which case the provisions of the GPL or the LGPL are applicable instead
- * of those above. If you wish to allow use of your version of this file only
- * under the terms of either the GPL or the LGPL, and not to allow others to
- * use your version of this file under the terms of the MPL, indicate your
- * decision by deleting the provisions above and replace them with the notice
- * and other provisions required by the GPL or the LGPL. If you do not delete
- * the provisions above, a recipient may use your version of this file under
- * the terms of any one of the MPL, the GPL or the LGPL.
- *
- * ***** END LICENSE BLOCK ***** */
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 /*
  * Deal with PKCS #11 Slots.
  */
@@ -50,6 +17,7 @@
 #include "dev.h" 
 #include "dev3hack.h" 
 #include "pkim.h"
+#include "utilpars.h"
 
 
 /*************************************************************
@@ -59,7 +27,7 @@
 /*
  * This array helps parsing between names, mechanisms, and flags.
  * to make the config files understand more entries, add them
- * to this table. (NOTE: we need function to export this table and it's size)
+ * to this table.
  */
 PK11DefaultArrayEntry PK11_DefaultArray[] = {
 	{ "RSA", SECMOD_RSA_FLAG, CKM_RSA_PKCS },
@@ -73,6 +41,7 @@ PK11DefaultArrayEntry PK11_DefaultArray[] = {
 	{ "SEED", SECMOD_SEED_FLAG, CKM_SEED_CBC },
 	{ "RC5", SECMOD_RC5_FLAG, CKM_RC5_CBC },
 	{ "SHA-1", SECMOD_SHA1_FLAG, CKM_SHA_1 },
+/*	{ "SHA224", SECMOD_SHA256_FLAG, CKM_SHA224 }, */
 	{ "SHA256", SECMOD_SHA256_FLAG, CKM_SHA256 },
 /*	{ "SHA384", SECMOD_SHA512_FLAG, CKM_SHA384 }, */
 	{ "SHA512", SECMOD_SHA512_FLAG, CKM_SHA512 },
@@ -857,6 +826,7 @@ PK11_GetSlotList(CK_MECHANISM_TYPE type)
 	return &pk11_rc5SlotList;
     case CKM_SHA_1:
 	return &pk11_sha1SlotList;
+    case CKM_SHA224:
     case CKM_SHA256:
 	return &pk11_sha256SlotList;
     case CKM_SHA384:
@@ -1349,7 +1319,7 @@ pk11_isRootSlot(PK11SlotInfo *slot)
  * times as tokens are removed and re-inserted.
  */
 void
-PK11_InitSlot(SECMODModule *mod,CK_SLOT_ID slotID,PK11SlotInfo *slot)
+PK11_InitSlot(SECMODModule *mod, CK_SLOT_ID slotID, PK11SlotInfo *slot)
 {
     SECStatus rv;
     char *tmp;
@@ -1726,6 +1696,12 @@ PK11_NeedUserInit(PK11SlotInfo *slot)
 }
 
 static PK11SlotInfo *pk11InternalKeySlot = NULL;
+
+/*
+ * Set a new default internal keyslot. If one has already been set, clear it.
+ * Passing NULL falls back to the NSS normally selected default internal key
+ * slot.
+ */
 void
 pk11_SetInternalKeySlot(PK11SlotInfo *slot)
 {
@@ -1733,6 +1709,32 @@ pk11_SetInternalKeySlot(PK11SlotInfo *slot)
 	PK11_FreeSlot(pk11InternalKeySlot);
    }
    pk11InternalKeySlot = slot ? PK11_ReferenceSlot(slot) : NULL;
+}
+
+/*
+ * Set a new default internal keyslot if the normal key slot has not already
+ * been overridden. Subsequent calls to this function will be ignored unless
+ * pk11_SetInternalKeySlot is used to clear the current default.
+ */
+void
+pk11_SetInternalKeySlotIfFirst(PK11SlotInfo *slot)
+{
+   if (pk11InternalKeySlot) {
+	return;
+   }
+   pk11InternalKeySlot = slot ? PK11_ReferenceSlot(slot) : NULL;
+}
+
+/*
+ * Swap out a default internal keyslot.  Caller owns the Slot Reference
+ */
+PK11SlotInfo *
+pk11_SwapInternalKeySlot(PK11SlotInfo *slot)
+{
+   PK11SlotInfo *swap = pk11InternalKeySlot;
+
+   pk11InternalKeySlot = slot ? PK11_ReferenceSlot(slot) : NULL;
+   return swap;
 }
 
 
@@ -1954,14 +1956,63 @@ PK11_GetPrivateKeyTokens(CK_MECHANISM_TYPE type,PRBool needRW,void *wincx)
     return list;
 }
 
+/*
+ * returns true if the slot doesn't conform to the requested attributes
+ */
+PRBool
+pk11_filterSlot(PK11SlotInfo *slot, CK_MECHANISM_TYPE mechanism, 
+	CK_FLAGS mechanismInfoFlags, unsigned int keySize) 
+{
+    CK_MECHANISM_INFO mechanism_info;
+    CK_RV crv = CKR_OK;
+
+    /* handle the only case where we don't actually fetch the mechanisms
+     * on the fly */
+    if ((keySize == 0) && (mechanism == CKM_RSA_PKCS) && (slot->hasRSAInfo)) {
+	mechanism_info.flags = slot->RSAInfoFlags;
+    } else {
+	if (!slot->isThreadSafe) PK11_EnterSlotMonitor(slot);
+    	crv = PK11_GETTAB(slot)->C_GetMechanismInfo(slot->slotID, mechanism, 
+							&mechanism_info);
+	if (!slot->isThreadSafe) PK11_ExitSlotMonitor(slot);
+	/* if we were getting the RSA flags, save them */
+	if ((crv == CKR_OK) && (mechanism == CKM_RSA_PKCS) 
+						&& (!slot->hasRSAInfo)) {
+	    slot->RSAInfoFlags = mechanism_info.flags;
+	    slot->hasRSAInfo = PR_TRUE;
+	}
+    }
+    /* couldn't get the mechanism info */
+    if (crv != CKR_OK ) {
+	return PR_TRUE;
+    }
+    if (keySize && ((mechanism_info.ulMinKeySize > keySize)
+			|| (mechanism_info.ulMaxKeySize < keySize)) ) {
+	/* Token can do mechanism, but not at the key size we
+	 * want */
+	return PR_TRUE;
+    }
+    if (mechanismInfoFlags && ((mechanism_info.flags & mechanismInfoFlags) !=
+				mechanismInfoFlags) ) {
+	return PR_TRUE;
+    }
+    return PR_FALSE;
+}
+
 
 /*
- * find the best slot which supports the given
- * Mechanism. In normal cases this should grab the first slot on the list
- * with no fuss.
+ * Find the best slot which supports the given set of mechanisms and key sizes.
+ * In normal cases this should grab the first slot on the list with no fuss.
+ * The size array is presumed to match one for one with the mechanism type 
+ * array, which allows you to specify the required key size for each
+ * mechanism in the list. Whether key size is in bits or bytes is mechanism
+ * dependent. Typically asymetric keys are in bits and symetric keys are in 
+ * bytes.
  */
 PK11SlotInfo *
-PK11_GetBestSlotMultiple(CK_MECHANISM_TYPE *type, int mech_count, void *wincx)
+PK11_GetBestSlotMultipleWithAttributes(CK_MECHANISM_TYPE *type, 
+		CK_FLAGS *mechanismInfoFlags, unsigned int *keySize, 
+		unsigned int mech_count, void *wincx)
 {
     PK11SlotList *list = NULL;
     PK11SlotListElement *le ;
@@ -1992,6 +2043,7 @@ PK11_GetBestSlotMultiple(CK_MECHANISM_TYPE *type, int mech_count, void *wincx)
     for (i=0; i < mech_count; i++) {
 	if ((type[i] != CKM_FAKE_RANDOM) && 
 	    (type[i] != CKM_SHA_1) &&
+	    (type[i] != CKM_SHA224) &&
 	    (type[i] != CKM_SHA256) &&
 	    (type[i] != CKM_SHA384) &&
 	    (type[i] != CKM_SHA512) &&
@@ -2011,7 +2063,17 @@ PK11_GetBestSlotMultiple(CK_MECHANISM_TYPE *type, int mech_count, void *wincx)
 		    doExit = PR_TRUE;
 		    break;
 		}
+		if ((mechanismInfoFlags && mechanismInfoFlags[i]) ||
+			(keySize && keySize[i])) {
+		    if (pk11_filterSlot(le->slot, type[i], 
+			    mechanismInfoFlags ?  mechanismInfoFlags[i] : 0,
+			    keySize ? keySize[i] : 0)) {
+			doExit = PR_TRUE;
+			break;
+		    }
+		}
 	    }
+    
 	    if (doExit) continue;
 	      
 	    if (listNeedLogin && le->slot->needLogin) {
@@ -2032,11 +2094,27 @@ PK11_GetBestSlotMultiple(CK_MECHANISM_TYPE *type, int mech_count, void *wincx)
     return NULL;
 }
 
+PK11SlotInfo *
+PK11_GetBestSlotMultiple(CK_MECHANISM_TYPE *type, 
+			 unsigned int mech_count, void *wincx)
+{
+    return PK11_GetBestSlotMultipleWithAttributes(type, NULL, NULL, 
+						mech_count, wincx);
+}
+
 /* original get best slot now calls the multiple version with only one type */
 PK11SlotInfo *
 PK11_GetBestSlot(CK_MECHANISM_TYPE type, void *wincx)
 {
-    return PK11_GetBestSlotMultiple(&type, 1, wincx);
+    return PK11_GetBestSlotMultipleWithAttributes(&type, NULL, NULL, 1, wincx);
+}
+
+PK11SlotInfo *
+PK11_GetBestSlotWithAttributes(CK_MECHANISM_TYPE type, CK_FLAGS mechanismFlags,
+		unsigned int keySize, void *wincx)
+{
+    return PK11_GetBestSlotMultipleWithAttributes(&type, &mechanismFlags,
+						 &keySize, 1, wincx);
 }
 
 int

@@ -1,3 +1,7 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
 /*
  * Merge the source token into the target token.
  */
@@ -1037,13 +1041,11 @@ pk11_mergeTrustEntry(CK_ATTRIBUTE *target, CK_ATTRIBUTE *source)
      * actual trust of the cert (CKT_MUST_VERIFY, CKT_NSS_VALID,
      * CKT_NSS_VALID_DELEGATOR).
      */
-    if ((sourceTrust == CKT_NSS_MUST_VERIFY) 
-	|| (sourceTrust == CKT_NSS_VALID)
+    if ((sourceTrust == CKT_NSS_MUST_VERIFY_TRUST) 
 	|| (sourceTrust == CKT_NSS_VALID_DELEGATOR)) {
 	return USE_TARGET;
     }
-    if ((targetTrust == CKT_NSS_MUST_VERIFY) 
-	|| (targetTrust == CKT_NSS_VALID)
+    if ((targetTrust == CKT_NSS_MUST_VERIFY_TRUST) 
 	|| (targetTrust == CKT_NSS_VALID_DELEGATOR)) {
 	/* source overrites the target */
 	return USE_SOURCE;
@@ -1111,7 +1113,7 @@ pk11_mergeTrust(PK11SlotInfo *targetSlot, PK11SlotInfo *sourceSlot,
 	CK_ULONG trustAttrsCount = 
 		sizeof(trustAttrs)/sizeof(trustAttrs[0]);
 
-	int i;
+	CK_ULONG i;
 	CK_ATTRIBUTE targetTemplate, sourceTemplate;
 
 	/* existing trust record, merge the two together */
