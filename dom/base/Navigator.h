@@ -42,6 +42,8 @@ class WakeLock;
 class ArrayBufferViewOrBlobOrStringOrFormData;
 struct MobileIdOptions;
 class ServiceWorkerContainer;
+struct FlyWebPublishOptions;
+struct FlyWebFilter;
 } // namespace dom
 } // namespace mozilla
 
@@ -163,6 +165,12 @@ public:
   Geolocation* GetGeolocation(ErrorResult& aRv);
   Promise* GetBattery(ErrorResult& aRv);
   battery::BatteryManager* GetDeprecatedBattery(ErrorResult& aRv);
+
+  already_AddRefed<Promise> PublishServer(const nsAString& aName,
+                                          const FlyWebPublishOptions& aOptions,
+                                          ErrorResult& aRv);
+  already_AddRefed<Promise> ConnectToServer(const FlyWebFilter& aFilter,
+                                            ErrorResult& aRv);
 
   static already_AddRefed<Promise> GetDataStores(nsPIDOMWindow* aWindow,
                                                  const nsAString& aName,

@@ -4779,6 +4779,8 @@ pref("dom.mozInputMethod.enabled", false);
 // DataStore is disabled by default
 pref("dom.datastore.enabled", false);
 
+pref("dom.flyweb.enabled", true);
+
 // Telephony API
 #ifdef MOZ_B2G_RIL
 pref("dom.telephony.enabled", true);

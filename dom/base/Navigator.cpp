@@ -98,6 +98,7 @@
 
 #include "nsIDOMGlobalPropertyInitializer.h"
 #include "mozilla/dom/DataStoreService.h"
+#include "mozilla/dom/FlyWebService.h"
 #include "nsJSUtils.h"
 
 #include "nsScriptNameSpaceManager.h"
@@ -1528,6 +1529,33 @@ Navigator::GetDataStores(const nsAString& aName,
                          ErrorResult& aRv)
 {
   return GetDataStores(mWindow, aName, aOwner, aRv);
+}
+
+already_AddRefed<Promise>
+Navigator::PublishServer(const nsAString& aName,
+                         const FlyWebPublishOptions& aOptions,
+                         ErrorResult& aRv)
+{
+  RefPtr<FlyWebService> service = FlyWebService::GetOrCreate();
+  if (!service) {
+    aRv.Throw(NS_ERROR_FAILURE);
+    return nullptr;
+  }
+
+  return service->PublishServer(aName, aOptions, mWindow, aRv);
+}
+
+already_AddRefed<Promise>
+Navigator::ConnectToServer(const FlyWebFilter& aFilter,
+                           ErrorResult& aRv)
+{
+  RefPtr<FlyWebService> service = FlyWebService::GetOrCreate();
+  if (!service) {
+    aRv.Throw(NS_ERROR_FAILURE);
+    return nullptr;
+  }
+
+  return service->ConnectToServer(aFilter, mWindow, aRv);
 }
 
 already_AddRefed<Promise>

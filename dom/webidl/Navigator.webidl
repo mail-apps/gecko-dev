@@ -147,6 +147,15 @@ interface NavigatorDataStore {
 };
 Navigator implements NavigatorDataStore;
 
+partial interface Navigator {
+  [NewObject, Pref="dom.flyweb.enabled"]
+  Promise<FlyWebPublishedServer> publishServer(DOMString name,
+                                               optional FlyWebPublishOptions options);
+
+  [NewObject, Pref="dom.flyweb.enabled"]
+  Promise<FlyWebConnection> connectToServer(optional FlyWebFilter filter);
+};
+
 // http://www.w3.org/TR/vibration/#vibration-interface
 partial interface Navigator {
     // We don't support sequences in unions yet
