@@ -12,6 +12,8 @@
 #include "mozilla/dom/FlyWebChannel.h"
 #include "nsIUUIDGenerator.h"
 #include "nsStandardURL.h"
+#include "mozilla/Services.h"
+#include "nsISupportsPrimitives.h"
 
 namespace mozilla {
 namespace dom {
@@ -21,7 +23,22 @@ struct FlyWebPublishOptions;
 static StaticRefPtr<FlyWebService> gFlyWebService;
 
 NS_IMPL_ISUPPORTS(FlyWebService,
-                  nsIProtocolHandler)
+                  nsIProtocolHandler,
+                  nsIObserver)
+
+FlyWebService::FlyWebService()
+{
+  nsCOMPtr<nsIObserverService> obs = mozilla::services::GetObserverService();
+  if (obs) {
+    obs->AddObserver(this, "inner-window-destroyed", false);
+  }
+}
+
+FlyWebService*
+FlyWebService::GetExisting()
+{
+  return gFlyWebService;
+}
 
 FlyWebService*
 FlyWebService::GetOrCreate()
@@ -67,6 +84,7 @@ FlyWebService::PublishServer(const nsAString& aName,
 
   server->SetServerSocket(serverSocket);
 
+  mServers.AppendElement(server);
   promise->MaybeResolve(server);
 
   return promise.forget();
@@ -95,7 +113,7 @@ FlyWebService::ConnectToServer(const FlyWebFilter& aFilter,
                                      nullptr, getter_AddRefs(transport));
 
   if (NS_SUCCEEDED(rv)) {
-    connection = new FlyWebConnection(aWindow, transport, rv);
+    connection = new FlyWebConnection(aWindow, transport, nullptr, rv);
   }
   if (NS_FAILED(rv)) {
     if (transport) {
@@ -174,6 +192,38 @@ FlyWebService::AllowPort(int32_t port, const char* scheme, bool* _retval)
   return NS_OK;
 }
 
+NS_IMETHODIMP
+FlyWebService::Observe(nsISupports* aSubject, const char* aTopic,
+                       const char16_t* aData)
+{
+  if (strcmp(aTopic, "inner-window-destroyed")) {
+    return NS_OK;
+  }
+
+  nsCOMPtr<nsISupportsPRUint64> wrapper = do_QueryInterface(aSubject);
+  NS_ENSURE_TRUE(wrapper, NS_ERROR_FAILURE);
+
+  uint64_t innerID;
+  nsresult rv = wrapper->GetData(&innerID);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  for (FlyWebConnection* connection : mConnections) {
+    nsPIDOMWindow* win = connection->GetOwner();
+    if (win && win->WindowID() == innerID) {
+      connection->Close();
+    }
+  }
+
+  for (FlyWebPublishedServer* server : mServers) {
+    nsPIDOMWindow* win = server->GetOwner();
+    if (win && win->WindowID() == innerID) {
+      server->Close();
+    }
+  }
+
+  return NS_OK;
+}
+
 nsresult
 FlyWebService::RegisterConnection(FlyWebConnection* aConnection,
                                   nsAString& aRoot)
@@ -189,13 +239,12 @@ FlyWebService::RegisterConnection(FlyWebConnection* aConnection,
 
   char uuidChars[NSID_LENGTH];
   id.ToProvidedString(uuidChars);
-
   nsCString prePath = NS_LITERAL_CSTRING("flyweb://") +
                       Substring(uuidChars + 1, uuidChars + NSID_LENGTH - 2);
-  
-  mConnections.Put(prePath, aConnection);
-
+  mConnectionRoots.Put(prePath, aConnection);
   aRoot = NS_ConvertUTF8toUTF16(prePath + NS_LITERAL_CSTRING("/"));
+
+  mConnections.AppendElement(aConnection);
 
   return NS_OK;
 }
@@ -207,10 +256,11 @@ FlyWebService::UnregisterConnection(FlyWebConnection* aConnection)
   aConnection->GetUrl(root);
 
   NS_ConvertUTF16toUTF8 prePath(StringHead(root, root.Length() - 1));
+  MOZ_ASSERT(mConnectionRoots.Get(prePath) == aConnection);
+  mConnectionRoots.Remove(prePath);
 
-  MOZ_ASSERT(mConnections.Get(prePath) == aConnection);
-
-  mConnections.Remove(prePath);
+  DebugOnly<bool> removed = mConnections.RemoveElement(aConnection);
+  MOZ_ASSERT(removed);
 }
 
 
@@ -221,8 +271,46 @@ FlyWebService::GetConnection(nsIURI* aURI)
   nsresult rv = aURI->GetPrePath(prePath);
   NS_ENSURE_SUCCESS(rv, nullptr);
 
-  return mConnections.Get(prePath);
+  return mConnectionRoots.Get(prePath);
 }
+
+void
+FlyWebService::UnregisterServer(FlyWebPublishedServer* aServer)
+{
+  DebugOnly<bool> removed = mServers.RemoveElement(aServer);
+  MOZ_ASSERT(removed);
+}
+
+bool
+FlyWebService::HasConnectionOrServer(uint64_t aWindowID)
+{
+  for (FlyWebConnection* connection : mConnections) {
+    nsPIDOMWindow* win = connection->GetOwner();
+    if (win && win->WindowID() == aWindowID) {
+      return true;
+    }
+  }
+
+  for (FlyWebPublishedServer* server : mServers) {
+    nsPIDOMWindow* win = server->GetOwner();
+    if (win && win->WindowID() == aWindowID) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+void
+FlyWebService::CloseConnectionsForServer(FlyWebPublishedServer* aServer)
+{
+  for (FlyWebConnection* connection : mConnections) {
+    if (connection->GetServer() == aServer) {
+      return connection->Close();
+    }
+  }
+}
+
 
 } // namespace dom
 } // namespace mozilla

@@ -23,6 +23,7 @@ class Promise;
 struct FlyWebPublishOptions;
 class FlyWebChannel;
 class Response;
+class FlyWebPublishedServer;
 
 class FlyWebConnection final : public mozilla::DOMEventTargetHelper
                              , public nsIInputStreamCallback
@@ -31,6 +32,7 @@ class FlyWebConnection final : public mozilla::DOMEventTargetHelper
 public:
   FlyWebConnection(nsPIDOMWindow* aOwner,
                    nsISocketTransport* aTransport,
+                   FlyWebPublishedServer* aServer,
                    nsresult& rv);
 
   virtual JSObject* WrapObject(JSContext *cx, JS::Handle<JSObject*> aGivenProto) override;
@@ -48,6 +50,11 @@ public:
   void GetUrl(nsAString& aUrl)
   {
     aUrl = mRoot;
+  }
+
+  FlyWebPublishedServer* GetServer()
+  {
+    return mServer;
   }
 
   nsresult MakeHttpRequest(nsIURI* aURI, FlyWebChannel* aChannel);
@@ -70,8 +77,10 @@ private:
                         const char* aEnd);
 
   nsCOMPtr<nsISocketTransport> mTransport;
+  RefPtr<FlyWebPublishedServer> mServer;
   nsCOMPtr<nsIAsyncInputStream> mInput;
   nsCOMPtr<nsIAsyncOutputStream> mOutput;
+
   nsTArray<Variant<nsCString, nsCOMPtr<nsIAsyncInputStream>>> mOutputBuffers;
 
   static const uint32_t HeaderSize = sizeof(uint32_t);
@@ -92,7 +101,6 @@ private:
   bool mIsRegistered;
 
   nsRefPtrHashtable<nsCStringHashKey, FlyWebChannel> mChannels;
-
 };
 
 } // namespace dom

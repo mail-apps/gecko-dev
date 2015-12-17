@@ -13,11 +13,11 @@ interface FlyWebPublishedServer : EventTarget {
   readonly attribute DOMString? uiUrl;
   //readonly attribute deep_frozen object? data;
 
-  // start(); // to make sure not 'connect' events are fired before a listener is registered
-  // close();
+  // start(); // to make sure 'connect' events are not fired before a listener is registered
+  void close();
 
   attribute EventHandler onconnect;
-  attribute EventHandler onerror;
+  attribute EventHandler onclose;
 
   // Temporary until we get publishing/discovery up and running
   readonly attribute long port;

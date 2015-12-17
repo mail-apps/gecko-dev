@@ -29,9 +29,11 @@ NS_IMPL_ISUPPORTS_INHERITED(FlyWebConnection,
 
 FlyWebConnection::FlyWebConnection(nsPIDOMWindow* aOwner,
                                    nsISocketTransport* aTransport,
+                                   FlyWebPublishedServer* aServer,
                                    nsresult& rv)
   : mozilla::DOMEventTargetHelper(aOwner)
   , mTransport(aTransport)
+  , mServer(aServer)
   , mInputState(eInit)
   , mReadFrameHeaderWritten(0)
   , mWriteFrameRemaining(0)
@@ -308,6 +310,11 @@ FlyWebConnection::DispatchFetchEvent(const nsACString& aUri)
 void
 FlyWebConnection::Close()
 {
+  if (!mTransport) {
+    MOZ_ASSERT(!mOutput);
+    return;
+  }
+
   mTransport->Close(NS_BINDING_ABORTED);
   mInput->Close();
   mOutput->Close();

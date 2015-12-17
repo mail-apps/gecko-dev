@@ -19,6 +19,7 @@ FlyWebPublishedServer::FlyWebPublishedServer(nsPIDOMWindow* aOwner,
                                              const nsAString& aName,
                                              const FlyWebPublishOptions& aOptions)
   : mozilla::DOMEventTargetHelper(aOwner)
+  , mIsRegistered(true) // Registered by the FlyWebService
   , mName(aName)
   , mCategory(aOptions.mCategory)
   , mHttp(aOptions.mHttp)
@@ -27,6 +28,14 @@ FlyWebPublishedServer::FlyWebPublishedServer(nsPIDOMWindow* aOwner,
 {
   if (mCategory.IsEmpty()) {
     mCategory.SetIsVoid(true);
+  }
+}
+
+FlyWebPublishedServer::~FlyWebPublishedServer()
+{
+  MOZ_ASSERT(!mIsRegistered);
+  if (mIsRegistered) {
+    FlyWebService::GetOrCreate()->UnregisterServer(this);
   }
 }
 
@@ -45,6 +54,16 @@ FlyWebPublishedServer::SetServerSocket(nsIServerSocket* aServerSocket)
   MOZ_ASSERT(NS_SUCCEEDED(rv));
 }
 
+void
+FlyWebPublishedServer::Close()
+{
+  if (mServerSocket) {
+    mServerSocket->Close();
+  }
+
+  FlyWebService::GetOrCreate()->CloseConnectionsForServer(this);
+}
+
 NS_IMETHODIMP
 FlyWebPublishedServer::OnSocketAccepted(nsIServerSocket* aServ,
                                         nsISocketTransport* aTransport)
@@ -55,7 +74,7 @@ FlyWebPublishedServer::OnSocketAccepted(nsIServerSocket* aServ,
 
   FlyWebClientConnectEventInit init;
   init.mConnection = 
-    new FlyWebConnection(GetOwner(), aTransport, rv);
+    new FlyWebConnection(GetOwner(), aTransport, this, rv);
   NS_ENSURE_SUCCESS(rv, rv);
 
   RefPtr<FlyWebClientConnectEvent> event =
@@ -72,11 +91,13 @@ NS_IMETHODIMP
 FlyWebPublishedServer::OnStopListening(nsIServerSocket* aServ,
                                        nsresult aStatus)
 {
-  MOZ_ASSERT(aServ == mServerSocket || !mServerSocket);
+  MOZ_ASSERT(aServ == mServerSocket);
 
-  DispatchTrustedEvent(NS_LITERAL_STRING("error"));
+  DispatchTrustedEvent(NS_LITERAL_STRING("close"));
 
   mServerSocket = nullptr;
+  FlyWebService::GetOrCreate()->UnregisterServer(this);
+  mIsRegistered = false;
 
   return NS_OK;
 }

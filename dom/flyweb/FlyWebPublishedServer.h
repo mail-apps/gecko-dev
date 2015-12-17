@@ -65,13 +65,16 @@ public:
     aUiUrl = mUiUrl;
   }
 
+  void Close();
+
   IMPL_EVENT_HANDLER(connect)
-  IMPL_EVENT_HANDLER(error)
+  IMPL_EVENT_HANDLER(close)
 
 private:
-  ~FlyWebPublishedServer() {}
+  ~FlyWebPublishedServer();
 
   nsCOMPtr<nsIServerSocket> mServerSocket;
+  bool mIsRegistered;
 
   int32_t mPort;
 

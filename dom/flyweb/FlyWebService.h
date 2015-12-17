@@ -11,6 +11,7 @@
 #include "mozilla/ErrorResult.h"
 #include "nsIProtocolHandler.h"
 #include "nsDataHashtable.h"
+#include "nsIObserver.h"
 
 class nsPIDOMWindow;
 
@@ -21,13 +22,17 @@ class Promise;
 struct FlyWebPublishOptions;
 struct FlyWebFilter;
 class FlyWebConnection;
+class FlyWebPublishedServer;
 
 class FlyWebService final : public nsIProtocolHandler
+                          , public nsIObserver
 {
 public:
   NS_DECL_ISUPPORTS
   NS_DECL_NSIPROTOCOLHANDLER
+  NS_DECL_NSIOBSERVER
 
+  static FlyWebService* GetExisting();
   static FlyWebService* GetOrCreate();
   static already_AddRefed<FlyWebService> GetOrCreateAddRefed()
   {
@@ -46,12 +51,20 @@ public:
   nsresult RegisterConnection(FlyWebConnection* connection, nsAString& aRoot);
   void UnregisterConnection(FlyWebConnection* connection);
   FlyWebConnection* GetConnection(nsIURI* aURI);
+  void UnregisterServer(FlyWebPublishedServer* aServer);
+
+  bool HasConnectionOrServer(uint64_t aWindowID);
+
+  void CloseConnectionsForServer(FlyWebPublishedServer* aServer);
 
 private:
+  FlyWebService();
   ~FlyWebService() {};
 
-  nsDataHashtable<nsCStringHashKey, FlyWebConnection*> mConnections;
-
+  nsDataHashtable<nsCStringHashKey, FlyWebConnection*> mConnectionRoots;
+  // Might want to make these hashes for perf
+  nsTArray<FlyWebConnection*> mConnections;
+  nsTArray<FlyWebPublishedServer*> mServers;
 };
 
 } // namespace dom
