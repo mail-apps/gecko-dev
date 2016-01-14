@@ -747,7 +747,7 @@ ICStubCompiler::getStubCode()
 
     // All barriers are emitted off-by-default, enable them if needed.
     if (cx->zone()->needsIncrementalBarrier())
-        newStubCode->togglePreBarriers(true);
+        newStubCode->togglePreBarriers(true, DontReprotect);
 
     // Cache newly compiled stubcode.
     if (!comp->putStubCode(cx, stubKey, newStubCode))
@@ -2555,7 +2555,8 @@ TryAttachNativeGetAccessorPropStub(JSContext* cx, HandleScript script, jsbytecod
 
     bool isScripted = false;
     bool cacheableCall = IsCacheableGetPropCall(cx, obj, holder, shape, &isScripted,
-                                                isTemporarilyUnoptimizable);
+                                                isTemporarilyUnoptimizable,
+                                                isDOMProxy);
 
     // Try handling scripted getters.
     if (cacheableCall && isScripted && !isDOMProxy && engine == ICStubCompiler::Engine::Baseline) {

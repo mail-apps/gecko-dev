@@ -73,13 +73,6 @@ InterpreterFrame::extensibleLexicalScope() const
     return NearestEnclosingExtensibleLexicalScope(scopeChain());
 }
 
-inline JSCompartment*
-InterpreterFrame::compartment() const
-{
-    MOZ_ASSERT(scopeChain()->compartment() == script()->compartment());
-    return scopeChain()->compartment();
-}
-
 inline void
 InterpreterFrame::initCallFrame(JSContext* cx, InterpreterFrame* prev, jsbytecode* prevpc,
                                 Value* prevsp, JSFunction& callee, JSScript* script, Value* argv,
@@ -91,7 +84,6 @@ InterpreterFrame::initCallFrame(JSContext* cx, InterpreterFrame* prev, jsbytecod
     /* Initialize stack frame members. */
     flags_ = FUNCTION | HAS_SCOPECHAIN | flagsArg;
     argv_ = argv;
-    exec.fun = &callee;
     u.nactual = nactual;
     scopeChain_ = callee.environment();
     prev_ = prev;
@@ -225,14 +217,14 @@ InterpreterFrame::replaceInnermostScope(ScopeObject& scope)
 bool
 InterpreterFrame::hasCallObj() const
 {
-    MOZ_ASSERT(isStrictEvalFrame() || fun()->needsCallObject());
+    MOZ_ASSERT(isStrictEvalFrame() || callee().needsCallObject());
     return flags_ & HAS_CALL_OBJ;
 }
 
 inline CallObject&
 InterpreterFrame::callObj() const
 {
-    MOZ_ASSERT(fun()->needsCallObject());
+    MOZ_ASSERT(callee().needsCallObject());
 
     JSObject* pobj = scopeChain();
     while (MOZ_UNLIKELY(!pobj->is<CallObject>()))
@@ -411,7 +403,7 @@ FrameIter::unaliasedForEachActual(JSContext* cx, Op op)
 {
     switch (data_.state_) {
       case DONE:
-      case ASMJS:
+      case WASM:
         break;
       case INTERP:
         interpFrame()->unaliasedForEachActual(op);
@@ -581,23 +573,25 @@ AbstractFramePtr::isFunctionFrame() const
 }
 
 inline bool
-AbstractFramePtr::isModuleFrame() const
+AbstractFramePtr::isGlobalOrModuleFrame() const
 {
     if (isInterpreterFrame())
-        return asInterpreterFrame()->isModuleFrame();
+        return asInterpreterFrame()->isGlobalOrModuleFrame();
     if (isBaselineFrame())
-        return asBaselineFrame()->isModuleFrame();
-    return asRematerializedFrame()->isModuleFrame();
+        return asBaselineFrame()->isGlobalOrModuleFrame();
+    return asRematerializedFrame()->isGlobalOrModuleFrame();
 }
 
 inline bool
 AbstractFramePtr::isGlobalFrame() const
 {
-    if (isInterpreterFrame())
-        return asInterpreterFrame()->isGlobalFrame();
-    if (isBaselineFrame())
-        return asBaselineFrame()->isGlobalFrame();
-    return asRematerializedFrame()->isGlobalFrame();
+    return isGlobalOrModuleFrame() && !script()->module();
+}
+
+inline bool
+AbstractFramePtr::isModuleFrame() const
+{
+    return isGlobalOrModuleFrame() && script()->module();
 }
 
 inline bool
@@ -688,26 +682,6 @@ AbstractFramePtr::script() const
     if (isBaselineFrame())
         return asBaselineFrame()->script();
     return asRematerializedFrame()->script();
-}
-
-inline JSFunction*
-AbstractFramePtr::fun() const
-{
-    if (isInterpreterFrame())
-        return asInterpreterFrame()->fun();
-    if (isBaselineFrame())
-        return asBaselineFrame()->fun();
-    return asRematerializedFrame()->fun();
-}
-
-inline JSFunction*
-AbstractFramePtr::maybeFun() const
-{
-    if (isInterpreterFrame())
-        return asInterpreterFrame()->maybeFun();
-    if (isBaselineFrame())
-        return asBaselineFrame()->maybeFun();
-    return asRematerializedFrame()->maybeFun();
 }
 
 inline JSFunction*
@@ -943,8 +917,8 @@ Activation::isProfiling() const
     if (isJit())
         return asJit()->isProfiling();
 
-    MOZ_ASSERT(isAsmJS());
-    return asAsmJS()->isProfiling();
+    MOZ_ASSERT(isWasm());
+    return asWasm()->isProfiling();
 }
 
 Activation*
@@ -1023,16 +997,10 @@ InterpreterActivation::resumeGeneratorFrame(HandleFunction callee, HandleValue n
     return true;
 }
 
-inline JSContext*
-AsmJSActivation::cx()
-{
-    return cx_->asJSContext();
-}
-
 inline bool
 FrameIter::hasCachedSavedFrame() const
 {
-    if (isAsmJS())
+    if (isWasm())
         return false;
 
     if (hasUsableAbstractFramePtr())
@@ -1048,7 +1016,7 @@ FrameIter::hasCachedSavedFrame() const
 inline void
 FrameIter::setHasCachedSavedFrame()
 {
-    MOZ_ASSERT(!isAsmJS());
+    MOZ_ASSERT(!isWasm());
 
     if (hasUsableAbstractFramePtr()) {
         abstractFramePtr().setHasCachedSavedFrame();

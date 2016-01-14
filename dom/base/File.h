@@ -195,10 +195,6 @@ public:
          const nsAString& aContentType, uint64_t aLength,
          int64_t aLastModifiedDate, BlobDirState aDirState);
 
-  static already_AddRefed<File>
-  Create(nsISupports* aParent, const nsAString& aName,
-         const nsAString& aContentType, uint64_t aLength);
-
   // The returned File takes ownership of aMemoryBuffer. aMemoryBuffer will be
   // freed by free so it must be allocated by malloc or something
   // compatible with it.
@@ -835,6 +831,31 @@ private:
   nsCOMPtr<nsIFile> mFile;
   bool mWholeFile;
   bool mIsTemporary;
+};
+
+class BlobImplEmptyFile final : public BlobImplBase
+{
+public:
+  NS_DECL_ISUPPORTS_INHERITED
+
+  explicit BlobImplEmptyFile(const nsAString& aContentType)
+    : BlobImplBase(EmptyString(), aContentType, 0 /* aLength */)
+  {}
+
+  virtual void GetInternalStream(nsIInputStream** aStream,
+                                 ErrorResult& aRv) override;
+
+  virtual already_AddRefed<BlobImpl>
+  CreateSlice(uint64_t aStart, uint64_t aLength,
+              const nsAString& aContentType, ErrorResult& aRv) override;
+
+  virtual bool IsMemoryFile() const override
+  {
+    return true;
+  }
+
+private:
+  ~BlobImplEmptyFile() {}
 };
 
 } // namespace dom

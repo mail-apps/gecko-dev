@@ -11,6 +11,7 @@
 #include "jsiter.h"
 
 #include "builtin/SelfHostingDefines.h"
+#include "builtin/WeakMapObject.h"
 #include "vm/GlobalObject.h"
 #include "vm/SelfHosting.h"
 
@@ -35,7 +36,6 @@ const JSPropertySpec WeakSetObject::properties[] = {
 
 const JSFunctionSpec WeakSetObject::methods[] = {
     JS_SELF_HOSTED_FN("add",    "WeakSet_add",    1, 0),
-    JS_SELF_HOSTED_FN("clear",  "WeakSet_clear",  0, 0),
     JS_SELF_HOSTED_FN("delete", "WeakSet_delete", 1, 0),
     JS_SELF_HOSTED_FN("has",    "WeakSet_has",    1, 0),
     JS_FS_END

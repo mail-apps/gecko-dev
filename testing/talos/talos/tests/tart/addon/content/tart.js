@@ -223,7 +223,7 @@ Tart.prototype = {
     }
 
     var recordingAbsoluteDuration;
-    function stopRecord(Handle) {
+    function stopRecord() {
       recordingAbsoluteDuration =  window.performance.now() - startRecordTimestamp;
       if (self._config.controlProfiler) {
         if (isReportResult)
@@ -287,7 +287,7 @@ Tart.prototype = {
 
         if (isMeasureNow) {
           // Get the recorded frame intervals and append result if required
-          let intervals = stopRecord(recordingHandle);
+          let intervals = stopRecord();
           if (isReportResult) {
             addResult(intervals);
           }
@@ -526,7 +526,7 @@ Tart.prototype = {
       ],
 
       newtabNoPreload: [
-        function(){aboutNewTabService.newTabURL = "about:newtab";
+        function(){aboutNewTabService.resetNewTabURL();
                    Services.prefs.setCharPref("layout.css.devPixelsPerPx", "-1");
                    Services.prefs.setBoolPref("browser.newtab.preload", false);
                    next();
@@ -538,7 +538,7 @@ Tart.prototype = {
       ],
 
       newtabYesPreload: [
-        function(){aboutNewTabService.newTabURL = "about:newtab";
+        function(){aboutNewTabService.resetNewTabURL();
                    Services.prefs.setCharPref("layout.css.devPixelsPerPx", "-1");
                    Services.prefs.setBoolPref("browser.newtab.preload", true);
                    next();

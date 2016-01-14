@@ -45,13 +45,19 @@ if CONFIG['MOZ_FFMPEG']:
     UNIFIED_SOURCES += [
         'ffmpeg/FFmpegRuntimeLinker.cpp',
     ]
+    if CONFIG['OS_ARCH'] != 'WINNT':
+        DIRS += [
+            'ffmpeg/libav53',
+            'ffmpeg/libav54',
+            'ffmpeg/libav55',
+        ]
+    else:
+        LOCAL_INCLUDES += [
+            'ffmpeg/ffmpeg57/include',
+        ]
+
     DIRS += [
-        'ffmpeg/libav53',
-        'ffmpeg/libav54',
-        'ffmpeg/libav55',
-    ]
-    LOCAL_INCLUDES += [
-        'ffmpeg',
+        'ffmpeg/ffmpeg57',
     ]
 
 if CONFIG['MOZ_APPLEMEDIA']:

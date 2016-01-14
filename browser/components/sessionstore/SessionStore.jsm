@@ -18,9 +18,14 @@ const TAB_STATE_NEEDS_RESTORE = 1;
 const TAB_STATE_RESTORING = 2;
 const TAB_STATE_WILL_RESTORE = 3;
 
+// A new window has just been restored. At this stage, tabs are generally
+// not restored.
+const NOTIFY_SINGLE_WINDOW_RESTORED = "sessionstore-single-window-restored";
 const NOTIFY_WINDOWS_RESTORED = "sessionstore-windows-restored";
 const NOTIFY_BROWSER_STATE_RESTORED = "sessionstore-browser-state-restored";
 const NOTIFY_LAST_SESSION_CLEARED = "sessionstore-last-session-cleared";
+const NOTIFY_RESTORING_ON_STARTUP = "sessionstore-restoring-on-startup";
+const NOTIFY_INITIATING_MANUAL_RESTORE = "sessionstore-initiating-manual-restore";
 
 const NOTIFY_TAB_RESTORED = "sessionstore-debug-tab-restored"; // WARNING: debug-only
 
@@ -49,6 +54,10 @@ const WINDOW_HIDEABLE_FEATURES = [
 
 // Messages that will be received via the Frame Message Manager.
 const MESSAGES = [
+  // The content script gives us a reference to an object that performs
+  // synchronous collection of session data.
+  "SessionStore:setupSyncHandler",
+
   // The content script sends us data that has been invalidated and needs to
   // be saved to disk.
   "SessionStore:update",
@@ -80,6 +89,9 @@ const MESSAGES = [
 // has just been closed.
 const NOTAB_MESSAGES = new Set([
   // For a description see above.
+  "SessionStore:setupSyncHandler",
+
+  // For a description see above.
   "SessionStore:crashedTabRevived",
 
   // For a description see above.
@@ -92,6 +104,9 @@ const NOTAB_MESSAGES = new Set([
 // The list of messages we accept without an "epoch" parameter.
 // See getCurrentEpoch() and friends to find out what an "epoch" is.
 const NOEPOCH_MESSAGES = new Set([
+  // For a description see above.
+  "SessionStore:setupSyncHandler",
+
   // For a description see above.
   "SessionStore:crashedTabRevived",
 
@@ -691,6 +706,9 @@ var SessionStoreInternal = {
     }
 
     switch (aMessage.name) {
+      case "SessionStore:setupSyncHandler":
+        TabState.setSyncHandler(browser, aMessage.objects.handler);
+        break;
       case "SessionStore:update":
         // |browser.frameLoader| might be empty if the browser was already
         // destroyed and its tab removed. In that case we still have the last
@@ -1166,6 +1184,9 @@ var SessionStoreInternal = {
         let initialState = this.initSession();
         this._sessionInitialized = true;
 
+        if (initialState) {
+          Services.obs.notifyObservers(null, NOTIFY_RESTORING_ON_STARTUP, "");
+        }
         TelemetryStopwatch.start("FX_SESSION_RESTORE_STARTUP_ONLOAD_INITIAL_WINDOW_MS");
         this.initializeWindow(aWindow, initialState);
         TelemetryStopwatch.finish("FX_SESSION_RESTORE_STARTUP_ONLOAD_INITIAL_WINDOW_MS");
@@ -1554,7 +1575,7 @@ var SessionStoreInternal = {
     }
 
     this._clearRestoringWindows();
-    this._saveableClosedWindowData.clear();
+    this._saveableClosedWindowData = new WeakSet();
   },
 
   /**
@@ -1894,10 +1915,10 @@ var SessionStoreInternal = {
     this._cleanupOldData([this._closedWindows]);
 
     // Remove closed tabs of closed windows
-    this._cleanupOldData([winData._closedTabs for (winData of this._closedWindows)]);
+    this._cleanupOldData(this._closedWindows.map((winData) => winData._closedTabs));
 
     // Remove closed tabs of open windows
-    this._cleanupOldData([this._windows[key]._closedTabs for (key of Object.keys(this._windows))]);
+    this._cleanupOldData(Object.keys(this._windows).map((key) => this._windows[key]._closedTabs));
   },
 
   // Remove "old" data from an array
@@ -2302,6 +2323,8 @@ var SessionStoreInternal = {
     if (!this.canRestoreLastSession) {
       throw Components.Exception("Last session can not be restored");
     }
+
+    Services.obs.notifyObservers(null, NOTIFY_INITIATING_MANUAL_RESTORE, "");
 
     // First collect each window with its id...
     let windows = {};
@@ -3004,6 +3027,9 @@ var SessionStoreInternal = {
     TelemetryStopwatch.finish("FX_SESSION_RESTORE_RESTORE_WINDOW_MS");
 
     this._setWindowStateReady(aWindow);
+
+    Services.obs.notifyObservers(aWindow, NOTIFY_SINGLE_WINDOW_RESTORED, "");
+
     this._sendRestoreCompletedNotifications();
   },
 
@@ -3174,6 +3200,10 @@ var SessionStoreInternal = {
       tabbrowser.hideTab(tab);
     } else {
       tabbrowser.showTab(tab);
+    }
+
+    if (tabData.userContextId) {
+      tab.setUserContextId(tabData.userContextId);
     }
 
     if (!!tabData.muted != browser.audioMuted) {
@@ -4300,7 +4330,7 @@ var DirtyWindows = {
   },
 
   clear: function (window) {
-    this._data.clear();
+    this._data = new WeakMap();
   }
 };
 

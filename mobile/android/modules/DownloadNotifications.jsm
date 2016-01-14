@@ -15,6 +15,7 @@ XPCOMUtils.defineLazyModuleGetter(this, "FileUtils", "resource://gre/modules/Fil
 XPCOMUtils.defineLazyModuleGetter(this, "Notifications", "resource://gre/modules/Notifications.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "OS", "resource://gre/modules/osfile.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "Services", "resource://gre/modules/Services.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "Snackbars", "resource://gre/modules/Snackbars.jsm");
 
 XPCOMUtils.defineLazyServiceGetter(this, "ParentalControls",
   "@mozilla.org/parental-controls-service;1", "nsIParentalControlsService");
@@ -64,7 +65,7 @@ var DownloadNotifications = {
     if (!ParentalControls.isAllowed(ParentalControls.DOWNLOAD)) {
       download.cancel().catch(Cu.reportError);
       download.removePartialData().catch(Cu.reportError);
-      window.NativeWindow.toast.show(strings.GetStringFromName("downloads.disabledInGuest"), "long");
+      Snackbars.show(strings.GetStringFromName("downloads.disabledInGuest"), Snackbars.LENGTH_LONG);
       return;
     }
 
@@ -72,9 +73,9 @@ var DownloadNotifications = {
     notifications.set(download, notification);
     notification.showOrUpdate();
 
-    // If this is a new download, show a toast as well.
+    // If this is a new download, show a snackbar as well.
     if (this._viewAdded) {
-      window.NativeWindow.toast.show(strings.GetStringFromName("alertDownloadsToast"), "long");
+      Snackbars.show(strings.GetStringFromName("alertDownloadsToast"), Snackbars.LENGTH_LONG);
     }
   },
 
@@ -254,8 +255,8 @@ DownloadNotification.prototype = {
 var ConfirmCancelPrompt = {
   show: function (download) {
     // Open a prompt that offers a choice to cancel the download
-    let title = strings.GetStringFromName("downloadCancelPromptTitle");
-    let message = strings.GetStringFromName("downloadCancelPromptMessage");
+    let title = strings.GetStringFromName("downloadCancelPromptTitle1");
+    let message = strings.GetStringFromName("downloadCancelPromptMessage1");
 
     if (Services.prompt.confirm(null, title, message)) {
       download.cancel().catch(Cu.reportError);

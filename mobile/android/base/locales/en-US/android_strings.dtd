@@ -170,8 +170,6 @@
 <!ENTITY pref_developer_remotedebugging_wifi "Remote debugging via Wi-Fi">
 <!ENTITY pref_developer_remotedebugging_wifi_disabled_summary "Wi-Fi debugging requires your device to have a QR code reader app installed.">
 <!ENTITY pref_remember_signons2 "Remember logins">
-<!ENTITY pref_open_external_urls_privately_title "Open links in Private browsing">
-<!ENTITY pref_open_external_urls_privately_summary "For all external links opened in &brandShortName;">
 <!ENTITY pref_manage_logins "Manage logins">
 
 <!ENTITY pref_category_home "Home">
@@ -532,10 +530,10 @@ size. -->
      as an advisory message on how to add content to the reading list when the reading list empty.
      The placeholder &formatI; will be replaced by a small image of the icon described, and can be moved to wherever
      it is applicable. -->
-<!ENTITY home_reading_list_hint3 "TIP: Save articles to your reading list by long pressing the &formatI; icon when it appears in the URL bar.">
+<!ENTITY home_reading_list_hint3 "Tip: Save articles to your reading list by long pressing the &formatI; icon when it appears in the URL bar.">
 <!-- Localization note (home_reading_list_hint_accessible2): This string is used
      as alternate text for accessibility. It is not visible in the UI. -->
-<!ENTITY home_reading_list_hint_accessible2 "TIP: Save articles to your reading list by long pressing the reader mode button when it appears in the URL bar.">
+<!ENTITY home_reading_list_hint_accessible2 "Tip: Save articles to your reading list by long pressing the reader mode button when it appears in the URL bar.">
 
 <!-- Localization note (home_default_empty): This string is used as the default text when there
      is no data to show in an about:home panel that was created by an add-on. -->
@@ -594,6 +592,7 @@ just addresses the organization to follow, e.g. "This site is run by " -->
 <!ENTITY identity_connection_secure "Secure Connection">
 <!ENTITY identity_connection_insecure "Insecure connection">
 <!ENTITY identity_login_insecure "This page is not secure and your login could be vulnerable.">
+<!ENTITY identity_connection_chromeui "This is a secure &brandShortName; page">
 
 <!-- Mixed content notifications in site identity popup -->
 <!ENTITY mixed_content_blocked_all1 "&brandShortName; has blocked insecure content on this page.">
@@ -744,8 +743,8 @@ just addresses the organization to follow, e.g. "This site is run by " -->
 <!ENTITY restrictable_feature_advanced_settings_description "This includes importing bookmarks, restoring tabs and automated updates. Turn off for simplified settings suitable for any family member.">
 <!ENTITY restrictable_feature_camera_microphone "Camera &amp; Microphone">
 <!ENTITY restrictable_feature_camera_microphone_description "Allows family members to engage in real time communication on websites.">
-<!ENTITY restrictable_feature_data_choices "Data Choices">
-<!ENTITY restrictable_feature_data_choices_description "Choose whether or not to send usage information to Mozilla to help make Firefox better.">
+<!ENTITY restrictable_feature_block_list "Block List">
+<!ENTITY restrictable_feature_block_list_description "Block websites that include sensitive content.">
 
 <!-- Default Bookmarks titles-->
 <!-- LOCALIZATION NOTE (bookmarks_about_browser): link title for about:fennec -->

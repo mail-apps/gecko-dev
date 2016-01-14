@@ -1031,6 +1031,24 @@ nsDOMWindowUtils::SendNativeMouseEvent(int32_t aScreenX,
 }
 
 NS_IMETHODIMP
+nsDOMWindowUtils::SendNativeMouseMove(int32_t aScreenX,
+                                      int32_t aScreenY,
+                                      nsIDOMElement* aElement,
+                                      nsIObserver* aObserver)
+{
+  // get the widget to send the event to
+  nsCOMPtr<nsIWidget> widget = GetWidgetForElement(aElement);
+  if (!widget)
+    return NS_ERROR_FAILURE;
+
+  NS_DispatchToMainThread(NS_NewRunnableMethodWithArgs
+    <LayoutDeviceIntPoint, nsIObserver*>
+    (widget, &nsIWidget::SynthesizeNativeMouseMove,
+    LayoutDeviceIntPoint(aScreenX, aScreenY), aObserver));
+  return NS_OK;
+}
+
+NS_IMETHODIMP
 nsDOMWindowUtils::SendNativeMouseScrollEvent(int32_t aScreenX,
                                              int32_t aScreenY,
                                              uint32_t aNativeMessage,
@@ -3096,6 +3114,10 @@ nsDOMWindowUtils::ExitFullscreen()
 {
   nsCOMPtr<nsIDocument> doc = GetDocument();
   NS_ENSURE_STATE(doc);
+
+  // Although we would not use the old size if we have already exited
+  // fullscreen, we still want to cleanup in case we haven't.
+  nsSize oldSize = OldWindowSize::GetAndRemove(doc->GetWindow());
   if (!doc->IsFullScreenDoc()) {
     return NS_OK;
   }
@@ -3104,9 +3126,7 @@ nsDOMWindowUtils::ExitFullscreen()
   // set the window dimensions in advance. Since the resize message
   // comes after the fullscreen change call, doing so could avoid an
   // extra resize reflow after this point.
-  FullscreenChangePrepare prepare(
-    GetPresShell(), OldWindowSize::GetAndRemove(doc->GetWindow()));
-
+  FullscreenChangePrepare prepare(GetPresShell(), oldSize);
   nsIDocument::ExitFullscreenInDocTree(doc);
   return NS_OK;
 }

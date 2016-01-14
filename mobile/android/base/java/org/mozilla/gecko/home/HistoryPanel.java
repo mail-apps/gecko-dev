@@ -331,7 +331,7 @@ public class HistoryPanel extends HomeFragment {
     }
 
     /**
-     * Make Span that is clickable, italicized, and underlined
+     * Make Span that is clickable, and underlined
      * between the string markers <code>FORMAT_S1</code> and
      * <code>FORMAT_S2</code>.
      *
@@ -351,14 +351,11 @@ public class HistoryPanel extends HomeFragment {
 
         final SpannableStringBuilder ssb = new SpannableStringBuilder(text);
 
-        // Set italicization.
-        ssb.setSpan(new StyleSpan(Typeface.ITALIC), 0, ssb.length(), 0);
-
         // Set clickable text.
         final ClickableSpan clickableSpan = new ClickableSpan() {
             @Override
             public void onClick(View widget) {
-                Telemetry.sendUIEvent(TelemetryContract.Event.ACTION, TelemetryContract.Method.HOMESCREEN, "hint-private-browsing");
+                Telemetry.sendUIEvent(TelemetryContract.Event.ACTION, TelemetryContract.Method.PANEL, "hint-private-browsing");
                 try {
                     final JSONObject json = new JSONObject();
                     json.put("type", "Menu:Open");

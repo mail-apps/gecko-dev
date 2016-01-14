@@ -16,6 +16,7 @@ import os
 import sys
 import time
 
+from mozbuild.util import ensureParentDir
 from mozpack.files import FileFinder
 from mozpack.mozjar import JarWriter
 import mozpack.path as mozpath
@@ -33,6 +34,7 @@ ARCHIVE_FILES = {
             'pattern': '**',
             'ignore': [
                 'cppunittest/**',
+                'gtest/**',
                 'mochitest/**',
                 'reftest/**',
                 'talos/**',
@@ -49,6 +51,11 @@ ARCHIVE_FILES = {
             'source': buildconfig.topobjdir,
             'base': '_tests',
             'pattern': 'mozbase/**',
+        },
+        {
+            'source': buildconfig.topsrcdir,
+            'base': 'testing',
+            'pattern': 'firefox-ui/**',
         },
         {
             'source': buildconfig.topsrcdir,
@@ -79,6 +86,11 @@ ARCHIVE_FILES = {
             'base': 'js/src',
             'pattern': 'jsapi.h',
             'dest': 'jit-test',
+        },
+        {
+            'source': buildconfig.topsrcdir,
+            'base': 'testing',
+            'pattern': 'puppeteer/**',
         },
         {
             'source': buildconfig.topsrcdir,
@@ -140,6 +152,13 @@ ARCHIVE_FILES = {
             'base': '',
             'pattern': 'mozinfo.json',
             'dest': 'cppunittest',
+        },
+    ],
+    'gtest': [
+        {
+            'source': STAGE,
+            'base': '',
+            'pattern': 'gtest/**',
         },
     ],
     'mochitest': [
@@ -316,6 +335,7 @@ def main(argv):
 
     file_count = 0
     t_start = time.time()
+    ensureParentDir(args.outputfile)
     with open(args.outputfile, 'wb') as fh:
         # Experimentation revealed that level 5 is significantly faster and has
         # marginally larger sizes than higher values and is the sweet spot

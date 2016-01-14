@@ -52,6 +52,13 @@ this.AppConstants = Object.freeze({
   false,
 #endif
 
+  MOZ_DEV_EDITION:
+#ifdef MOZ_DEV_EDITION
+  true,
+#else
+  false,
+#endif
+
   MOZ_SERVICES_HEALTHREPORT:
 #ifdef MOZ_SERVICES_HEALTHREPORT
   true,
@@ -254,6 +261,7 @@ this.AppConstants = Object.freeze({
   MOZ_APP_VERSION: "@MOZ_APP_VERSION@",
   MOZ_APP_VERSION_DISPLAY: "@MOZ_APP_VERSION_DISPLAY@",
   MOZ_BUILD_APP: "@MOZ_BUILD_APP@",
+  MOZ_MACBUNDLE_NAME: "@MOZ_MACBUNDLE_NAME@",
   MOZ_UPDATE_CHANNEL: "@MOZ_UPDATE_CHANNEL@",
   INSTALL_LOCALE: "@AB_CD@",
   MOZ_WIDGET_TOOLKIT: "@MOZ_WIDGET_TOOLKIT@",
@@ -272,5 +280,12 @@ this.AppConstants = Object.freeze({
   // URL to the hg revision this was built from (e.g.
   // "https://hg.mozilla.org/mozilla-central/rev/6256ec9113c1")
   // On unofficial builds, this is an empty string.
-  SOURCE_REVISION_URL: "@SOURCE_REV_URL@"
+  SOURCE_REVISION_URL: "@SOURCE_REV_URL@",
+
+  MOZ_NUWA_PROCESS:
+#ifdef MOZ_NUWA_PROCESS
+    true
+#else
+    false
+#endif
 });

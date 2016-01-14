@@ -31,6 +31,7 @@ final class UnusedResourcesUtil {
             R.drawable.close,
             R.drawable.homepage_banner_firstrun,
             R.drawable.icon_openinapp,
+            R.drawable.network_offline,
             R.drawable.pause,
             R.drawable.phone,
             R.drawable.play,
@@ -51,9 +52,11 @@ final class UnusedResourcesUtil {
     };
 
     public static final int[] USED_IN_SUGGESTEDSITES = {
-            R.drawable.suggestedsites_fxaddons,
-            R.drawable.suggestedsites_fxsupport,
-            R.drawable.suggestedsites_mozilla,
+            R.drawable.suggestedsites_amazon,
+            R.drawable.suggestedsites_facebook,
+            R.drawable.suggestedsites_twitter,
+            R.drawable.suggestedsites_wikipedia,
+            R.drawable.suggestedsites_youtube,
     };
 
     public static final int[] USED_IN_BOOKMARKDEFAULTS = {

@@ -418,7 +418,7 @@ bool
 RootList::init()
 {
     EdgeVectorTracer tracer(rt, &edges, wantNames);
-    JS_TraceRuntime(&tracer);
+    js::TraceRuntime(&tracer);
     if (!tracer.okay)
         return false;
     noGC.emplace(rt);
@@ -431,7 +431,7 @@ RootList::init(ZoneSet& debuggees)
     EdgeVector allRootEdges;
     EdgeVectorTracer tracer(rt, &allRootEdges, wantNames);
 
-    JS_TraceRuntime(&tracer);
+    js::TraceRuntime(&tracer);
     if (!tracer.okay)
         return false;
     JS_TraceIncomingCCWs(&tracer, debuggees);
@@ -497,7 +497,7 @@ RootList::addRoot(Node node, const char16_t* edgeName)
     return edges.append(mozilla::Move(Edge(name.release(), node)));
 }
 
-const char16_t Concrete<RootList>::concreteTypeName[] = MOZ_UTF16("RootList");
+const char16_t Concrete<RootList>::concreteTypeName[] = MOZ_UTF16("JS::ubi::RootList");
 
 UniquePtr<EdgeRange>
 Concrete<RootList>::edges(JSRuntime* rt, bool wantNames) const {

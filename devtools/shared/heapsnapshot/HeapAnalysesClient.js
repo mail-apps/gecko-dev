@@ -173,6 +173,8 @@ HeapAnalysesClient.prototype.computeDominatorTree = function (snapshotFilePath) 
  *        An object specifying options for this request.
  *        - {DominatorTreeId} dominatorTreeId
  *          The id of the dominator tree.
+ *        - {Object} breakdown
+ *          The breakdown used to generate node labels.
  *        - {Number} maxDepth
  *          The maximum depth to traverse down the tree to create this initial
  *          view.
@@ -195,6 +197,8 @@ HeapAnalysesClient.prototype.getDominatorTree = function (opts) {
  *          The id of the dominator tree.
  *        - {NodeId} nodeId
  *          The id of the node whose children are being found.
+ *        - {Object} breakdown
+ *          The breakdown used to generate node labels.
  *        - {Number} startIndex
  *          The starting index within the full set of immediately dominated
  *          children of the children being requested. Children are always sorted
@@ -210,6 +214,9 @@ HeapAnalysesClient.prototype.getDominatorTree = function (opts) {
  *          - {Boolean} moreChildrenAvailable
  *            True iff there are more children available after the returned
  *            nodes.
+ *          - {Array<NodeId>} path
+ *            The path through the tree from the root to these node's parent, eg
+ *            [root's id, child of root's id, child of child of root's id, ..., `nodeId`].
  */
 HeapAnalysesClient.prototype.getImmediatelyDominated = function (opts) {
   return this._worker.performTask("getImmediatelyDominated", opts);

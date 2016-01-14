@@ -196,6 +196,7 @@ public abstract class GeckoApp
     protected DoorHangerPopup mDoorHangerPopup;
     protected FormAssistPopup mFormAssistPopup;
     protected ButtonToast mToast;
+    protected Snackbar mSnackbar;
 
     protected LayerView mLayerView;
     private AbsoluteLayout mPluginContainer;
@@ -854,6 +855,8 @@ public abstract class GeckoApp
         }
 
         snackbar.show();
+
+        this.mSnackbar = snackbar;
     }
 
     /**
@@ -2174,8 +2177,6 @@ public abstract class GeckoApp
 
         deleteTempFiles();
 
-        if (mLayerView != null)
-            mLayerView.destroy();
         if (mDoorHangerPopup != null)
             mDoorHangerPopup.destroy();
         if (mFormAssistPopup != null)
@@ -2200,7 +2201,7 @@ public abstract class GeckoApp
         final HealthRecorder rec = mHealthRecorder;
         mHealthRecorder = null;
         if (rec != null && rec.isEnabled()) {
-            // Closing a BrowserHealthRecorder could incur a write.
+            // Closing a HealthRecorder could incur a write.
             ThreadUtils.postToBackgroundThread(new Runnable() {
                 @Override
                 public void run() {
@@ -2589,8 +2590,7 @@ public abstract class GeckoApp
         GeckoAppShell.sendEventToGecko(GeckoEvent.createBroadcastEvent("Update:CheckResult", result));
     }
 
-    protected void geckoConnected() {
-        mLayerView.geckoConnected();
+    private void geckoConnected() {
         mLayerView.setOverScrollMode(View.OVER_SCROLL_NEVER);
     }
 
@@ -2793,7 +2793,7 @@ public abstract class GeckoApp
 
     /**
      * Use BrowserLocaleManager to change our persisted and current locales,
-     * and poke HealthRecorder to tell it of our changed state.
+     * and poke the system to tell it of our changed state.
      */
     protected void setLocale(final String locale) {
         if (locale == null) {

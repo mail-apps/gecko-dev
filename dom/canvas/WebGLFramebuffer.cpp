@@ -20,6 +20,8 @@ WebGLFBAttachPoint::WebGLFBAttachPoint(WebGLFramebuffer* fb, GLenum attachmentPo
     : mFB(fb)
     , mAttachmentPoint(attachmentPoint)
     , mTexImageTarget(LOCAL_GL_NONE)
+    , mTexImageLayer(0)
+    , mTexImageLevel(0)
 { }
 
 WebGLFBAttachPoint::~WebGLFBAttachPoint()
@@ -476,9 +478,11 @@ WebGLFBAttachPoint::GetParameter(const char* funcName, WebGLContext* webgl, JSCo
         if (webgl->IsWebGL2() ||
             webgl->IsExtensionEnabled(WebGLExtensionID::EXT_sRGB))
         {
-            const auto format = Format()->format;
-            return JS::Int32Value(format->isSRGB ? LOCAL_GL_SRGB
-                                                 : LOCAL_GL_LINEAR);
+            const auto format = Format();
+            if (!format)
+                return JS::NullValue();
+            return JS::Int32Value(format->format->isSRGB ? LOCAL_GL_SRGB
+                                                         : LOCAL_GL_LINEAR);
         }
         break;
 

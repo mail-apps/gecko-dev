@@ -115,6 +115,8 @@ var interfaceNamesInGlobalScope =
 // IMPORTANT: Do not change this list without review from a DOM peer!
     "File",
 // IMPORTANT: Do not change this list without review from a DOM peer!
+    "FileReader",
+// IMPORTANT: Do not change this list without review from a DOM peer!
     "FileReaderSync",
 // IMPORTANT: Do not change this list without review from a DOM peer!
     "FormData",
@@ -145,6 +147,8 @@ var interfaceNamesInGlobalScope =
 // IMPORTANT: Do not change this list without review from a DOM peer!
     "ImageBitmap",
 // IMPORTANT: Do not change this list without review from a DOM peer!
+    "ImageBitmapRenderingContext",
+// IMPORTANT: Do not change this list without review from a DOM peer!
     "ImageData",
 // IMPORTANT: Do not change this list without review from a DOM peer!
     "MessageChannel",
@@ -167,13 +171,13 @@ var interfaceNamesInGlobalScope =
 // IMPORTANT: Do not change this list without review from a DOM peer!
     "Promise",
 // IMPORTANT: Do not change this list without review from a DOM peer!
-    { name: "PushEvent", b2g: false, android: false, release: false},
+    { name: "PushEvent", b2g: false, android: false },
 // IMPORTANT: Do not change this list without review from a DOM peer!
-    { name: "PushManager", b2g: false, android: false, release: false},
+    { name: "PushManager", b2g: false, android: false },
 // IMPORTANT: Do not change this list without review from a DOM peer!
-    { name: "PushMessageData", b2g: false, android: false, release: false},
+    { name: "PushMessageData", b2g: false, android: false },
 // IMPORTANT: Do not change this list without review from a DOM peer!
-    { name: "PushSubscription", b2g: false, android: false, release: false},
+    { name: "PushSubscription", b2g: false, android: false },
 // IMPORTANT: Do not change this list without review from a DOM peer!
     "Request",
 // IMPORTANT: Do not change this list without review from a DOM peer!

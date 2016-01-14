@@ -33,7 +33,6 @@
 #include "jstypes.h"
 #include "jsutil.h"
 
-#include "asmjs/AsmJSModule.h"
 #include "frontend/BytecodeCompiler.h"
 #include "frontend/SourceNotes.h"
 #include "gc/GCInternals.h"
@@ -973,7 +972,7 @@ js::Disassemble1(JSContext* cx, HandleScript script, jsbytecode* pc,
 
       default: {
         char numBuf[12];
-        JS_snprintf(numBuf, sizeof numBuf, "%lx", (unsigned long) cs->format);
+        JS_snprintf(numBuf, sizeof numBuf, "%x", cs->format);
         JS_ReportErrorNumber(cx, GetErrorMessage, nullptr,
                              JSMSG_UNKNOWN_FORMAT, numBuf);
         return 0;
@@ -1021,14 +1020,12 @@ struct ExpressionDecompiler
 {
     JSContext* cx;
     RootedScript script;
-    RootedFunction fun;
     BytecodeParser parser;
     Sprinter sprinter;
 
-    ExpressionDecompiler(JSContext* cx, JSScript* script, JSFunction* fun)
+    ExpressionDecompiler(JSContext* cx, JSScript* script)
         : cx(cx),
           script(cx, script),
-          fun(cx, fun),
           parser(cx, script),
           sprinter(cx)
     {}
@@ -1239,7 +1236,7 @@ ExpressionDecompiler::loadAtom(jsbytecode* pc)
 JSAtom*
 ExpressionDecompiler::getArg(unsigned slot)
 {
-    MOZ_ASSERT(fun);
+    MOZ_ASSERT(script->functionNonDelazifying());
     MOZ_ASSERT(slot < script->bindings.numArgs());
 
     for (BindingIter bi(script); bi; bi++) {
@@ -1385,9 +1382,6 @@ DecompileExpressionFromStack(JSContext* cx, int spindex, int skipStackHits, Hand
     RootedScript script(cx, frameIter.script());
     AutoCompartment ac(cx, &script->global());
     jsbytecode* valuepc = frameIter.pc();
-    RootedFunction fun(cx, frameIter.isFunctionFrame()
-                           ? frameIter.calleeTemplate()
-                           : nullptr);
 
     MOZ_ASSERT(script->containsPC(valuepc));
 
@@ -1400,7 +1394,7 @@ DecompileExpressionFromStack(JSContext* cx, int spindex, int skipStackHits, Hand
     if (!valuepc)
         return true;
 
-    ExpressionDecompiler ed(cx, script, fun);
+    ExpressionDecompiler ed(cx, script);
     if (!ed.init())
         return false;
     if (!ed.decompilePC(valuepc))
@@ -1467,9 +1461,6 @@ DecompileArgumentFromStack(JSContext* cx, int formalIndex, char** res)
     RootedScript script(cx, frameIter.script());
     AutoCompartment ac(cx, &script->global());
     jsbytecode* current = frameIter.pc();
-    RootedFunction fun(cx, frameIter.isFunctionFrame()
-                           ? frameIter.calleeTemplate()
-                           : nullptr);
 
     MOZ_ASSERT(script->containsPC(current));
 
@@ -1489,7 +1480,7 @@ DecompileArgumentFromStack(JSContext* cx, int formalIndex, char** res)
     if (uint32_t(formalStackIndex) >= parser.stackDepthAtPC(current))
         return true;
 
-    ExpressionDecompiler ed(cx, script, fun);
+    ExpressionDecompiler ed(cx, script);
     if (!ed.init())
         return false;
     if (!ed.decompilePCForStackOperand(current, formalStackIndex))
@@ -1813,7 +1804,7 @@ GetPCCountJSON(JSContext* cx, const ScriptAndCounts& sac, StringBuffer& buf)
         }
 
         {
-            ExpressionDecompiler ed(cx, script, script->functionDelazifying());
+            ExpressionDecompiler ed(cx, script);
             if (!ed.init())
                 return false;
             if (!ed.decompilePC(pc))

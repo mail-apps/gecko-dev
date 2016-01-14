@@ -121,7 +121,12 @@ enum VarEmitOption {
     // Emit code to evaluate initializer expressions and leave those values on
     // the stack. This is used to implement `for (let/const ...;;)` and
     // deprecated `let` blocks.
-    PushInitialValues
+    PushInitialValues,
+
+    // Like InitializeVars, but bind using BINDVAR instead of
+    // BINDNAME/BINDGNAME. Only used for emitting declarations synthesized for
+    // Annex B block-scoped function semantics.
+    AnnexB,
 };
 
 struct BytecodeEmitter
@@ -249,7 +254,10 @@ struct BytecodeEmitter
         return parser->blockScopes[dn->pn_blockid];
     }
 
-    bool atBodyLevel() const;
+    bool atBodyLevel(StmtInfoBCE* stmt) const;
+    bool atBodyLevel() const {
+        return atBodyLevel(innermostStmt());
+    }
     uint32_t computeHops(ParseNode* pn, BytecodeEmitter** bceOfDefOut);
     bool isAliasedName(BytecodeEmitter* bceOfDef, ParseNode* pn);
     bool computeDefinitionIsAliased(BytecodeEmitter* bceOfDef, Definition* dn, JSOp* op);
@@ -427,10 +435,12 @@ struct BytecodeEmitter
     bool emitSetThis(ParseNode* pn);
 
     // These functions are used to emit GETLOCAL/GETALIASEDVAR or
-    // SETLOCAL/SETALIASEDVAR for a particular binding. The CallObject must be
-    // on top of the scope chain.
-    bool emitLoadFromTopScope(BindingIter& bi);
-    bool emitStoreToTopScope(BindingIter& bi);
+    // SETLOCAL/SETALIASEDVAR for a particular binding on a function's
+    // CallObject.
+    bool emitLoadFromEnclosingFunctionScope(BindingIter& bi);
+    bool emitStoreToEnclosingFunctionScope(BindingIter& bi);
+
+    uint32_t computeHopsToEnclosingFunction();
 
     bool emitJump(JSOp op, ptrdiff_t off, ptrdiff_t* jumpOffset = nullptr);
     bool emitCall(JSOp op, uint16_t argc, ParseNode* pn = nullptr);
@@ -463,6 +473,8 @@ struct BytecodeEmitter
 
     MOZ_NEVER_INLINE bool emitFunction(ParseNode* pn, bool needsProto = false);
     MOZ_NEVER_INLINE bool emitObject(ParseNode* pn);
+
+    bool emitHoistedFunctionsInList(ParseNode* pn);
 
     bool emitPropertyList(ParseNode* pn, MutableHandlePlainObject objp, PropListType type);
 
@@ -565,7 +577,7 @@ struct BytecodeEmitter
 
     // Pops iterator from the top of the stack. Pushes the result of |.next()|
     // onto the stack.
-    bool emitIteratorNext(ParseNode* pn);
+    bool emitIteratorNext(ParseNode* pn, bool allowSelfHosted = false);
 
     // Check if the value on top of the stack is "undefined". If so, replace
     // that value on the stack with the value defined by |defaultExpr|.
@@ -598,9 +610,11 @@ struct BytecodeEmitter
     bool emitConditionalExpression(ConditionalExpression& conditional);
 
     bool emitCallOrNew(ParseNode* pn);
+    bool emitDebugOnlyCheckSelfHosted();
     bool emitSelfHostedCallFunction(ParseNode* pn);
     bool emitSelfHostedResumeGenerator(ParseNode* pn);
     bool emitSelfHostedForceInterpreter(ParseNode* pn);
+    bool emitSelfHostedAllowContentSpread(ParseNode* pn);
 
     bool emitComprehensionFor(ParseNode* compFor);
     bool emitComprehensionForIn(ParseNode* pn);
@@ -624,23 +638,19 @@ struct BytecodeEmitter
     bool pushInitialConstants(JSOp op, unsigned n);
     bool initializeBlockScopedLocalsFromStack(Handle<StaticBlockObject*> blockObj);
 
+    // Emit bytecode for the spread operator.
+    //
     // emitSpread expects the current index (I) of the array, the array itself
     // and the iterator to be on the stack in that order (iterator on the bottom).
     // It will pop the iterator and I, then iterate over the iterator by calling
     // |.next()| and put the results into the I-th element of array with
     // incrementing I, then push the result I (it will be original I +
     // iteration count). The stack after iteration will look like |ARRAY INDEX|.
-    bool emitSpread();
+    bool emitSpread(bool allowSelfHosted = false);
 
-    // If type is StmtType::FOR_OF_LOOP, emit bytecode for a for-of loop.
-    // pn should be PNK_FOR, and pn->pn_left should be PNK_FOROF.
-    //
-    // If type is StmtType::SPREAD, emit bytecode for spread operator.
-    // pn should be nullptr.
-    //
-    // Please refer the comment above emitSpread for additional information about
-    // stack convention.
-    bool emitForOf(StmtType type, ParseNode* pn);
+    // Emit bytecode for a for-of loop.  pn should be PNK_FOR, and pn->pn_left
+    // should be PNK_FOROF.
+    bool emitForOf(ParseNode* pn);
 
     bool emitClass(ParseNode* pn);
     bool emitSuperPropLHS(ParseNode* superBase, bool isCall = false);

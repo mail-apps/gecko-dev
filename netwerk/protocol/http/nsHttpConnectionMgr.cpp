@@ -34,6 +34,7 @@
 #include <algorithm>
 #include "mozilla/ChaosMode.h"
 #include "mozilla/unused.h"
+#include "nsIURI.h"
 
 #include "mozilla/Telemetry.h"
 
@@ -2308,6 +2309,7 @@ nsHttpConnectionMgr::OnMsgShutdown(int32_t, ARefBase *param)
     MOZ_ASSERT(PR_GetCurrentThread() == gSocketThread);
     LOG(("nsHttpConnectionMgr::OnMsgShutdown\n"));
 
+    gHttpHandler->StopRequestTokenBucket();
     mCT.Enumerate(ShutdownPassCB, this);
 
     if (mTimeoutTick) {

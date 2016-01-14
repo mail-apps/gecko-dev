@@ -385,8 +385,25 @@ BluetoothGattManager::Get()
 
   // Create a new instance, register, and return
   BluetoothGattManager* manager = new BluetoothGattManager();
+  NS_ENSURE_TRUE(manager->Init(), nullptr);
   sBluetoothGattManager = manager;
   return sBluetoothGattManager;
+}
+
+bool
+BluetoothGattManager::Init()
+{
+  MOZ_ASSERT(NS_IsMainThread());
+
+  nsCOMPtr<nsIObserverService> obs = services::GetObserverService();
+  NS_ENSURE_TRUE(obs, false);
+
+  if (NS_FAILED(obs->AddObserver(this, NS_XPCOM_SHUTDOWN_OBSERVER_ID, false))) {
+    BT_WARNING("Failed to add observers!");
+    return false;
+  }
+
+  return true;
 }
 
 class BluetoothGattManager::RegisterModuleResultHandler final
@@ -2616,10 +2633,7 @@ private:
 
     InfallibleTArray<BluetoothNamedValue> properties;
 
-    nsAutoString addressStr;
-    AddressToString(mBdAddr, addressStr);
-
-    AppendNamedValue(properties, "Address", addressStr);
+    AppendNamedValue(properties, "Address", mBdAddr);
     AppendNamedValue(properties, "Rssi", mRssi);
     AppendNamedValue(properties, "GattAdv", mAdvData);
     AppendNamedValue(properties, "Type", static_cast<uint32_t>(type));
@@ -3411,13 +3425,10 @@ BluetoothGattManager::ConnectionNotification(int aConnId,
     server->mConnectionMap.Remove(aBdAddr);
   }
 
-  nsAutoString bdAddrStr;
-  AddressToString(aBdAddr, bdAddrStr);
-
   // Notify BluetoothGattServer that connection status changed
   InfallibleTArray<BluetoothNamedValue> props;
   AppendNamedValue(props, "Connected", aConnected);
-  AppendNamedValue(props, "Address", bdAddrStr);
+  AppendNamedValue(props, "Address", aBdAddr);
   bs->DistributeSignal(
     NS_LITERAL_STRING(GATT_CONNECTION_STATE_CHANGED_ID),
     server->mAppUuid,
@@ -3725,15 +3736,12 @@ BluetoothGattManager::RequestReadNotification(
     return;
   }
 
-  nsAutoString bdAddrStr;
-  AddressToString(aBdAddr, bdAddrStr);
-
   // Distribute a signal to gattServer
   InfallibleTArray<BluetoothNamedValue> properties;
 
   AppendNamedValue(properties, "TransId", aTransId);
   AppendNamedValue(properties, "AttrHandle", aAttributeHandle);
-  AppendNamedValue(properties, "Address", bdAddrStr);
+  AppendNamedValue(properties, "Address", aBdAddr);
   AppendNamedValue(properties, "NeedResponse", true);
   AppendNamedValue(properties, "Value", nsTArray<uint8_t>());
 
@@ -3782,15 +3790,12 @@ BluetoothGattManager::RequestWriteNotification(
     return;
   }
 
-  nsAutoString bdAddrStr;
-  AddressToString(aBdAddr, bdAddrStr);
-
   // Distribute a signal to gattServer
   InfallibleTArray<BluetoothNamedValue> properties;
 
   AppendNamedValue(properties, "TransId", aTransId);
   AppendNamedValue(properties, "AttrHandle", aAttributeHandle);
-  AppendNamedValue(properties, "Address", bdAddrStr);
+  AppendNamedValue(properties, "Address", aBdAddr);
   AppendNamedValue(properties, "NeedResponse", aNeedResponse);
 
   nsTArray<uint8_t> value;

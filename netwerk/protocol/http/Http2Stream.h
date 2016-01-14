@@ -15,6 +15,8 @@
 #include "nsISupportsPriority.h"
 
 class nsStandardURL;
+class nsIInputStream;
+class nsIOutputStream;
 
 namespace mozilla {
 namespace net {
@@ -200,6 +202,8 @@ protected:
 
   void     ChangeState(enum upstreamStateType);
 
+  virtual void AdjustInitialWindow();
+
 private:
   friend class nsAutoPtr<Http2Stream>;
 
@@ -207,7 +211,6 @@ private:
   nsresult GenerateOpen();
 
   void     AdjustPushedPriority();
-  void     AdjustInitialWindow();
   nsresult TransmitFrame(const char *, uint32_t *, bool forceCommitment);
   void     GenerateDataFrameHeader(uint32_t, bool);
 
@@ -311,6 +314,9 @@ private:
   // True when sending is suspended becuase the server receive window is
   //   <= 0
   bool                         mBlockedOnRwin;
+
+  // For properly adjusting push stream windows - see bug 1228822
+  bool                         mSentPushWindowBump;
 
   // For Progress Events
   uint64_t                     mTotalSent;

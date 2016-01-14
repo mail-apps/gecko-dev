@@ -739,8 +739,6 @@ HistoryMenu.prototype = {
       return;
     }
 
-    let enabled = PlacesUIUtils.shouldEnableTabsFromOtherComputersMenuitem();
-    menuitem.setAttribute("disabled", !enabled);
     menuitem.setAttribute("hidden", false);
   },
 
@@ -1554,12 +1552,6 @@ var BookmarkingUI = {
     PlacesCommandHook.updateBookmarkAllTabsCommand();
   },
 
-  updatePocketItemVisibility: function BUI_updatePocketItemVisibility(prefix) {
-    let hidden = !CustomizableUI.getPlacementOfWidget("pocket-button");
-    document.getElementById(prefix + "pocket").hidden = hidden;
-    document.getElementById(prefix + "pocketSeparator").hidden = hidden;
-  },
-
   _showBookmarkedNotification: function BUI_showBookmarkedNotification() {
     function getCenteringTransformForRects(rectToPosition, referenceRect) {
       let topDiff = referenceRect.top - rectToPosition.top;
@@ -1681,7 +1673,6 @@ var BookmarkingUI = {
 
   onPanelMenuViewShowing: function BUI_onViewShowing(aEvent) {
     this._updateBookmarkPageMenuItem();
-    this.updatePocketItemVisibility("panelMenu_");
     // Update checked status of the toolbar toggle.
     let viewToolbar = document.getElementById("panelMenu_viewBookmarksToolbar");
     let personalToolbar = document.getElementById("PersonalToolbar");
@@ -1824,3 +1815,44 @@ var BookmarkingUI = {
     Ci.nsINavBookmarkObserver
   ])
 };
+
+var AutoShowBookmarksToolbar = {
+  init() {
+    PlacesUtils.addLazyBookmarkObserver(this, false);
+  },
+
+  uninit() {
+    PlacesUtils.removeLazyBookmarkObserver(this);
+  },
+
+  onItemAdded(aItemId, aParentId, aIndex, aItemType, aURI, aTitle, aDateAdded,
+              aGuid, aParentGuid) {
+    this._autoshow(aParentGuid);
+  },
+  onBeginUpdateBatch() {},
+  onEndUpdateBatch() {},
+  onItemRemoved() {},
+  onItemChanged() {},
+  onItemVisited() {},
+  onItemMoved(aItemId, aOldParent, aOldIndex, aNewParent, aNewIndex, aItemType,
+              aGuid, aOldParentGuid, aNewParentGuid) {
+    this._autoshow(aNewParentGuid);
+  },
+
+  _autoshow(aParentGuid) {
+    if (aParentGuid != PlacesUtils.bookmarks.toolbarGuid)
+      return;
+
+    let toolbar = document.getElementById("PersonalToolbar");
+    if (!toolbar.collapsed)
+      return;
+
+    let placement = CustomizableUI.getPlacementOfWidget("personal-bookmarks");
+    let area = placement && placement.area;
+    if (area != CustomizableUI.AREA_BOOKMARKS)
+      return;
+
+    setToolbarVisibility(toolbar, true);
+  }
+};
+

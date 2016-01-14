@@ -537,6 +537,11 @@ WebGLContext::FramebufferTexture2D(GLenum target,
     if (!ValidateFramebufferTarget(target, "framebufferTexture2D"))
         return;
 
+    if (level < 0) {
+        ErrorInvalidValue("framebufferTexture2D: level must not be negative.");
+        return;
+    }
+
     if (!IsWebGL2() && level != 0) {
         ErrorInvalidValue("framebufferTexture2D: level must be 0.");
         return;
@@ -1339,6 +1344,24 @@ IsFormatAndTypeUnpackable(GLenum format, GLenum type)
     }
 }
 
+static bool
+IsIntegerFormatAndTypeUnpackable(GLenum format, GLenum type)
+{
+    switch (type) {
+    case LOCAL_GL_UNSIGNED_INT:
+    case LOCAL_GL_INT:
+        switch (format) {
+        case LOCAL_GL_RGBA_INTEGER:
+            return true;
+        default:
+            return false;
+        }
+    default:
+        return false;
+    }
+}
+
+
 CheckedUint32
 WebGLContext::GetPackSize(uint32_t width, uint32_t height, uint8_t bytesPerPixel,
                           CheckedUint32* const out_startOffset,
@@ -1394,8 +1417,10 @@ WebGLContext::ReadPixels(GLint x, GLint y, GLsizei width, GLsizei height, GLenum
     if (pixels.IsNull())
         return ErrorInvalidValue("readPixels: null destination buffer");
 
-    if (!IsFormatAndTypeUnpackable(format, type))
+    if (!(IsWebGL2() && IsIntegerFormatAndTypeUnpackable(format, type)) &&
+        !IsFormatAndTypeUnpackable(format, type)) {
         return ErrorInvalidEnum("readPixels: Bad format or type.");
+    }
 
     int channels = 0;
 
@@ -1408,6 +1433,7 @@ WebGLContext::ReadPixels(GLint x, GLint y, GLsizei width, GLsizei height, GLenum
         channels = 3;
         break;
     case LOCAL_GL_RGBA:
+    case LOCAL_GL_RGBA_INTEGER:
         channels = 4;
         break;
     default:
@@ -1429,6 +1455,16 @@ WebGLContext::ReadPixels(GLint x, GLint y, GLsizei width, GLsizei height, GLenum
     case LOCAL_GL_UNSIGNED_SHORT_5_6_5:
         bytesPerPixel = 2;
         requiredDataType = js::Scalar::Uint16;
+        break;
+
+    case LOCAL_GL_UNSIGNED_INT:
+        bytesPerPixel = 4;
+        requiredDataType = js::Scalar::Uint32;
+        break;
+
+    case LOCAL_GL_INT:
+        bytesPerPixel = 4;
+        requiredDataType = js::Scalar::Int32;
         break;
 
     case LOCAL_GL_FLOAT:
@@ -2325,35 +2361,6 @@ WebGLContext::RestoreContext()
         return ErrorInvalidOperation("restoreContext: Context cannot be restored.");
 
     ForceRestoreContext();
-}
-
-WebGLTexelFormat
-GetWebGLTexelFormat(TexInternalFormat effectiveInternalFormat)
-{
-    switch (effectiveInternalFormat.get()) {
-        case LOCAL_GL_RGBA8:                  return WebGLTexelFormat::RGBA8;
-        case LOCAL_GL_SRGB8_ALPHA8:           return WebGLTexelFormat::RGBA8;
-        case LOCAL_GL_RGB8:                   return WebGLTexelFormat::RGB8;
-        case LOCAL_GL_SRGB8:                  return WebGLTexelFormat::RGB8;
-        case LOCAL_GL_ALPHA8:                 return WebGLTexelFormat::A8;
-        case LOCAL_GL_LUMINANCE8:             return WebGLTexelFormat::R8;
-        case LOCAL_GL_LUMINANCE8_ALPHA8:      return WebGLTexelFormat::RA8;
-        case LOCAL_GL_RGBA32F:                return WebGLTexelFormat::RGBA32F;
-        case LOCAL_GL_RGB32F:                 return WebGLTexelFormat::RGB32F;
-        case LOCAL_GL_ALPHA32F_EXT:           return WebGLTexelFormat::A32F;
-        case LOCAL_GL_LUMINANCE32F_EXT:       return WebGLTexelFormat::R32F;
-        case LOCAL_GL_LUMINANCE_ALPHA32F_EXT: return WebGLTexelFormat::RA32F;
-        case LOCAL_GL_RGBA16F:                return WebGLTexelFormat::RGBA16F;
-        case LOCAL_GL_RGB16F:                 return WebGLTexelFormat::RGB16F;
-        case LOCAL_GL_ALPHA16F_EXT:           return WebGLTexelFormat::A16F;
-        case LOCAL_GL_LUMINANCE16F_EXT:       return WebGLTexelFormat::R16F;
-        case LOCAL_GL_LUMINANCE_ALPHA16F_EXT: return WebGLTexelFormat::RA16F;
-        case LOCAL_GL_RGBA4:                  return WebGLTexelFormat::RGBA4444;
-        case LOCAL_GL_RGB5_A1:                return WebGLTexelFormat::RGBA5551;
-        case LOCAL_GL_RGB565:                 return WebGLTexelFormat::RGB565;
-        default:
-            return WebGLTexelFormat::FormatNotSupportingAnyConversion;
-    }
 }
 
 void
